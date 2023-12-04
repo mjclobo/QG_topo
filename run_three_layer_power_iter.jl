@@ -61,6 +61,7 @@ if !isdir(plotpath_psi_vert); mkpath(plotpath_psi_vert); end
 # defining initial diagnostics
 E = MultiLayerQG.energies(prob)
 specE = MultiLayerQG.spectralfluxes(prob)
+fluxE = MultiLayerQG.fluxes(prob)
 
 # variables for plotting, that will be pushed to
 tiempo = [0.]
@@ -77,7 +78,14 @@ CL1  = [[specE[1][:,1]]]
 CT   = [[specE[3]]]
 NL1  = [[specE[4][:,:,1]]]
 NL2  = [[specE[4][:,:,2]]] 
-NL3  = [[specE[4][:,:,3]]] 
+NL3  = [[specE[4][:,:,3]]]
+
+LF1 = [fluxE[1][1]]
+LF2 = [fluxE[1][2]]
+LF3 = [fluxE[1][3]]
+VF32 = [fluxE[2][1]]
+VF52 = [fluxE[2][2]]
+TF = [fluxE[3]]
 
 # initial KE of upper layer, for renormalization
 KE1_0 = E[1][1]
@@ -114,6 +122,7 @@ while cyc<cycles
     MultiLayerQG.updatevars!(prob)
     local E = MultiLayerQG.energies(prob)
     local specE = MultiLayerQG.spectralfluxes(prob)
+    local fluxE = MultiLayerQG.fluxes(prob)
 
     if j % nsubs == 0
         # updating variables to plot
@@ -168,6 +177,14 @@ while cyc<cycles
         push!(NL1,[specE[4][:,:,1]])
         push!(NL2,[specE[4][:,:,2]])
         push!(NL3,[specE[4][:,:,3]])
+
+        # push flux terms
+        push!(LF1,fluxE[1][1])
+        push!(LF2,fluxE[1][2])
+        push!(LF3,fluxE[1][3])
+        push!(VF32,fluxE[2][1])
+        push!(VF52,fluxE[2][2])
+        push!(TF,fluxE[3])
 
         # finding vertical structure of instability
         psi_vert = [maximum(psi_vert1[:,end])
@@ -277,11 +294,12 @@ if save_output
     # should I add streamfunction or PV here?? How would I use them?
     csv_data = Dict("t" => tiempo, "CV32" => CV32, "CV52" => CV52, "KE1" => KE1, "KE2" => KE2, "KE3" => KE3, "Nz" => nlayers, "L" => L, "H" => H, "rho" => rho, "U" => U,
                     "dt" => dt, "F_profile" => params.F, "beta" => β, "h0" => h0, "kt" => kt, "sigma_emp_KE1" => sigma_emp_KE1, "sigma_emp_KE2" => sigma_emp_KE2,
-                    "sigma_emp_KE3" => sigma_emp_KE3, "sigma_emp_PE32" => sigma_emp_PE32, "sigma_emp_PE52" => sigma_emp_PE52, "psi1" => psi1_ot, "psi2" => psi2_ot,
-                    "psi3" => psi3_ot, "t_hovm" => t_hovm, "k_growth_emp" => k_emp, "k_growth_lsa" => k_x[:], "sigma_ls" => sigma_LS_all,"cfl_set" => cfl_glob, "H_T" => H_t,
-                    "Ri" => Ri, "Bu" => Bu, "inv_sqrt_Bu" => inv2_Bu, "csp_crit" => csp_crit, "csp_terms" => csp_terms, "rd" => rd1, "max_evec" => max_eve1,
+                    "sigma_emp_KE3" => sigma_emp_KE3, "sigma_emp_PE32" => sigma_emp_PE32, "sigma_emp_PE52" => sigma_emp_PE52, "psi1_ot" => psi1_ot, "psi2_ot" => psi2_ot,
+                    "psi3_ot" => psi3_ot, "t_hovm" => t_hovm, "k_growth_emp" => k_emp, "k_growth_lsa" => k_x[:], "sigma_ls" => sigma_LS_all,"cfl_set" => cfl_glob, "H_T_scale" => H_t,
+                    "Ri" => Ri, "Bu" => Bu, "inv_sqrt_Bu" => inv2_Bu, "csp_crit" => csp_crit, "csp_terms" => csp_terms, "rd_LSA" => rd1, "max_evec" => max_eve1,
                     "max_eval" => max_eva1, "PE32" => PE32, "PE52" => PE52, "CT" => CT, "NL1" => NL1, "NL2" => NL2, "NL3" => NL3, "psivert1" => psi_vert1,
-                    "psivert2" => psi_vert2, "psivert3" => psi_vert3, "alpha" => alpha, "gamma" => gamma)
+                    "psivert2" => psi_vert2, "psivert3" => psi_vert3, "alpha" => alpha, "gamma" => gamma, "cr" => cr, "cr_Dopp" => cr_dopp, "LF1" => LF1, "LF2" => LF2,
+                    "LF3" => LF3, "VF32" => VF32, "VF52" => VF52, "TF" => TF)
 
     CSV.write(csv_name, csv_data)
 end

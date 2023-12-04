@@ -26,7 +26,7 @@ H = [500., 1000., 2500.]     # the rest depths of each layer; [250., 500., 3000.
 H32 = 0.5 * (H[1] + H[2])
 H52 = 0.5 * (H[2] + H[3])
 
-U = [0.05,0.0255,0.001]
+U = [0.05,0.0255,0.0]
 U[2] = (U[1] + alpha * U[3] * (H32/H52))/(1 + alpha * (H32/H52))
 
 # setting density profile as function of gamma

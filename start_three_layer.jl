@@ -5,6 +5,10 @@
 gamma = 1.1      # 5.0 is a good number to use; 1.0 is stable with Callies parameters (but with double upper shear)
 alpha = 2.2
 
+# topo
+h0 = 50.      # dimensional topo height; constant for now
+kt = 6.         # topo wavenumber (no factor of 2pi); constant for now
+
 # whether or not to perform the linear stability analysis
 perform_ls = true
 
@@ -13,7 +17,7 @@ save_output = true
 
 # whether or not to plot model output at nsubs timesteps
 using PyPlot
-global plot_model = true; pygui(false)
+global plot_model = false; pygui(false)
 
 # whether or not to calculate growth rate from model output
 calc_growth_rate = true
@@ -24,17 +28,13 @@ type = "idealized_Eady"
 # set topography w/ current option(s): "eggshell"
 # currently the height is fixed, but maybe it's worth varying this height for
 # a given Charney-type profile in the future..
-topo_type = "sinusoid" # "eggshell" # 
+topo_type = "eggshell" # "sinusoid" # 
 
 # Hovmoller of streamfunction
 psi_hovm = true
 
 # Magnitude of initial, random QG PV; How to set this??
 q0_mag = 1e-7
-
-# topo
-h0 = 50.      # dimensional topo height; constant for now
-kt = 6.         # topo wavenumber (no factor of 2pi); constant for now
 
 # linear or nonlinear model (default: false)
 linear = false
@@ -45,7 +45,7 @@ run_type = "power_iter"
 if run_type=="power_iter"
     # renormalization parameters
     Rthresh = 0.01        # Threshold energy ratio for renormalization.
-    cycles  = 1         # Total number of renormalization cycles.
+    cycles  = 3           # Total number of renormalization cycles.
 elseif run_type=="nsteps"
     # number of steps
     nsteps = 30000
