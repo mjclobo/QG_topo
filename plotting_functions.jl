@@ -1,5 +1,5 @@
 # plotting functions, currently for three layer model
-using Measures
+using Measures, PyPlot
 
 function plot_three_layer(tiempo,KE,Cterms,q,grid,kt,h0,plotpath,plotname,ell)
 
@@ -7,42 +7,62 @@ function plot_three_layer(tiempo,KE,Cterms,q,grid,kt,h0,plotpath,plotname,ell)
     q2 = transpose(q[:, :, 2])
     q3 = transpose(q[:, :, 3])
     
-    p1 = plot(tiempo, KE,label=["layer 1" "layer 2" "layer 3"],xlabel="time",ylabel=L"KE [m s^{-2}]")
+    fig,ax = PyPlot.subplots(2,2,figsize=(15,10))
+    fig.tight_layout(pad=7.0)
+    ax1=ax[1]; ax2=ax[2]; ax3=ax[3]; ax4=ax[4];
+
+    ax1.plot(tiempo/3600/24,KE[:,1],linewidth=2.,color="blue",label=L"KE_1 / H_1")
+    ax1.plot(tiempo/3600/24,KE[:,2],linewidth=2.,color="orange",label=L"KE_2 / H_2")
+    ax1.plot(tiempo/3600/24,KE[:,3],linewidth=2.,color="green",label=L"KE_3 / H_3")
+    ax1.tick_params(labelsize=16.)
+    ax1.set_xlabel(L"time \quad [days]", fontsize=22.)
+    ax1.set_ylabel(L"KE_k / H_k \quad [m s^{-2}]", fontsize=22.)
+    # ax1.set_title(L"\psi_1 [\mathrm{norm}]", fontsize = 20.)
+    # ax1.set_ylim([t_hovm[1],t_hovm[end]])
+    ax1.legend(loc="upper right",fontsize=16.)
   
     p2a = Cterms[1][2:end]
     p2b = Cterms[2][2:end]
-    p2c = Cterms[3][2:end]
+    p2c = Cterms[3][2:end] # CL1
     p2T = Cterms[4][2:end] # topography
     p2d = Cterms[5][2:end] # NL1
     p2e = Cterms[6][2:end] # NL2
     p2f = Cterms[7][2:end] # NL3
 
-    # p2 = plot(grid.kr[2:end]*grid.Lx/(2*pi), [p2a p2b p2T],label=[L"\widehat{C}_{V,3/2}" L"\widehat{C}_{V,5/2}" L"\widehat{C}_{T}"],
-    # xaxis=:log, xlabel= L"k_x L_x /(2 \pi)" ,ylabel=L"\mathrm{Spectral thickness flux }[m^3 s^{-3}]",linewidth=2., linecolor=[:green :red :blue], 
-    # xtickfontsize=12,ytickfontsize=12,xlabelfontsize=18,ylabelfontsize=18,legendfontsize=12,size=(750,500),margin=5mm)
+    ax2.plot(grid.kr[2:end]*grid.Lx/(2*pi),p2a,linewidth=2.,color="blue",label=L"\widehat{C}_{V,3/2}")
+    ax2.plot(grid.kr[2:end]*grid.Lx/(2*pi),p2b,linewidth=2.,color="orange",label=L"\widehat{C}_{V,5/2}")
+    ax2.plot(grid.kr[2:end]*grid.Lx/(2*pi),p2d,linewidth=2.,color="green",label=L"\widehat{C}_{N,1}")
+    ax2.plot([],[],linewidth=2.,color="red",label= L"\widehat{C}_{T}")
+    ax2t=ax2.twinx()
+    ax2t.plot(grid.kr[2:end]*grid.Lx/(2*pi),p2T,color="red",linewidth=2.,label= L"\widehat{C}_{T} \mathrm{(R)}")
+    ax2.set_xlabel(L"k_x L_x /(2 \pi)", fontsize=22.)
+    ax2.set_ylabel(L"\mathrm{Spec.} \ \mathrm{energy} \quad [m^3 s^{-3}]",fontsize=22.)
+    ax2.legend(loc="upper right",fontsize=16.)
+    ax2.tick_params(labelsize=16.)
+    ax2t.tick_params(labelsize=16.)
 
-    # plot!(twinx(), [p2d p2e p2f],label=[L"\widehat{C}_{N,1}" L"\widehat{C}_{N,2}" L"\widehat{C}_{N,3}"],
-    # xaxis=:log, ylabel=L"\mathrm{Spectral thickness flux }[m^3 s^{-3}]", linewidth=2., linecolor=[:brown :orange :cyan],
-    # xtickfontsize=12,ytickfontsize=12,xlabelfontsize=18,ylabelfontsize=18,legendfontsize=12,size=(750,500),margin=5mm)
+    pc3=ax3.pcolormesh(grid.x/grid.Lx,grid.y/grid.Ly,q1,cmap=matplotlib.cm.coolwarm,norm=matplotlib.colors.TwoSlopeNorm(0))
+    ax3.set_xlabel(L"x/L_x",fontsize=22.)
+    ax3.set_ylabel(L"y/L_y",fontsize=22.)
+    ax3.set_title(L"q_1",fontsize=26.)
+    ax3.tick_params(labelsize=16.)
+    cb3 = fig.colorbar(pc3)
+    cb3.ax.tick_params(labelsize=16.)
 
+    pc4=ax4.pcolormesh(grid.x/grid.Lx,grid.y/grid.Ly,q3,cmap=matplotlib.cm.coolwarm,norm=matplotlib.colors.TwoSlopeNorm(0))
+    ax4.set_xlabel(L"x/L_x",fontsize=22.)
+    ax4.set_ylabel(L"y/L_y",fontsize=22.)
+    ax4.set_title(L"q_3",fontsize=26.)
+    ax4.tick_params(labelsize=16.)
+    cb4 = fig.colorbar(pc4)
+    cb4.ax.tick_params(labelsize=16.)
 
-    p2 = plot(grid.kr[2:end]*grid.Lx/(2*pi), [p2a p2b],label=[L"\widehat{C}_{V,3/2}" L"\widehat{C}_{V,5/2}"],
-    xaxis=:log, xlabel= L"k_x L_x /(2 \pi)" ,ylabel=L"\mathrm{Spectral thickness flux }[m^3 s^{-3}]",linewidth=2., linecolor=[:green :red], 
-    xtickfontsize=12,ytickfontsize=12,xlabelfontsize=18,ylabelfontsize=18,legendfontsize=12,size=(750,500),margin=5mm)
-
-    plot!(twinx(), p2T,label= L"\widehat{C}_{T}",
-    xaxis=:log,ylabel=L"\mathrm{Spectral thickness flux }[m^3 s^{-3}]",linewidth=2., linecolor=:blue, 
-    xtickfontsize=12,ytickfontsize=12,ylabelfontsize=18,legendfontsize=12,size=(750,500),margin=5mm)
-
-    p3 = heatmap(grid.x/grid.Lx,grid.y/grid.Ly,q1,xlabel=L"x/L_x ",ylabel=L"y/L_y",xflip=true,title=L"q_1",c=:balance,
-    xtickfontsize=12,ytickfontsize=12,xlabelfontsize=18,ylabelfontsize=18,size=(750,500),margin=5mm)
-    p4 = heatmap(grid.x/grid.Lx,grid.y/grid.Ly,q3,xlabel=L"x/L_x",ylabel=L"y/L_y",xflip=true,title=L"q_3",c=:balance,
-    xtickfontsize=12,ytickfontsize=12,xlabelfontsize=18,ylabelfontsize=18,size=(750,500),margin=5mm)
-
-    p = plot(p1,p2,p3,p4,layout=(2,2),plot_title=L"k_{topo}= "*string(kt)*L", h_0= "*string(h0)*L", Bu_{1,2} = "*type,size=(1200,750))
+    PyPlot.suptitle(L"k_{topo}= "*string(kt)*L", h_0= "*string(h0),fontsize=30.)
 
     local savename = @sprintf("%s_%04d.png", joinpath(plotpath, plotname), ell)
-    savefig(p,savename)
+    PyPlot.savefig(savename)
+
+    PyPlot.close()
 
 end
 
@@ -54,7 +74,7 @@ function plot_growth_rate(k_x,sigma_x,k_emp,sigma_emp,Lx,plotpath)
     Plots.scatter!([k_emp]*Lx/(2*pi),[sigma_emp]*inv_s_to_day,markersize=6.,color="green",label="Model output")
 
     local savename = plotpath*"../growth_plot.png"
-    savefig(p,savename)
+    Plots.savefig(p,savename)
 end
 
 function plot_Qy(H,Qy,plotpath)
@@ -64,7 +84,7 @@ function plot_Qy(H,Qy,plotpath)
     xtickfontsize=12,ytickfontsize=12,xlabelfontsize=18,ylabelfontsize=18,legendfontsize=12,size=(400,1000),margin=5mm)
 
     local savename = plotpath*"../Qy.png"
-    savefig(p,savename)
+    Plots.savefig(p,savename)
 end
 
 function plot_unstable_vert(H,max_eve,psi_emp,plotpath,plotname,ell)
@@ -76,7 +96,7 @@ function plot_unstable_vert(H,max_eve,psi_emp,plotpath,plotname,ell)
     Plots.plot!(psi_emp,-z,linewidth=2,label=L"\psi_\mathrm{max} \ (model)")
 
     local savename = @sprintf("%s_%04d.png", joinpath(plotpath, plotname), ell)
-    savefig(p,savename)
+    Plots.savefig(p,savename)
 
 end
 
@@ -87,7 +107,7 @@ function plot_layerwise_spectra(k,specs,plotpath,plotname,ell)
     xtickfontsize=12,ytickfontsize=12,xlabelfontsize=18,ylabelfontsize=18,legendfontsize=12,size=(750,500),margin=5mm)
 
     local savename = @sprintf("%s_%04d.png", joinpath(plotpath, plotname), ell)
-    savefig(p,savename)
+    Plots.savefig(p,savename)
 
 end
 

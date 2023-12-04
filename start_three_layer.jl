@@ -2,7 +2,8 @@
 # This is where we set parameters that change.
 
 # controls ratios of two upper layer densities spanning either side of ``critical'' density (see equation)
-gamma = 1.5      # 5.0 is a good number to use; 1.0 is stable with Callies parameters (but with double upper shear)
+gamma = 1.1      # 5.0 is a good number to use; 1.0 is stable with Callies parameters (but with double upper shear)
+alpha = 2.2
 
 # whether or not to perform the linear stability analysis
 perform_ls = true
@@ -11,7 +12,8 @@ perform_ls = true
 save_output = true
 
 # whether or not to plot model output at nsubs timesteps
-global plot_model = true # false 
+using PyPlot
+global plot_model = true; pygui(false)
 
 # whether or not to calculate growth rate from model output
 calc_growth_rate = true
@@ -22,7 +24,7 @@ type = "idealized_Eady"
 # set topography w/ current option(s): "eggshell"
 # currently the height is fixed, but maybe it's worth varying this height for
 # a given Charney-type profile in the future..
-topo_type = "eggshell"
+topo_type = "sinusoid" # "eggshell" # 
 
 # Hovmoller of streamfunction
 psi_hovm = true
@@ -31,8 +33,8 @@ psi_hovm = true
 q0_mag = 1e-7
 
 # topo
-h0 = 0.      # dimensional topo height; constant for now
-kt = 12.         # topo wavenumber (no factor of 2pi); constant for now
+h0 = 50.      # dimensional topo height; constant for now
+kt = 6.         # topo wavenumber (no factor of 2pi); constant for now
 
 # linear or nonlinear model (default: false)
 linear = false
@@ -43,10 +45,10 @@ run_type = "power_iter"
 if run_type=="power_iter"
     # renormalization parameters
     Rthresh = 0.01        # Threshold energy ratio for renormalization.
-    cycles  = 4         # Total number of renormalization cycles.
+    cycles  = 1         # Total number of renormalization cycles.
 elseif run_type=="nsteps"
     # number of steps
-    nsteps = 10000
+    nsteps = 30000
 
     calc_growth_rate = false # for plotting
 else
@@ -69,7 +71,7 @@ end
 
 using PyPlot; matplotlib[:rcParams]["axes.unicode_minus"]=false
 
-fig,ax = PyPlot.subplots(1,3,figsize=(12,8))
+fig,ax = PyPlot.subplots(1,3,figsize=(12,8));
 fig.tight_layout(pad=5.0)
 ax1=ax[1]; ax2=ax[2]; ax3=ax[3];
 
@@ -102,12 +104,9 @@ fig.colorbar(pc3)
 
 # PyPlot.savefig(fig,plotpath_main*"../psi_hovm_gamma"*string(gamma)*".png")
 
-
-
 # Dimensionless parameters
 Ri = [((0.5*(H[1]+H[2])*g*(rho[2]-rho[1])/rho[1])/((U[1]-U[2])^2))
         ((0.5*(H[2]+H[3])*g*(rho[3]-rho[2])/rho[1])/((U[2]-U[3])^2))]
-
 
 Bu_11 = (H[1]*g*(rho[2]-rho[1])/rho[1])/f0^2 * Lx^-2
 Bu_12 = (H[2]*g*(rho[2]-rho[1])/rho[1])/f0^2 * Lx^-2
@@ -120,5 +119,19 @@ inv2_Bu = sqrt.(Bu).^-1
 
 # Prandlt e-folding scale
 H_t = f0^2 * (Lx/kt)^2 / (g*(rho[3]-rho[2])/rho[1])
+
+cr_crit = 0.5 * (cr_dopp[1] + cr_dopp[2])
+
+U32_int = U[1] - (H[1]/2) * ((U[1]-U[2])/((H[1]+H[2])/2))
+
+H_qy_is_0 = - H[1]/2 - qy1[1] * (((H[1]+H[2])/2))/(qy1[1]-qy1[2])
+
+U32_eq_cr = U[1] + (H[1]/2 + H_qy_is_0) * ((U[1]-U[2])/((H[1]+H[2])/2))
+
+cr_int = cr[1] - (H[1]/2) * ((cr[1]-cr[2])/((H[1]+H[2])/2))
+
+H_cr_is_0 = - H[1]/2 - cr[1] * (((H[1]+H[2])/2))/(cr[1]-cr[2])
+
+cr_qy_is_0 = cr[1] + (H[1]/2 + H_qy_is_0) * ((cr[1]-cr[2])/((H[1]+H[2])/2))
 
 

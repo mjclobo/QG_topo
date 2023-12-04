@@ -8,7 +8,7 @@
 
 ## load packages
 
-using GeophysicalFlows, Plots, Printf, FFTW, LinearAlgebra, Statistics, LaTeXStrings
+using GeophysicalFlows, Printf, FFTW, LinearAlgebra, Statistics, LaTeXStrings
 
 using Random: seed!
 
@@ -30,6 +30,8 @@ seed!(1234) # reset of the random number generator for reproducibility
 q₀  = q0_mag * device_array(dev)(randn((grid.nx, grid.ny, nlayers)))
 q₀h = prob.timestepper.filter .* rfft(q₀, (1, 2)) # apply rfft  only in dims=1, 2
 q₀  = irfft(q₀h, grid.nx, (1, 2))                 # apply irfft only in dims=1, 2
+
+# q₀[:,:,3] .= 0.0
 
 MultiLayerQG.set_q!(prob, q₀)
 
@@ -92,7 +94,7 @@ if perform_ls==true
     sigma_LS_all = Array(imag(eva1))
     sigma_LS_mid = sigma_LS_all[:,round(Int,Nx/2)]
 
-    plot_Qy(H,qy1',plotpath_main)
+    # plot_Qy(H,qy1',plotpath_main)
 
     global bulk_Bu = (real(rd1[2])/Lx)^2
 end
@@ -177,12 +179,12 @@ while cyc<cycles
         # plotting stuff
         global plot_model
         if plot_model==true
-            # plot_three_layer(tiempo,[KE1 KE2 KE3],[CV32[ell+1] CV52[ell+1] CL1[ell+1] CT[ell+1] NL1[ell+1] NL2[ell+1] NL3[ell+1]],vars.q,grid,kt,h0,plotpath_main,plotname,ell) 
+            plot_three_layer(tiempo,[KE1 KE2 KE3],[CV32[ell+1] CV52[ell+1] CL1[ell+1] CT[ell+1] NL1[ell+1] NL2[ell+1] NL3[ell+1]],vars.q,grid,kt,h0,plotpath_main,plotname,ell) 
 
             # Should I also plot the LS most unstable vert structure and the model output for most unstable wavenumber?
             # plot_unstable_vert(H,max_eve1,psi_vert,plotpath_psi,plotname,ell)
 
-            plot_layerwise_spectra(grid.kr*Lx/(2*pi),[psi_vert1[:,end] psi_vert2[:,end] psi_vert3[:,end]],plotpath_psi_vert,plotname,ell)
+            # plot_layerwise_spectra(grid.kr*Lx/(2*pi),[psi_vert1[:,end] psi_vert2[:,end] psi_vert3[:,end]],plotpath_psi_vert,plotname,ell)
         end
 
         # increase counter
@@ -237,12 +239,14 @@ end
 if calc_growth_rate==true
     using Peaks
     sigma_emp = LinStab.calc_growth(tiempo, [KE1 KE2 KE3 PE32 PE52])
+    sigma_emp_KE1, sigma_emp_KE2, sigma_emp_KE3 = sigma_emp[1], sigma_emp[2], sigma_emp[3]
+    sigma_emp_PE32, sigma_emp_PE52 = sigma_emp[4], sigma_emp[5]
     a = findmax(CV32[end][1])
     k_emp = grid.kr[a[2][1]]
 end
 
 if calc_growth_rate==true && perform_ls==true
-    plot_growth_rate(k_x[:],sigma_LS_mid,k_emp,sigma_emp,Lx,plotpath_main)
+    # plot_growth_rate(k_x[:],sigma_LS_mid,k_emp,sigma_emp_KE1,Lx,plotpath_main)
 end
 
 # a couple of random params
@@ -272,11 +276,12 @@ if save_output
 
     # should I add streamfunction or PV here?? How would I use them?
     csv_data = Dict("t" => tiempo, "CV32" => CV32, "CV52" => CV52, "KE1" => KE1, "KE2" => KE2, "KE3" => KE3, "Nz" => nlayers, "L" => L, "H" => H, "rho" => rho, "U" => U,
-                    "dt" => dt, "F_profile" => params.F, "beta" => β, "h0" => h0, "kt" => kt, "sigma_emp" => sigma_emp, "psi1" => psi1_ot, "psi2" => psi2_ot,
+                    "dt" => dt, "F_profile" => params.F, "beta" => β, "h0" => h0, "kt" => kt, "sigma_emp_KE1" => sigma_emp_KE1, "sigma_emp_KE2" => sigma_emp_KE2,
+                    "sigma_emp_KE3" => sigma_emp_KE3, "sigma_emp_PE32" => sigma_emp_PE32, "sigma_emp_PE52" => sigma_emp_PE52, "psi1" => psi1_ot, "psi2" => psi2_ot,
                     "psi3" => psi3_ot, "t_hovm" => t_hovm, "k_growth_emp" => k_emp, "k_growth_lsa" => k_x[:], "sigma_ls" => sigma_LS_all,"cfl_set" => cfl_glob, "H_T" => H_t,
                     "Ri" => Ri, "Bu" => Bu, "inv_sqrt_Bu" => inv2_Bu, "csp_crit" => csp_crit, "csp_terms" => csp_terms, "rd" => rd1, "max_evec" => max_eve1,
                     "max_eval" => max_eva1, "PE32" => PE32, "PE52" => PE52, "CT" => CT, "NL1" => NL1, "NL2" => NL2, "NL3" => NL3, "psivert1" => psi_vert1,
-                    "psivert2" => psi_vert2, "psivert3" => psi_vert3)
+                    "psivert2" => psi_vert2, "psivert3" => psi_vert3, "alpha" => alpha, "gamma" => gamma)
 
     CSV.write(csv_name, csv_data)
 end

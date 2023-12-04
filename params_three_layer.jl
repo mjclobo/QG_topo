@@ -21,13 +21,20 @@ beta = β = 0 # 1.9e-11 # 1.14052e-11              # the y-gradient of planetary
 nlayers = 3                 # number of layers
 f0 = f₀= 8.3e-5  # 1.0e-4            # Coriolis param [s^-1] 
 g = 9.81                    # gravity
-H = [500., 1000., 3000.]     # the rest depths of each layer; [250., 500., 3000.] 
+H = [500., 1000., 2500.]     # the rest depths of each layer; [250., 500., 3000.] 
+
+H32 = 0.5 * (H[1] + H[2])
+H52 = 0.5 * (H[2] + H[3])
 
 U = [0.05,0.0255,0.001]
+U[2] = (U[1] + alpha * U[3] * (H32/H52))/(1 + alpha * (H32/H52))
 
 # setting density profile as function of gamma
 rho = ρ = [0.0, 1025.0, 1025.75]         # the density of each layer
+
 rho1 = rho[2] - (abs(U[2]-U[1])*(rho[3]-rho[2]))/abs(U[2]-U[3])/gamma
+# rho1 = rho[2] - gamma * (rho[3] - rho[2]) * (H32/H52)
+
 rho[1] = ρ[1] = rho1
 
 # rho[3] = rho[2] + rho[2] - rho[1]
@@ -50,23 +57,27 @@ rho[1] = ρ[1] = rho1
 V = zeros(nlayers)
 
 # Linear bottom drag
-μ = 1e-7                                # bottom drag
-μ = f0*10/2/H[3]            # a typical value of 5-10 m in the ocean [Weatherly and Martin, 1978; Perlin et al., 2007]
+# μ = 1e-7                                # bottom drag
+μ =  (86400*20)^-1           # a typical value of 5-10 m in the ocean [Weatherly and Martin, 1978; Perlin et al., 2007]
 
 # setting cfl and dt; should we switch to a constant dt?...hypothetically this
 # should already be constant since U[1] is fixed.
-cfl_glob = 0.5 # 0.1 is standard so far
+cfl_glob = 0.5 # 0.1 is standard so far; 0.5 for 128
 dx = L/Nx
 dt = dx*cfl_glob/U[1]     # /5
 
 # setting topography
-function topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H)
+function topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,type)
     Nx = length(grid_topo.x); Ny = length(grid_topo.y)
     eta_out = zeros(Nx,Ny)
     x = collect(grid_topo.x); y = collect(grid_topo.y)
     for i=1:Nx
       for j=1:Ny
-        eta_out[i,j] =  (f0/sum(H)) * h0 * cos(2*pi*kt*x[i]/Lx) * cos(2*pi*kt*y[j]/Ly)
+        if type=="eggshell"
+          eta_out[i,j] = (f0/sum(H)) * h0 * cos(2*pi*kt*x[i]/Lx) * cos(2*pi*kt*y[j]/Ly)
+        elseif type=="sinusoid"
+          eta_out[i,j] = (f0/sum(H)) * h0 * cos(2*pi*kt*x[i]/Lx)
+        end
       end
     end
     return eta_out
@@ -75,9 +86,11 @@ function topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H)
 aliased_fraction=1/3; T=Float64;
 grid_topo = TwoDGrid(dev; nx=Nx, Lx, ny=Ny, Ly, aliased_fraction, T)
 if topo_type=="eggshell"
-    eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H)
+  eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"eggshell")
+elseif topo_type=="sinusoid"
+  eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"sinusoid")
 else
-    eta = 0.
+  eta = 0.
 end
 
 ## alternate way to set density values
