@@ -66,6 +66,43 @@ function plot_three_layer(tiempo,KE,Cterms,q,grid,kt,h0,plotpath,plotname,ell)
 
 end
 
+function plot_hovm()
+    matplotlib[:rcParams]["axes.unicode_minus"]=false
+
+    fig,ax = PyPlot.subplots(1,3,figsize=(12,8));
+    fig.tight_layout(pad=5.0)
+    ax1=ax[1]; ax2=ax[2]; ax3=ax[3];
+
+    cr1_dopp = cr_dopp[1]; cr2_dopp = cr_dopp[2]; cr3_dopp = cr_dopp[3];
+
+    pc1=ax1.pcolormesh(x/1.e3,t_hovm,psi1_ot'./ maximum(abs.(psi1_ot)',dims=2))
+    ax1.tick_params(labelsize=10.)
+    ax1.set_xlabel(L"x [km]", fontsize=18.)
+    ax1.set_ylabel(L"t [s]", fontsize=18.)
+    ax1.set_title(L"\psi_1 [\mathrm{norm}]", fontsize = 20.)
+    ax1.set_ylim([t_hovm[1],t_hovm[end]])
+    ax1.text(0.2,0.1,L"c_{r,1} = " * string(Int(round(cr1_dopp*1000))/1000), transform=ax1.transAxes,fontsize=16.)
+    fig.colorbar(pc1)
+    pc2=ax2.pcolormesh(x/1.e3,t_hovm,psi2_ot'./ maximum(abs.(psi2_ot)',dims=2))
+    ax2.tick_params(labelsize=10.)
+    ax2.set_xlabel(L"x [km]", fontsize=18.)
+    ax2.set_ylabel(L"t [s]", fontsize=18.)
+    ax2.set_title(L"\psi_2 [\mathrm{norm}]", fontsize = 20.)
+    ax2.set_ylim([t_hovm[1],t_hovm[end]])
+    ax2.text(0.2,0.1,L"c_{r,2} = " * string(Int(round(cr2_dopp*1000))/1000), transform=ax2.transAxes,fontsize=16.)
+    fig.colorbar(pc2)
+    pc3=ax3.pcolormesh(x/1.e3,t_hovm,psi3_ot'./ maximum(abs.(psi3_ot)',dims=2))
+    ax3.tick_params(labelsize=10.)
+    ax3.set_xlabel(L"x [km]", fontsize=18.)
+    ax3.set_ylabel(L"t [s]", fontsize=18.)
+    ax3.set_title(L"\psi_3 [\mathrm{norm}]", fontsize = 20.)
+    ax3.set_ylim([t_hovm[1],t_hovm[end]])
+    ax3.text(0.2,0.1,L"c_{r,3} = " * string(Int(round(cr3_dopp*1000))/1000), transform=ax3.transAxes,fontsize=16.)
+    fig.colorbar(pc3)
+
+
+end
+
 function plot_growth_rate(k_x,sigma_x,k_emp,sigma_emp,Lx,plotpath)
     mid_int = round(Int,length(k_x)/2+1)
     inv_s_to_day = 3600*24

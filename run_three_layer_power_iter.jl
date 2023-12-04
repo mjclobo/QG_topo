@@ -288,7 +288,7 @@ if save_output
 
     println("Saving output data to CSV")
 
-    csv_name = "./data/threelayer_" * type*"_gamma"*string(gamma)*"_topo"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
+    csv_name = "./data/threelayer_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
     # ψ₁, ψ₂ = vars.ψ[:, :, 1], vars.ψ[:, :, 2]
 
     # should I add streamfunction or PV here?? How would I use them?

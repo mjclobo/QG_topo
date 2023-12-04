@@ -15,7 +15,7 @@ stepper = "FilteredRK4"         # time stepping scheme
 nsubs   = 10                   # number of time-steps for plotting
 
 # physical params
-L = Lx = Ly = 500.e3                   # domain size [m]
+L = Lx = Ly = 400.e3                   # domain size [m]
 beta = β = 0 # 1.9e-11 # 1.14052e-11              # the y-gradient of planetary PV
 
 nlayers = 3                 # number of layers
@@ -32,8 +32,8 @@ U[2] = (U[1] + alpha * U[3] * (H32/H52))/(1 + alpha * (H32/H52))
 # setting density profile as function of gamma
 rho = ρ = [0.0, 1025.0, 1025.75]         # the density of each layer
 
-rho1 = rho[2] - (abs(U[2]-U[1])*(rho[3]-rho[2]))/abs(U[2]-U[3])/gamma
-# rho1 = rho[2] - gamma * (rho[3] - rho[2]) * (H32/H52)
+# rho1 = rho[2] - (abs(U[2]-U[1])*(rho[3]-rho[2]))/abs(U[2]-U[3])/gamma
+rho1 = rho[2] - gamma * (rho[3] - rho[2]) * (H32/H52)
 
 rho[1] = ρ[1] = rho1
 
