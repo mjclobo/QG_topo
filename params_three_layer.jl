@@ -4,6 +4,11 @@
 using FourierFlows: CPU, TwoDGrid
 using Random: seed!, rand
 using FFTW
+using GeophysicalFlows, Printf, FFTW, LinearAlgebra, Statistics, LaTeXStrings, CSV, Peaks
+using Random: seed!
+
+include("../LinStab/mjcl_stab.jl")
+using .LinStab
 
 ## build basic model
 
@@ -27,15 +32,9 @@ H32 = 0.5 * (H[1] + H[2])
 H52 = 0.5 * (H[2] + H[3])
 
 U = [0.05,0.0255,0.0]
-U[2] = (U[1] + alpha * U[3] * (H32/H52))/(1 + alpha * (H32/H52))
 
-# setting density profile as function of gamma
+# setting base density profile
 rho = ρ = [0.0, 1025.0, 1025.75]         # the density of each layer
-
-# rho1 = rho[2] - (abs(U[2]-U[1])*(rho[3]-rho[2]))/abs(U[2]-U[3])/gamma
-rho1 = rho[2] - gamma * (rho[3] - rho[2]) * (H32/H52)
-
-rho[1] = ρ[1] = rho1
 
 # rho[3] = rho[2] + rho[2] - rho[1]
 
@@ -65,33 +64,6 @@ V = zeros(nlayers)
 cfl_glob = 0.5 # 0.1 is standard so far; 0.5 for 128
 dx = L/Nx
 dt = dx*cfl_glob/U[1]     # /5
-
-# setting topography
-function topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,type)
-    Nx = length(grid_topo.x); Ny = length(grid_topo.y)
-    eta_out = zeros(Nx,Ny)
-    x = collect(grid_topo.x); y = collect(grid_topo.y)
-    for i=1:Nx
-      for j=1:Ny
-        if type=="eggshell"
-          eta_out[i,j] = (f0/sum(H)) * h0 * cos(2*pi*kt*x[i]/Lx) * cos(2*pi*kt*y[j]/Ly)
-        elseif type=="sinusoid"
-          eta_out[i,j] = (f0/sum(H)) * h0 * cos(2*pi*kt*x[i]/Lx)
-        end
-      end
-    end
-    return eta_out
-  end
-
-aliased_fraction=1/3; T=Float64;
-grid_topo = TwoDGrid(dev; nx=Nx, Lx, ny=Ny, Ly, aliased_fraction, T)
-if topo_type=="eggshell"
-  eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"eggshell")
-elseif topo_type=="sinusoid"
-  eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"sinusoid")
-else
-  eta = 0.
-end
 
 ## alternate way to set density values
 # N2 = [2*10^-6 2*10^-5 2*10^-6]

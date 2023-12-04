@@ -2,35 +2,35 @@
 # This is where we set parameters that change.
 
 # whether or not to perform the linear stability analysis
-perform_ls = true
+global perform_ls = true
 
 # whether or not to save model output
-save_output = true
+global save_output = true
 
 # whether or not to plot model output at nsubs timesteps
 using PyPlot
 global plot_model = false; pygui(false)
 
 # whether or not to calculate growth rate from model output
-calc_growth_rate = true
+global calc_growth_rate = true
 
 # type w/ current options: "idealized_Charney", "idealized_Eady", or "real_param_space"
-type = "idealized_Eady"
+global type = "idealized_Eady"
 
 # set topography w/ current options: "eggshell", "sinusoid"
-topo_type = "eggshell" # "sinusoid" # 
+global topo_type = "eggshell" # "sinusoid" # 
 
 # Hovmoller of streamfunction; also calculates cr and cr_Dopp
-psi_hovm = true
+global psi_hovm = true
 
 # Magnitude of initial, random QG PV; How to set this??
-q0_mag = 1e-7
+global q0_mag = 1e-7
 
 # linear or nonlinear model (default: false)
-linear = false
+global linear = false
 
 # setting type of run
-run_type = "power_iter"
+global run_type = "power_iter"
 
 if run_type=="power_iter"
     # renormalization parameters
@@ -46,30 +46,25 @@ else
 end
 
 # controls ratio of interface densities
-gammas = collect(range(0.1,3,20))
+gammas = [1.1] # collect(range(0.1,3,20))
 
 # controls ratio of interface shears
-alphas = collect(range(1,5,20))
+alphas = [2.2] # collect(range(1,5,20))
 
 # topo parameters
-h0s = collect(range(0.,500.,6))      # dimensional topo height 
-kts = collect(range(1.,50.,6))         # topo wavenumber (no factor of 2pi)
+h0s = [0.] # collect(range(0.,500.,6))      # dimensional topo height 
+kts = [12.] # collect(range(1.,50.,6))         # topo wavenumber (no factor of 2pi)
 
-for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
+include("./params_three_layer.jl")
 
-    # loading shared params
-    include("./params_three_layer.jl")
-
-    # running model
-    if run_type=="power_iter"
-        include("./run_three_layer_power_iter.jl")
-    elseif run_type=="nsteps"
-        include("./run_three_layer_nsteps.jl")
-    else
-        println("You must choose a valid run type.")
-    end
-
-end; end; end; end
+# running model
+if run_type=="power_iter"
+    include("./run_three_layer_power_iter.jl")
+elseif run_type=="nsteps"
+    include("./run_three_layer_nsteps.jl")
+else
+    println("You must choose a valid run type.")
+end
 
 # # Prandlt e-folding scale
 # H_t = f0^2 * (Lx/kt)^2 / (g*(rho[3]-rho[2])/rho[1])
