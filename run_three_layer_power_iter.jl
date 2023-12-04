@@ -39,13 +39,13 @@ MultiLayerQG.set_q!(prob, q₀)
 filepath = "."
 
 if linear
-    plotpath_main = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_h0"*string(Int(h0))*"_linear_res" * string(Int(Nx)) *"/main/"
-    plotpath_psi  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_h0"*string(Int(h0))*"_linear_res" * string(Int(Nx)) *"/psi/"
-    plotpath_psi_vert  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_h0"*string(Int(h0))*"_linear_res" * string(Int(Nx)) *"/psi_vert/"
+    plotpath_main = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/main/"
+    plotpath_psi  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi/"
+    plotpath_psi_vert  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi_vert/"
 else
-    plotpath_main = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_h0"*string(Int(h0))*"_res" * string(Int(Nx)) *"/main/"
-    plotpath_psi  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_h0"*string(Int(h0))*"_res" * string(Int(Nx)) *"/psi/"
-    plotpath_psi_vert  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_h0"*string(Int(h0))*"_res" * string(Int(Nx)) *"/psi_vert/"
+    plotpath_main = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) *"/main/"
+    plotpath_psi  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) *"/psi/"
+    plotpath_psi_vert  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) *"/psi_vert/"
 end
 plotname = "snapshots"
 filename = joinpath(filepath, "2layer.jld2")
@@ -288,7 +288,7 @@ if save_output
 
     println("Saving output data to CSV")
 
-    csv_name = "./data/threelayer_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
+    csv_name = "./data/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
     # ψ₁, ψ₂ = vars.ψ[:, :, 1], vars.ψ[:, :, 2]
 
     # should I add streamfunction or PV here?? How would I use them?
