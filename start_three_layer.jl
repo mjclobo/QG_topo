@@ -46,14 +46,14 @@ else
 end
 
 # controls ratio of interface densities
-gammas = [1.1] # collect(range(0.1,3,20))
+gammas = collect(range(0.1,3,20)) # [1.1] #
 
 # controls ratio of interface shears
-alphas = [2.2] # collect(range(1,5,20))
+alphas = collect(range(1,5,20)) # [2.2] #
 
 # topo parameters
-h0s = [0.] # collect(range(0.,500.,6))      # dimensional topo height 
-kts = [12.] # collect(range(1.,50.,6))         # topo wavenumber (no factor of 2pi)
+h0s = collect(range(0.,500.,6)) # [0.] #      # dimensional topo height 
+kts = collect(range(1.,50.,6)) # [12.] #         # topo wavenumber (no factor of 2pi)
 
 include("./params_three_layer.jl")
 
