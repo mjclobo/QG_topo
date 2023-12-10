@@ -9,7 +9,7 @@ global save_output = true
 
 # whether or not to plot model output at nsubs timesteps
 using PyPlot
-global plot_model = false; pygui(false)
+global plot_model = true; pygui(false)
 
 # whether or not to calculate growth rate from model output
 global calc_growth_rate = true
@@ -30,12 +30,12 @@ global q0_mag = 1e-7
 global linear = false
 
 # setting type of run
-global run_type = "power_iter"
+global run_type = "yrs_to_ss"
 
 if run_type=="power_iter"
     # renormalization parameters
     Rthresh = 0.01        # Threshold energy ratio for renormalization.
-    cycles  = 3           # Total number of renormalization cycles.
+    cycles  = 1           # Total number of renormalization cycles.
 elseif run_type=="nsteps"
     # number of steps
     nsteps = 30000
@@ -46,14 +46,14 @@ else
 end
 
 # controls ratio of interface densities
-gammas = [1.1] # collect(range(0.1,3,20))
+gammas = [0.5] # collect(range(0.1,3,5))
 
 # controls ratio of interface shears
-alphas = [2.2] # collect(range(1,5,20))
+alphas = [4.0] # collect(range(1,5,20))
 
 # topo parameters
 h0s = [0.] # collect(range(0.,500.,6))      # dimensional topo height 
-kts = [12.] # collect(range(1.,50.,6))         # topo wavenumber (no factor of 2pi)
+kts = [50.] # collect(range(1.,50.,6))         # topo wavenumber (no factor of 2pi)
 
 include("./params_three_layer.jl")
 
@@ -61,7 +61,9 @@ include("./params_three_layer.jl")
 if run_type=="power_iter"
     include("./run_three_layer_power_iter.jl")
 elseif run_type=="nsteps"
-    include("./run_three_layer_nsteps.jl")
+    include("./run_three_layer_steps.jl")
+elseif run_type=="yrs_to_ss"
+    include("./run_three_layer_yrs_ss.jl")
 else
     println("You must choose a valid run type.")
 end

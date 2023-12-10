@@ -15,12 +15,12 @@ using .LinStab
 dev = CPU()     # device (CPU)
 
 # numerical params
-Ny = Nx = n = 128                # 2D resolution = n²
+Ny = Nx = n = 64                # 2D resolution = n²
 stepper = "FilteredRK4"         # time stepping scheme
-nsubs   = 10                   # number of time-steps for plotting
+nsubs   = 10                   # number of time-steps for plotting; for nsteps this is set in run_three_layer_nsteps.jl!!!
 
 # physical params
-L = Lx = Ly = 400.e3                   # domain size [m]
+L = Lx = Ly = 1000.e3                   # domain size [m]
 beta = β = 0 # 1.9e-11 # 1.14052e-11              # the y-gradient of planetary PV
 
 nlayers = 3                 # number of layers
@@ -61,7 +61,7 @@ V = zeros(nlayers)
 
 # setting cfl and dt; should we switch to a constant dt?...hypothetically this
 # should already be constant since U[1] is fixed.
-cfl_glob = 0.5 # 0.1 is standard so far; 0.5 for 128
+cfl_glob = 0.0125 # 0.1 is standard so far; 0.5 for 128
 dx = L/Nx
 dt = dx*cfl_glob/U[1]     # /5
 

@@ -8,6 +8,8 @@
 
 ## load packages
 
+
+
 for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
     # change variable params
@@ -24,13 +26,13 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
         eta_out = zeros(Nx,Ny)
         x = collect(grid_topo.x); y = collect(grid_topo.y)
         for i=1:Nx
-        for j=1:Ny
-            if type=="eggshell"
-            eta_out[i,j] = (f0/sum(H)) * h0 * cos(2*pi*kt*x[i]/Lx) * cos(2*pi*kt*y[j]/Ly)
-            elseif type=="sinusoid"
-            eta_out[i,j] = (f0/sum(H)) * h0 * cos(2*pi*kt*x[i]/Lx)
+            for j=1:Ny
+                if type=="eggshell"
+                    eta_out[i,j] = (f0/sum(H)) * h0 * cos(2*pi*kt*x[i]/Lx) * cos(2*pi*kt*y[j]/Ly)
+                elseif type=="sinusoid"
+                    eta_out[i,j] = (f0/sum(H)) * h0 * cos(2*pi*kt*x[i]/Lx)
+                end
             end
-        end
         end
         return eta_out
     end
@@ -38,11 +40,11 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
     aliased_fraction=1/3; T=Float64;
     grid_topo = TwoDGrid(dev; nx=Nx, Lx, ny=Ny, Ly, aliased_fraction, T)
     if topo_type=="eggshell"
-    eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"eggshell")
+        eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"eggshell")
     elseif topo_type=="sinusoid"
-    eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"sinusoid")
+        eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"sinusoid")
     else
-    eta = 0.
+        eta = 0.
     end
 
     # define the model problem
@@ -104,6 +106,11 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
     PE32 = [E[2][1]]/((H[1]+H[2])/2)
     PE52 = [E[2][2]]/((H[2]+H[3])/2)
+
+    ED = [E[3][1]]
+    BD1 = [E[3][2][1]]
+    BD2 = [E[3][2][2]]
+    BD3 = [E[3][2][3]]
 
     CV32 = [[specE[2][:,:,1]]]
     CV52 = [[specE[2][:,:,2]]]
@@ -200,6 +207,12 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
             # push to interface potential energies
             push!(PE32,E[2][1]/((H[1]+H[2])/2))
             push!(PE52,E[2][2]/((H[2]+H[3])/2))
+
+            # push to bottom drag and biharmonic dissipation
+            push!(ED,E[3][1])
+            push!(BD1,E[3][2][1])
+            push!(BD2,E[3][2][2])
+            push!(BD3,E[3][2][3])
 
             # push to spectral flux terms
             push!(CV32,[specE[2][:,:,1]])
@@ -329,9 +342,26 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                         "Ri" => Ri, "Bu" => Bu, "inv_sqrt_Bu" => inv2_Bu, "csp_crit" => csp_crit, "csp_terms" => csp_terms, "rd_LSA" => rd1, "max_evec" => max_eve1,
                         "max_eval" => max_eva1, "PE32" => PE32, "PE52" => PE52, "CT" => CT, "NL1" => NL1, "NL2" => NL2, "NL3" => NL3, "psivert1" => psi_vert1,
                         "psivert2" => psi_vert2, "psivert3" => psi_vert3, "alpha" => alpha, "gamma" => gamma, "cr" => cr, "cr_Dopp" => cr_dopp, "LF1" => LF1, "LF2" => LF2,
-                        "LF3" => LF3, "VF32" => VF32, "VF52" => VF52, "TF" => TF)
+                        "LF3" => LF3, "VF32" => VF32, "VF52" => VF52, "TF" => TF, "Ekman_drag" => ED, "biharmonic_diss_1" => BD1, "biharmonic_diss_2" => BD2,
+                        "biharmonic_diss_3" => BD3)
 
         CSV.write(csv_name, csv_data)
     end
 
 end; end; end; end
+
+# Can topo affect wavenumber of instability? How?
+
+# Can we define a Charney/Held depth from the model output?
+
+# Look at CSP_crit..can this be meaningful? Is it's asymptotic point
+# dependent on growth rate?
+
+# Compare upper and lower KE growth rates as function of alpha and gamma...as functions of gamma and kt, gamma and h0
+
+# I NEED TO RUN A FEW OF THESE TO EQUILIBRIUM.
+
+# time series of, say, KE1 as function of time; use alpha (opacity) parameter
+# to correspond to topographic height or wavenumber or alpha or gamma (or their ratio?)
+
+# DEFINITELY plot KE1/KE3 normalized by KE1/KE3(h0=0.)
