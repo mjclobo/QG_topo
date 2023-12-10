@@ -130,12 +130,12 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
         local specE = MultiLayerQG.spectralfluxes(prob)
 
         if j % nsubs == 0
-            # updating variables to plot
-            psi1 = vars.ψ[:, :, 1]
-            psi2 = vars.ψ[:, :, 2]
-            psi3 = vars.ψ[:, :, 3]
-        
+
             if isnothing(t_hovm)
+                psi1 = vars.ψ[:, :, 1]
+                psi2 = vars.ψ[:, :, 2]
+                psi3 = vars.ψ[:, :, 3]
+
                 global psi1_ot = psi1[:,Int(round(Nx/2))]
                 global psi2_ot = psi2[:,Int(round(Nx/2))]
                 global psi3_ot = psi3[:,Int(round(Nx/2))]
@@ -151,30 +151,34 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                 fluxE = MultiLayerQG.fluxes(prob)
 
                 # variables for plotting, that will be pushed to
-                tiempo = [0.]
-                KE1 = [E[1][1]]/H[1]
-                KE2 = [E[1][2]]/H[2]
-                KE3 = [E[1][3]]/H[3]
+                global tiempo = [0.]
+                global KE1 = [E[1][1]]/H[1]
+                global KE2 = [E[1][2]]/H[2]
+                global KE3 = [E[1][3]]/H[3]
 
-                PE32 = [E[2][1]]/((H[1]+H[2])/2)
-                PE52 = [E[2][2]]/((H[2]+H[3])/2)
+                global PE32 = [E[2][1]]/((H[1]+H[2])/2)
+                global PE52 = [E[2][2]]/((H[2]+H[3])/2)
 
-                CV32 = [[specE[2][:,:,1]]]
-                CV52 = [[specE[2][:,:,2]]]
-                CL1  = [[specE[1][:,1]]]
-                CT   = [[specE[3]]]
-                NL1  = [[specE[4][:,:,1]]]
-                NL2  = [[specE[4][:,:,2]]] 
-                NL3  = [[specE[4][:,:,3]]]
+                global CV32 = [[specE[2][:,:,1]]]
+                global CV52 = [[specE[2][:,:,2]]]
+                global CL1  = [[specE[1][:,1]]]
+                global CT   = [[specE[3]]]
+                global NL1  = [[specE[4][:,:,1]]]
+                global NL2  = [[specE[4][:,:,2]]] 
+                global NL3  = [[specE[4][:,:,3]]]
 
-                LF1 = [fluxE[1][1]]
-                LF2 = [fluxE[1][2]]
-                LF3 = [fluxE[1][3]]
-                VF32 = [fluxE[2][1]]
-                VF52 = [fluxE[2][2]]
-                TF = [fluxE[3]]
+                global LF1 = [fluxE[1][1]]
+                global LF2 = [fluxE[1][2]]
+                global LF3 = [fluxE[1][3]]
+                global VF32 = [fluxE[2][1]]
+                global VF52 = [fluxE[2][2]]
+                global TF = [fluxE[3]]
 
             else
+
+                psi1 = vars.ψ[:, :, 1]
+                psi2 = vars.ψ[:, :, 2]
+                psi3 = vars.ψ[:, :, 3]
 
                 global psi1_ot = cat(psi1_ot,psi1[:,Int(round(Nx/2))], dims=2)
                 global psi2_ot = cat(psi2_ot,psi2[:,Int(round(Nx/2))], dims=2)
@@ -190,6 +194,11 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                 q2 = transpose(vars.q[:, :, 2])
                 q3 = transpose(vars.q[:, :, 3])
                 
+                # defining initial diagnostics
+                E = MultiLayerQG.energies(prob)
+                specE = MultiLayerQG.spectralfluxes(prob)
+                fluxE = MultiLayerQG.fluxes(prob)
+
                 # push to time
                 push!(tiempo,clock.t)
     
@@ -218,30 +227,22 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                 push!(VF32,fluxE[2][1])
                 push!(VF52,fluxE[2][2])
                 push!(TF,fluxE[3])
+
+                # plotting stuff
+                global plot_model
+                if plot_model==true
+                    plot_three_layer(tiempo,[KE1 KE2 KE3],[CV32[ell+1] CV52[ell+1] CL1[ell+1] CT[ell+1] NL1[ell+1] NL2[ell+1] NL3[ell+1]],vars.q,grid,kt,h0,plotpath_main,plotname,ell) 
+
+                    # Should I also plot the LS most unstable vert structure and the model output for most unstable wavenumber?
+                    # plot_unstable_vert(H,max_eve1,psi_vert,plotpath_psi,plotname,ell)
+
+                    # plot_layerwise_spectra(grid.kr*Lx/(2*pi),[psi_vert1 psi_vert2 psi_vert3],plotpath_psi_vert,plotname,ell)
+                end
+
+                # increase counter
+                global ell+=1
+
             end
-
-
-
-            # finding vertical structure of instability
-            psi_vert = [maximum(psi_vert1[:,end])
-                        maximum(psi_vert2[:,end])
-                        maximum(psi_vert3[:,end])]
-            
-            psi_vert = psi_vert./maximum(psi_vert)
-        
-            # plotting stuff
-            global plot_model
-            if plot_model==true
-                plot_three_layer(tiempo,[KE1 KE2 KE3],[CV32[ell+1] CV52[ell+1] CL1[ell+1] CT[ell+1] NL1[ell+1] NL2[ell+1] NL3[ell+1]],vars.q,grid,kt,h0,plotpath_main,plotname,ell) 
-
-                # Should I also plot the LS most unstable vert structure and the model output for most unstable wavenumber?
-                plot_unstable_vert(H,max_eve1,psi_vert,plotpath_psi,plotname,ell)
-
-                plot_layerwise_spectra(grid.kr*Lx/(2*pi),[psi_vert1 psi_vert2 psi_vert3],plotpath_psi_vert,plotname,ell)
-            end
-
-            # increase counter
-            global ell+=1
         
             # reading out stats
             cfl = clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
@@ -252,7 +253,9 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
             println(log)
 
             # save output and reset params every year
-            if ((tiempo - yr_cnt*365*86400) > 0)
+            if ((tiempo[end] - yr_cnt*365*86400) > 0)
+                yr_cnt += 1
+                ell = 0
                 # check to see if model has reached s.s.
                 if ss_yr==true
                     ss_yr_cnt += 1
@@ -263,10 +266,14 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                     ss_yr_cnt = 1
                 end
 
+                if isnan(KE1[end])
+                    ss_yr_cnt = ss_yr_max
+                end
+
 
                 if save_output
                     # saving output data
-                    println("Saving output data to CSV for year: "*string(yr_cnt))
+                    println("Saving output data to CSV for year: "*string(yr_cnt-1))
             
                     csv_name = "./data/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) *"_yr"*string(yr_cnt)* ".csv"
             
@@ -293,11 +300,9 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
     end
 
-    if calc_growth_rate==true && perform_ls==true
-        plot_growth_rate(k_x[:],sigma_LS_mid,k_emp,sigma_emp,Lx,plotpath_main)
-    elseif perform_ls==true
-        plot_growth_rate(k_x[:],sigma_LS_mid,[],[],Lx,plotpath_main)
-    end
+    # if perform_ls==true
+    #     plot_growth_rate(k_x[:],sigma_LS_mid,[],[],Lx,plotpath_main)
+    # end
 
     # a couple of random params
     H_t = f0^2 * (Lx/kt)^2 / (g*(rho[3]-rho[2])/rho[1])
@@ -332,4 +337,4 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
         CSV.write(csv_name, csv_data)
     end
-end     # end for loop thru gammas, etc.
+end; end; end; end     # end for loop thru gammas, etc.
