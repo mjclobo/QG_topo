@@ -47,6 +47,7 @@ end
 
 # controls ratio of interface densities
 gammas = round.(collect(range(0.1,3,5)),sigdigits=2) # [1.1] #
+gammas = gammas[3:end]
 
 # controls ratio of interface shears
 alphas = round.(collect(range(1,5,5)),sigdigits=2) # [2.2] #
@@ -54,6 +55,8 @@ alphas = round.(collect(range(1,5,5)),sigdigits=2) # [2.2] #
 # topo parameters
 h0s = round.(collect(range(0.,500.,6))) # [0.] #      # dimensional topo height 
 kts = round.(collect(range(1.,51.,6))) # [12.] #      # topo wavenumber (no factor of 2pi)
+
+h0s = [h0s[6]]
 
 include("./params_three_layer.jl")
 

@@ -331,7 +331,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                         "psivert2" => psi_vert2, "psivert3" => psi_vert3, "alpha" => alpha, "gamma" => gamma, "cr" => cr, "cr_Dopp" => cr_dopp, "LF1" => LF1, "LF2" => LF2,
                         "LF3" => LF3, "VF32" => VF32, "VF52" => VF52, "TF" => TF)
 
-        CSV.write(csv_name, csv_data)
+        CSV.write(csv_name, csv_data,bufsize=2^24)
     end
 
 end; end; end; end
