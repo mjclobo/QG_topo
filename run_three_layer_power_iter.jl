@@ -345,23 +345,8 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                         "LF3" => LF3, "VF32" => VF32, "VF52" => VF52, "TF" => TF, "Ekman_drag" => ED, "biharmonic_diss_1" => BD1, "biharmonic_diss_2" => BD2,
                         "biharmonic_diss_3" => BD3)
 
-        CSV.write(csv_name, csv_data)
+        CSV.write(csv_name, csv_data,bufsize=2^24)
     end
 
 end; end; end; end
 
-# Can topo affect wavenumber of instability? How?
-
-# Can we define a Charney/Held depth from the model output?
-
-# Look at CSP_crit..can this be meaningful? Is it's asymptotic point
-# dependent on growth rate?
-
-# Compare upper and lower KE growth rates as function of alpha and gamma...as functions of gamma and kt, gamma and h0
-
-# I NEED TO RUN A FEW OF THESE TO EQUILIBRIUM.
-
-# time series of, say, KE1 as function of time; use alpha (opacity) parameter
-# to correspond to topographic height or wavenumber or alpha or gamma (or their ratio?)
-
-# DEFINITELY plot KE1/KE3 normalized by KE1/KE3(h0=0.)
