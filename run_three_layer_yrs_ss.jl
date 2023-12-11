@@ -151,7 +151,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                 fluxE = MultiLayerQG.fluxes(prob)
 
                 # variables for plotting, that will be pushed to
-                global tiempo = [0.]
+                global tiempo = [clock.t]
                 global KE1 = [E[1][1]]/H[1]
                 global KE2 = [E[1][2]]/H[2]
                 global KE3 = [E[1][3]]/H[3]
@@ -285,7 +285,8 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                                     "rd_LSA" => rd1, "max_evec" => max_eve1,
                                     "max_eval" => max_eva1, "PE32" => PE32, "PE52" => PE52, "CT" => CT, "NL1" => NL1, "NL2" => NL2, "NL3" => NL3, "psivert1" => psi_vert1,
                                     "psivert2" => psi_vert2, "psivert3" => psi_vert3, "alpha" => alpha, "gamma" => gamma, "LF1" => LF1, "LF2" => LF2,
-                                    "LF3" => LF3, "VF32" => VF32, "VF52" => VF52, "TF" => TF)
+                                    "LF3" => LF3, "VF32" => VF32, "VF52" => VF52, "TF" => TF, "Ekman_drag" => ED, "biharmonic_diss_1" => BD1, "biharmonic_diss_2" => BD2,
+                                    "biharmonic_diss_3" => BD3)
             
                     CSV.write(csv_name, csv_data)
                 end
