@@ -159,6 +159,11 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                 global PE32 = [E[2][1]]/((H[1]+H[2])/2)
                 global PE52 = [E[2][2]]/((H[2]+H[3])/2)
 
+                global ED = [E[3][1]]
+                global BD1 = [E[3][2][1]]
+                global BD2 = [E[3][2][2]]
+                global BD3 = [E[3][2][3]]
+
                 global CV32 = [[specE[2][:,:,1]]]
                 global CV52 = [[specE[2][:,:,2]]]
                 global CL1  = [[specE[1][:,1]]]
@@ -210,6 +215,12 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                 # push to interface potential energies
                 push!(PE32,E[2][1]/((H[1]+H[2])/2))
                 push!(PE52,E[2][2]/((H[2]+H[3])/2))
+
+                # push to bottom drag and biharmonic dissipation
+                push!(ED,E[3][1])
+                push!(BD1,E[3][2][1])
+                push!(BD2,E[3][2][2])
+                push!(BD3,E[3][2][3])
     
                 # push to spectral flux terms
                 push!(CV32,[specE[2][:,:,1]])
@@ -269,7 +280,6 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                 if isnan(KE1[end])
                     ss_yr_cnt = ss_yr_max
                 end
-
 
                 if save_output
                     # saving output data
