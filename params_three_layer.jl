@@ -1,17 +1,14 @@
 # Parameters for all three-layer model runs;
 # both constants and those set by inputs.
 
-using Pkg
-Pkg.develop(path="../gfjl/GeophysicalFlows.jl")
-
 using FourierFlows: CPU, TwoDGrid
 using Random: seed!, rand
 using FFTW
 using GeophysicalFlows, Printf, FFTW, LinearAlgebra, Statistics, LaTeXStrings, CSV, Peaks
 using Random: seed!
 
-using Pkg
-Pkg.develop(path="../gfjl/GeophysicalFlows.jl")
+# using Pkg
+# Pkg.develop(path="../gfjl/GeophysicalFlows.jl")
 
 
 include("../LinStab/mjcl_stab.jl")
@@ -24,7 +21,7 @@ dev = CPU()     # device (CPU)
 # numerical params
 Ny = Nx = n = 256                # 2D resolution = n²
 stepper = "FilteredRK4"         # time stepping scheme
-nsubs   = 10                   # number of time-steps for plotting; for nsteps this is set in run_three_layer_nsteps.jl!!!
+nsubs   = 100                   # number of time-steps for plotting; for nsteps this is set in run_three_layer_nsteps.jl!!!
 
 # physical params
 L = Lx = Ly = 1000.e3                   # domain size [m]

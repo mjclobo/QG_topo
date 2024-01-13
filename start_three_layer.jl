@@ -30,12 +30,12 @@ global q0_mag = 1e-7
 global linear = false
 
 # setting type of run
-global run_type = "yrs_to_ss"
+global run_type = "power_iter"
 
 if run_type=="power_iter"
     # renormalization parameters
     Rthresh = 0.01        # Threshold energy ratio for renormalization.
-    cycles  = 1           # Total number of renormalization cycles.
+    cycles  = 3           # Total number of renormalization cycles.
 elseif run_type=="nsteps"
     # number of steps
     nsteps = 30000
