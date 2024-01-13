@@ -1,11 +1,15 @@
 # plotting functions, currently for three layer model
 using Measures, PyPlot
 
-function plot_three_layer(tiempo,KE,Cterms,q,grid,kt,h0,plotpath,plotname,ell)
+function plot_three_layer(tiempo,KE,Cterms,q,v,grid,kt,h0,plotpath,plotname,ell)
 
     q1 = transpose(q[:, :, 1])
     q2 = transpose(q[:, :, 2])
     q3 = transpose(q[:, :, 3])
+
+    v1 = transpose(v[:, :, 1])
+    v2 = transpose(v[:, :, 2])
+    v3 = transpose(v[:, :, 3])
     
     fig,ax = PyPlot.subplots(2,2,figsize=(15,10))
     fig.tight_layout(pad=7.0)
@@ -49,10 +53,10 @@ function plot_three_layer(tiempo,KE,Cterms,q,grid,kt,h0,plotpath,plotname,ell)
     cb3 = fig.colorbar(pc3)
     cb3.ax.tick_params(labelsize=16.)
 
-    pc4=ax4.pcolormesh(grid.x/grid.Lx,grid.y/grid.Ly,q3,cmap=matplotlib.cm.coolwarm,norm=matplotlib.colors.TwoSlopeNorm(0))
+    pc4=ax4.pcolormesh(grid.x/grid.Lx,grid.y/grid.Ly,v1,cmap=matplotlib.cm.coolwarm,norm=matplotlib.colors.TwoSlopeNorm(0))
     ax4.set_xlabel(L"x/L_x",fontsize=22.)
     ax4.set_ylabel(L"y/L_y",fontsize=22.)
-    ax4.set_title(L"q_3",fontsize=26.)
+    ax4.set_title(L"v_1",fontsize=26.)
     ax4.tick_params(labelsize=16.)
     cb4 = fig.colorbar(pc4)
     cb4.ax.tick_params(labelsize=16.)

@@ -3,11 +3,8 @@
 # iterations of the power renormalization method.
 # Still an open question: How do we know what initial conditions are
 # appropriate, given that the condition for reiteration is 100x I.C.?
-# Maybe it is worth running different orders of magnitude of I.C.s and
-# seeing if/how this affects the instability results.
-
-## load packages
-
+# ANSWER: Run some models to steady-state../choose I.C.s that are a bit
+# less than 2 orders of magnitude than S.S.
 
 
 for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
@@ -28,9 +25,11 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
         for i=1:Nx
             for j=1:Ny
                 if type=="eggshell"
-                    eta_out[i,j] = (f0/sum(H)) * h0 * cos(2*pi*kt*x[i]/Lx) * cos(2*pi*kt*y[j]/Ly)
+                    eta_out[i,j] = (f0/H[end]) * h0 * cos(2*pi*kt*x[i]/Lx) * cos(2*pi*kt*y[j]/Ly)
                 elseif type=="sinusoid"
-                    eta_out[i,j] = (f0/sum(H)) * h0 * cos(2*pi*kt*x[i]/Lx)
+                    eta_out[i,j] = (f0/H[end]) * h0 * cos(2*pi*kt*x[i]/Lx)
+                elseif type=="y_slope"
+                    eta_out[i,j] = (f0/H[end]) * ((h0) * ((j-Ny/2)/Ny))
                 end
             end
         end
@@ -241,7 +240,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
             # plotting stuff
             global plot_model
             if plot_model==true
-                plot_three_layer(tiempo,[KE1 KE2 KE3],[CV32[ell+1] CV52[ell+1] CL1[ell+1] CT[ell+1] NL1[ell+1] NL2[ell+1] NL3[ell+1]],vars.q,grid,kt,h0,plotpath_main,plotname,ell) 
+                plot_three_layer(tiempo,[KE1 KE2 KE3],[CV32[ell+1] CV52[ell+1] CL1[ell+1] CT[ell+1] NL1[ell+1] NL2[ell+1] NL3[ell+1]],vars.q,vars.v,grid,kt,h0,plotpath_main,plotname,ell) 
 
                 # Should I also plot the LS most unstable vert structure and the model output for most unstable wavenumber?
                 # plot_unstable_vert(H,max_eve1,psi_vert,plotpath_psi,plotname,ell)
