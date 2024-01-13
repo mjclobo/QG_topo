@@ -47,10 +47,11 @@ end
 
 # controls ratio of interface densities
 gammas = round.(collect(range(0.1,3,5)),sigdigits=2) # [1.1] #
-gammas = gammas[3:end]
+gammas = [gammas[end]]
 
 # controls ratio of interface shears
 alphas = round.(collect(range(1,5,5)),sigdigits=2) # [2.2] #
+alphas = alphas[4:end]
 
 # topo parameters
 h0s = round.(collect(range(0.,500.,6))) # [0.] #      # dimensional topo height 

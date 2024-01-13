@@ -47,7 +47,7 @@ end
 
 # controls ratio of interface densities
 gammas = round.(collect(range(0.1,3,5)),sigdigits=2) # [1.1] #
-gammas = gammas[3:end]
+gammas = [gammas[end]]
 
 # controls ratio of interface shears
 alphas = round.(collect(range(1,5,5)),sigdigits=2) # [2.2] #
@@ -59,6 +59,8 @@ kts = round.(collect(range(1.,51.,6))) # [12.] #      # topo wavenumber (no fact
 h0s = [h0s[5]]
 
 include("./params_three_layer.jl")
+
+nsubs = 100
 
 # running model
 if run_type=="power_iter"

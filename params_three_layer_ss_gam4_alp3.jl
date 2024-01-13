@@ -68,7 +68,7 @@ V = zeros(nlayers)
 
 # setting cfl and dt; should we switch to a constant dt?...hypothetically this
 # should already be constant since U[1] is fixed.
-cfl_glob = 0.5 # 0.1 is standard so far; 0.5 for 128
+cfl_glob = 0.025 # 0.1 is standard so far; 0.5 for 128
 dx = L/Nx
 dt = dx*cfl_glob/U[1]     # /5
 

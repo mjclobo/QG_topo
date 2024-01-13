@@ -259,6 +259,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                             clock.step, clock.t, cfl, E[1][1], E[1][2], E[2][1], (time()-startwalltime)/60)
             
             # println(log)
+	    
 
         end
 
@@ -287,7 +288,9 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
             println(cr_all)
 
-            # then reset stuff
+            println("Renormalization cycle done for gamma = "*string(gamma)*", alpha = "*string(alpha)*", h0 = "* string(Int(h0))*", kt = "* string(Int(kt))*".")
+	    
+	    # then reset stuff
             MultiLayerQG.set_q!(prob, vars.q*R)
             global cyc += 1
             println("")
@@ -331,7 +334,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
         println("Saving output data to CSV")
 
-        csv_name = "./data/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
+        csv_name = "../data_pi_batch_02/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
         # ψ₁, ψ₂ = vars.ψ[:, :, 1], vars.ψ[:, :, 2]
 
         # should I add streamfunction or PV here?? How would I use them?
