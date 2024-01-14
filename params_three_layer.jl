@@ -3,7 +3,7 @@
 
 using FourierFlows: CPU, TwoDGrid
 using Random: seed!, rand
-using FFTW
+using FFTW, MAT
 using GeophysicalFlows, Printf, FFTW, LinearAlgebra, Statistics, LaTeXStrings, CSV, Peaks
 using Random: seed!
 

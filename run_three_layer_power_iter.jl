@@ -17,6 +17,37 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
     rho[1] = ρ[1] = rho1
 
+
+    function topo_rand(h_rms, kt, Lx, Nx)
+
+        # Wavenumber grid
+        nkr = Int(Nx / 2 + 1)
+        nl = Nx
+    
+        dk = 2 * pi / Lx
+        dl = dk
+        
+        k = reshape( rfftfreq(Nx, dk * Nx), (nkr, 1) )
+        l = reshape( fftfreq(Nx, dl * Nx), (1, nl) )
+
+        k = @. sqrt(k^2 + l^2)
+
+        # Isotropic Gaussian in wavenumber space about mean, kt, with standard deviation, sigma
+        # with random Fourier phases
+        sigma = sqrt(2) * dk
+
+        seed!(1234)
+        hh = exp.(-(k .- kt*(2*pi/Lx)).^2 ./ (2 * sigma^2)) .* exp.(2 * pi * im .* rand(nkr, nl))
+
+        # Recover h from hh
+        h = irfft(hh, Nx)
+
+        c = h_rms / sqrt.(mean(h.^2))
+        h = c .* h
+
+        return h
+    end
+
     # setting topography
     function topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,type)
         Nx = length(grid_topo.x); Ny = length(grid_topo.y)
@@ -30,9 +61,27 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                     eta_out[i,j] = (f0/H[end]) * h0 * cos(2*pi*kt*x[i]/Lx)
                 elseif type=="y_slope"
                     eta_out[i,j] = (f0/H[end]) * ((h0*Lx) * ((j-Ny/2)/Ny))
-                end
+               end
             end
         end
+
+        if type=="rand"
+            eta_out = (f0/H[end]) * topo_rand(h0,kt,Lx,Nx)
+            # T = eltype(grid_topo)
+            # nx, ny = grid_topo.nx, grid_topo.ny
+            # h, hx, hy = zeros(T, nx, ny), zeros(T, nx, ny), zeros(T, nx, ny)
+            # mfile = matopen("hrand256Km2tk10filtnx32.mat")
+            # h = read(mfile, "h")
+            # close(mfile)
+            # @. h = h*h0*0.5 # ht is rms in random topography. The factor 1/2 is the rms of sin(x)sin(y).
+            # hh = rfft(h)
+            # hxh = @. im * grid_topo.kr * hh
+            # hyh = @. im * grid_topo.l * hh
+            # hx = irfft(hxh, nx)
+            # hy = irfft(hyh, nx)
+            # eta_out = (f0/H[end]) * copy(h)
+        end
+
         return eta_out
     end
 
@@ -44,6 +93,8 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
         eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"sinusoid")
     elseif topo_type=="y_slope"
 	eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"y_slope")
+    elseif topo_type=="rand"
+        eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"rand")
     else
         eta = 0.
     end
