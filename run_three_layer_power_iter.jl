@@ -29,7 +29,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                 elseif type=="sinusoid"
                     eta_out[i,j] = (f0/H[end]) * h0 * cos(2*pi*kt*x[i]/Lx)
                 elseif type=="y_slope"
-                    eta_out[i,j] = (f0/H[end]) * ((h0) * ((j-Ny/2)/Ny))
+                    eta_out[i,j] = (f0/H[end]) * ((h0*Lx) * ((j-Ny/2)/Ny))
                 end
             end
         end
@@ -42,6 +42,8 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
         eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"eggshell")
     elseif topo_type=="sinusoid"
         eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"sinusoid")
+    elseif topo_type=="y_slope"
+	eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"y_slope")
     else
         eta = 0.
     end
@@ -72,7 +74,11 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
     # output dirs
     filepath = "."
 
-    if linear
+    if topo_type=="y_slope"
+	plotpath_main = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/main/"
+        plotpath_psi  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi/"
+        plotpath_psi_vert  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi_vert/"
+    elseif linear
         plotpath_main = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/main/"
         plotpath_psi  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi/"
         plotpath_psi_vert  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi_vert/"
@@ -287,7 +293,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
             println(cr_all)
 
-            println("Renormalization cycle done for gamma = "*string(gamma)*", alpha = "*string(alpha)*", h0 = "* string(Int(h0))*", kt = "* string(Int(kt))*".")
+            println("Renormalization cycle done for gamma = "*string(gamma)*", alpha = "*string(alpha)*", h0 = "* string(round(h0*Lx,digits=9))*", kt = "* string(Int(kt))*".")
 	    
 	    # then reset stuff
             MultiLayerQG.set_q!(prob, vars.q*R)
@@ -333,8 +339,12 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
         println("Saving output data to CSV")
 
-        csv_name = "../data_pi_batch_02/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
-        # ψ₁, ψ₂ = vars.ψ[:, :, 1], vars.ψ[:, :, 2]
+	if topo_type=="y_slope"
+	    csv_name = "../data_pi_batch_03/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
+        else
+	    csv_name = "../data_pi_batch_03/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
+	end
+	# ψ₁, ψ₂ = vars.ψ[:, :, 1], vars.ψ[:, :, 2]
 
         # should I add streamfunction or PV here?? How would I use them?
         csv_data = Dict("t" => tiempo, "CV32" => CV32, "CV52" => CV52, "KE1" => KE1, "KE2" => KE2, "KE3" => KE3, "Nz" => nlayers, "L" => L, "H" => H, "rho" => rho, "U" => U,
@@ -345,7 +355,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                         "max_eval" => max_eva1, "PE32" => PE32, "PE52" => PE52, "CT" => CT, "NL1" => NL1, "NL2" => NL2, "NL3" => NL3, "psivert1" => psi_vert1,
                         "psivert2" => psi_vert2, "psivert3" => psi_vert3, "alpha" => alpha, "gamma" => gamma, "cr" => cr, "cr_Dopp" => cr_dopp, "LF1" => LF1, "LF2" => LF2,
                         "LF3" => LF3, "VF32" => VF32, "VF52" => VF52, "TF" => TF, "Ekman_drag" => ED, "biharmonic_diss_1" => BD1, "biharmonic_diss_2" => BD2,
-                        "biharmonic_diss_3" => BD3)
+                        "biharmonic_diss_3" => BD3, "eta" => eta)
 
         CSV.write(csv_name, csv_data,bufsize=2^24)
     end
