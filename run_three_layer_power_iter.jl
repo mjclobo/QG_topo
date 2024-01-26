@@ -192,8 +192,8 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
 
         # perform stability analysis
-        eta=0;
-        eve1,eva1,max_eve1,max_eve_phase1,max_eva1,k_x,k_y,qx1,qy1,rd1 = LinStab.lin_stab(U,V,H,beta,eta,Nx,Ny,rho,f0,g,Float64(Lx),Float64(Ly))
+        # eta=0;
+        eve1,eva1,max_eve1,max_eve_phase1,max_eva1,k_x,k_y,qx1,qy1,rd1 = LinStab.lin_stab(U,V,H,beta,0.0,Nx,Ny,rho,f0,g,Float64(Lx),Float64(Ly))
         sigma_LS_all = Array(imag(eva1))
         sigma_LS_mid = sigma_LS_all[:,round(Int,Nx/2)]
 
@@ -390,10 +390,12 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
         println("Saving output data to CSV")
 
+	global data_dir
+
 	if topo_type=="y_slope"
-	    csv_name = "../data_pi_batch_03/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
+	    csv_name = data_dir*"/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
         else
-	    csv_name = "../data_pi_batch_03/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
+	    csv_name = data_dir*"/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
 	end
 	# ψ₁, ψ₂ = vars.ψ[:, :, 1], vars.ψ[:, :, 2]
 
