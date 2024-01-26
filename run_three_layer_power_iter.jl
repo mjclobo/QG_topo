@@ -468,12 +468,14 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
         println("Saving output data to CSV")
 
-        if topo_type=="y_slope"
-            csv_name = data_dir*"/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
-        else
-            csv_name = data_dir*"/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
-        end
+	global data_dir
 
+	if topo_type=="y_slope"
+	    csv_name = data_dir*"/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
+        else
+	    csv_name = data_dir*"/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
+	end
+	# ψ₁, ψ₂ = vars.ψ[:, :, 1], vars.ψ[:, :, 2]
 
         # should I add streamfunction or PV here?? How would I use them?
         csv_data = Dict("t" => tiempo, "CV32" => CV32, "CV52" => CV52, "KE1" => KE1, "KE2" => KE2, "KE3" => KE3, "Nz" => nlayers, "L" => L, "H" => H, "rho" => rho, "U" => U,
