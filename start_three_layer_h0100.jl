@@ -18,7 +18,7 @@ global calc_growth_rate = true
 global type = "idealized_Eady"
 
 # set topography w/ current options: "eggshell", "sinusoid"
-global topo_type = "eggshell" # "sinusoid" # 
+global topo_type = "y_slope" # "eggshell" # "sinusoid" # 
 
 # Hovmoller of streamfunction; also calculates cr and cr_Dopp
 global psi_hovm = true
@@ -47,16 +47,20 @@ end
 
 # controls ratio of interface densities
 gammas = round.(collect(range(0.1,3,5)),sigdigits=2) # [1.1] #
-gammas = gammas[3:end]
+gammas = [gammas[1]]
 
 # controls ratio of interface shears
 alphas = round.(collect(range(1,5,5)),sigdigits=2) # [2.2] #
+
+alphas = [alphas[1]]
 
 # topo parameters
 h0s = round.(collect(range(0.,500.,6))) # [0.] #      # dimensional topo height 
 kts = round.(collect(range(1.,51.,6))) # [12.] #      # topo wavenumber (no factor of 2pi)
 
-h0s = [h0s[2]]
+kts = [0]
+
+h0s = [-10^-2]
 
 include("./params_three_layer.jl")
 

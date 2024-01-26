@@ -98,6 +98,8 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
         eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"eggshell")
     elseif topo_type=="sinusoid"
         eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"sinusoid")
+    elseif topo_type=="y_slope"
+        eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"y_slope")
     elseif topo_type=="rand"
         eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"rand")
     else
@@ -130,7 +132,11 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
     # output dirs
     filepath = "."
 
-    if linear
+    if topo_type=="y_slope"
+        plotpath_main = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/main/"
+        plotpath_psi  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi/"
+        plotpath_psi_vert  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi_vert/"
+    elseif linear
         plotpath_main = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/main/"
         plotpath_psi  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi/"
         plotpath_psi_vert  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi_vert/"
@@ -193,8 +199,8 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
 
         # perform stability analysis
-        eta=0;
-        eve1,eva1,max_eve1,max_eve_phase1,max_eva1,k_x,k_y,qx1,qy1,rd1 = LinStab.lin_stab(U,V,H,beta,eta,Nx,Ny,rho,f0,g,Float64(Lx),Float64(Ly))
+        # eta=0;
+        eve1,eva1,max_eve1,max_eve_phase1,max_eva1,k_x,k_y,qx1,qy1,rd1 = LinStab.lin_stab(U,V,H,beta,0.0,Nx,Ny,rho,f0,g,Float64(Lx),Float64(Ly))
         sigma_LS_all = Array(imag(eva1))
         sigma_LS_mid = sigma_LS_all[:,round(Int,Nx/2)]
 
@@ -271,29 +277,29 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
             push!(BD2,E[3][2][2])
             push!(BD3,E[3][2][3])
 
-            # push to spectral flux terms
-            push!(CV32,[specE[2][:,:,1]])
-            push!(CV52,[specE[2][:,:,2]])
-            push!(CL1,[specE[1][:,1]])
-            push!(CT,[specE[3]])
-            push!(NL1,[specE[4][:,:,1]])
-            push!(NL2,[specE[4][:,:,2]])
-            push!(NL3,[specE[4][:,:,3]])
+            # # push to spectral flux terms
+            # push!(CV32,[specE[2][:,:,1]])
+            # push!(CV52,[specE[2][:,:,2]])
+            # push!(CL1,[specE[1][:,1]])
+            # push!(CT,[specE[3]])
+            # push!(NL1,[specE[4][:,:,1]])
+            # push!(NL2,[specE[4][:,:,2]])
+            # push!(NL3,[specE[4][:,:,3]])
 
-            # push flux terms
-            push!(LF1,fluxE[1][1])
-            push!(LF2,fluxE[1][2])
-            push!(LF3,fluxE[1][3])
-            push!(VF32,fluxE[2][1])
-            push!(VF52,fluxE[2][2])
-            push!(TF,fluxE[3])
+            # # push flux terms
+            # push!(LF1,fluxE[1][1])
+            # push!(LF2,fluxE[1][2])
+            # push!(LF3,fluxE[1][3])
+            # push!(VF32,fluxE[2][1])
+            # push!(VF52,fluxE[2][2])
+            # push!(TF,fluxE[3])
 
             # finding vertical structure of instability
-            psi_vert = [maximum(psi_vert1[:,end])
-                        maximum(psi_vert2[:,end])
-                        maximum(psi_vert3[:,end])]
+            # psi_vert = [maximum(psi_vert1[:,end])
+            #             maximum(psi_vert2[:,end])
+            #             maximum(psi_vert3[:,end])]
             
-            psi_vert = psi_vert./maximum(psi_vert)
+            # psi_vert = psi_vert./maximum(psi_vert)
         
             # plotting stuff
             global plot_model
@@ -344,6 +350,83 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
             println(cr_all)
 
+            if cyc == cycles-1
+                            # updating variables to plot
+                psi1 = vars.ψ[:, :, 1]
+                psi2 = vars.ψ[:, :, 2]
+                psi3 = vars.ψ[:, :, 3]
+            
+                if psi_hovm  # && cyc==(cycles-1) 
+                    if isnothing(t_hovm)
+                        global psi1_ot = psi1[:,Int(round(Nx/2))]
+                        global psi2_ot = psi2[:,Int(round(Nx/2))]
+                        global psi3_ot = psi3[:,Int(round(Nx/2))]
+                        global t_hovm = Array([clock.t])
+
+                        global psi_vert1 = abs.(rfft(psi1[:,32]))
+                        global psi_vert2 = abs.(rfft(psi2[:,32]))
+                        global psi_vert3 = abs.(rfft(psi3[:,32]))
+                    else
+                        global psi1_ot = cat(psi1_ot,psi1[:,Int(round(Nx/2))], dims=2)
+                        global psi2_ot = cat(psi2_ot,psi2[:,Int(round(Nx/2))], dims=2)
+                        global psi3_ot = cat(psi3_ot,psi3[:,Int(round(Nx/2))], dims=2)
+
+                        push!(t_hovm,clock.t)
+
+                        global psi_vert1 = cat(psi_vert1,abs.(rfft(psi1[:,32])),dims=2)
+                        global psi_vert2 = cat(psi_vert2,abs.(rfft(psi2[:,32])),dims=2)
+                        global psi_vert3 = cat(psi_vert3,abs.(rfft(psi3[:,32])),dims=2)
+                    end
+                end
+
+                q1 = transpose(vars.q[:, :, 1])
+                q2 = transpose(vars.q[:, :, 2])
+                q3 = transpose(vars.q[:, :, 3])
+                
+                # push to time
+                push!(tiempo,clock.t)
+
+                # push to layer-wise KE
+                push!(KE1,E[1][1]/H[1])
+                push!(KE2,E[1][2]/H[2])
+                push!(KE3,E[1][3]/H[3])
+
+                # push to interface potential energies
+                push!(PE32,E[2][1]/((H[1]+H[2])/2))
+                push!(PE52,E[2][2]/((H[2]+H[3])/2))
+
+                # push to bottom drag and biharmonic dissipation
+                push!(ED,E[3][1])
+                push!(BD1,E[3][2][1])
+                push!(BD2,E[3][2][2])
+                push!(BD3,E[3][2][3])
+
+                # push to spectral flux terms
+                push!(CV32,[specE[2][:,:,1]])
+                push!(CV52,[specE[2][:,:,2]])
+                push!(CL1,[specE[1][:,1]])
+                push!(CT,[specE[3]])
+                push!(NL1,[specE[4][:,:,1]])
+                push!(NL2,[specE[4][:,:,2]])
+                push!(NL3,[specE[4][:,:,3]])
+
+                # push flux terms
+                push!(LF1,fluxE[1][1])
+                push!(LF2,fluxE[1][2])
+                push!(LF3,fluxE[1][3])
+                push!(VF32,fluxE[2][1])
+                push!(VF52,fluxE[2][2])
+                push!(TF,fluxE[3])
+
+                # finding vertical structure of instability
+                psi_vert = [maximum(psi_vert1[:,end])
+                            maximum(psi_vert2[:,end])
+                            maximum(psi_vert3[:,end])]
+                
+                psi_vert = psi_vert./maximum(psi_vert)
+
+            end
+
             # then reset stuff
             MultiLayerQG.set_q!(prob, vars.q*R)
             global cyc += 1
@@ -388,8 +471,12 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
         println("Saving output data to CSV")
 
-        csv_name = "./data/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
-        # ψ₁, ψ₂ = vars.ψ[:, :, 1], vars.ψ[:, :, 2]
+        if topo_type=="y_slope"
+            csv_name = data_dir*"/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
+        else
+            csv_name = data_dir*"/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
+        end
+
 
         # should I add streamfunction or PV here?? How would I use them?
         csv_data = Dict("t" => tiempo, "CV32" => CV32, "CV52" => CV52, "KE1" => KE1, "KE2" => KE2, "KE3" => KE3, "Nz" => nlayers, "L" => L, "H" => H, "rho" => rho, "U" => U,
