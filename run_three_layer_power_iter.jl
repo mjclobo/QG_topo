@@ -193,7 +193,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
         # perform stability analysis
         # eta=0;
-        eve1,eva1,max_eve1,max_eve_phase1,max_eva1,k_x,k_y,qx1,qy1,rd1 = LinStab.lin_stab(U,V,H,beta,0.0,Nx,Ny,rho,f0,g,Float64(Lx),Float64(Ly))
+        eve1,eva1,max_eve1,max_eve_phase1,max_eva1,k_x,k_y,qx1,qy1,rd1,vert_modes = LinStab.lin_stab(U,V,H,beta,0.0,Nx,Ny,rho,f0,g,Float64(Lx),Float64(Ly))
         sigma_LS_all = Array(imag(eva1))
         sigma_LS_mid = sigma_LS_all[:,round(Int,Nx/2)]
 
@@ -347,9 +347,9 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
             if cyc == cycles-1
                             # updating variables to plot
-                psi1 = vars.ψ[:, :, 1]
-                psi2 = vars.ψ[:, :, 2]
-                psi3 = vars.ψ[:, :, 3]
+                global psi1 = vars.ψ[:, :, 1]
+                global psi2 = vars.ψ[:, :, 2]
+                global psi3 = vars.ψ[:, :, 3]
             
                 if psi_hovm  # && cyc==(cycles-1) 
                     if isnothing(t_hovm)
@@ -436,7 +436,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
     # Get growth rate from exponential fit to upper-layer KE time series.
     if calc_growth_rate==true
-        sigma_emp = LinStab.calc_growth(tiempo, [KE1 KE2 KE3 PE32 PE52])
+        sigma_emp = LinStab.calc_growth(tiempo, [KE1[end-1] KE2[end-1] KE3[end-1] PE32[end-1] PE52[end-1]])
         sigma_emp_KE1, sigma_emp_KE2, sigma_emp_KE3 = sigma_emp[1], sigma_emp[2], sigma_emp[3]
         sigma_emp_PE32, sigma_emp_PE52 = sigma_emp[4], sigma_emp[5]
         a = findmax(CV32[end][1])
@@ -484,7 +484,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                         "max_eval" => max_eva1, "PE32" => PE32, "PE52" => PE52, "CT" => CT, "NL1" => NL1, "NL2" => NL2, "NL3" => NL3, "psivert1" => psi_vert1,
                         "psivert2" => psi_vert2, "psivert3" => psi_vert3, "alpha" => alpha, "gamma" => gamma, "cr" => cr, "cr_Dopp" => cr_dopp, "LF1" => LF1, "LF2" => LF2,
                         "LF3" => LF3, "VF32" => VF32, "VF52" => VF52, "TF" => TF, "Ekman_drag" => ED, "biharmonic_diss_1" => BD1, "biharmonic_diss_2" => BD2,
-                        "biharmonic_diss_3" => BD3, "eta" => eta)
+                        "biharmonic_diss_3" => BD3, "eta" => eta, "psi1_full" => psi1, "psi2_full" => psi2, "psi3_full" => psi3)
 
         CSV.write(csv_name, csv_data,bufsize=2^24)
     end
