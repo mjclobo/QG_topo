@@ -60,15 +60,8 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                 elseif type=="sinusoid"
                     eta_out[i,j] = (f0/H[end]) * h0 * cos(2*pi*kt*x[i]/Lx)
                 elseif type=="y_slope"
-                    eta_out[i,j] = (f0/H[end]) * ((h0) * ((j-Ny/2)/Ny))
-                # elseif type=="rand"
-                #     k_min = 10
-                #     k_max = 50
-                #     k_range = collect(range(k_min,k_max,100))
-                #     sin_range = collect(range(0,pi,100))
-                #     amps = sin.(sin_range)*h0
-                #     eta_out[i,j] = (f0/H[end]) * sum((amps .* cos.(2*pi*k_range*x[i]./Lx) .* cos.(2*pi*k_range*y[j]./Ly)))
-                end
+                    eta_out[i,j] = (f0/H[end]) * ((h0*Lx) * ((j-Ny/2)/Ny))
+               end
             end
         end
 
@@ -322,6 +315,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                             clock.step, clock.t, cfl, E[1][1], E[1][2], E[2][1], (time()-startwalltime)/60)
             
             # println(log)
+	    
 
         end
 
@@ -349,6 +343,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
             cr_all = @sprintf("c2-c1(dopp) = %.3e, cr_dopp 1: %.3e, cr_dopp 2: %.3e, cr_dopp 3: %.3e", cr_dopp[1]-cr_dopp[2], cr_dopp[1], cr_dopp[2], cr_dopp[3])
 
             println(cr_all)
+
 
             if cyc == cycles-1
                             # updating variables to plot
@@ -428,6 +423,8 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
             end
 
             # then reset stuff
+            println("Renormalization cycle done for gamma = "*string(gamma)*", alpha = "*string(alpha)*", h0 = "* string(round(h0*Lx,digits=9))*", kt = "* string(Int(kt))*".")
+
             MultiLayerQG.set_q!(prob, vars.q*R)
             global cyc += 1
             println("")

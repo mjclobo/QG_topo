@@ -47,7 +47,6 @@ end
 
 # controls ratio of interface densities
 gammas = round.(collect(range(0.1,3,5)),sigdigits=2) # [1.1] #
-gammas = gammas[4:end]
 
 # controls ratio of interface shears
 alphas = round.(collect(range(1,5,5)),sigdigits=2) # [2.2] #

@@ -118,7 +118,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
     global ss_yr = false
     global ss_yr_cnt = 0
     global ss_yr_max = 5
-    global KE_thresh = 1.05      # if KE at end of year over KE at beginning of yr is less than this, then model is in steady-state
+    global KE_thresh = 1.2      # if KE at end of year over KE at beginning of yr is less than this, then model is in steady-state
 
     while ss_yr_cnt < ss_yr_max
         global ell, j 
@@ -282,12 +282,11 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                 end
 
                 if save_output
-                    # saving output data
-                    println("Saving output data to CSV for year: "*string(yr_cnt-1))
+                    # saving output data            
+                    csv_name = "../data_ss_batch_02/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) *"_yr"*string(yr_cnt)* ".csv"
             
-                    csv_name = "./data/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) *"_yr"*string(yr_cnt)* ".csv"
-            
-                    # should I add streamfunction or PV here?? How would I use them?
+		    println("Saving output data to CSV to: "*csv_name)
+
                     csv_data = Dict("t" => tiempo, "CV32" => CV32, "CV52" => CV52, "KE1" => KE1, "KE2" => KE2, "KE3" => KE3, "Nz" => nlayers, "L" => L, "H" => H, "rho" => rho, "U" => U,
                                     "dt" => dt, "F_profile" => params.F, "beta" => β, "h0" => h0, "kt" => kt,
                                     "psi1_ot" => psi1_ot, "psi2_ot" => psi2_ot,
@@ -298,7 +297,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                                     "LF3" => LF3, "VF32" => VF32, "VF52" => VF52, "TF" => TF, "Ekman_drag" => ED, "biharmonic_diss_1" => BD1, "biharmonic_diss_2" => BD2,
                                     "biharmonic_diss_3" => BD3, "eta" => eta)
             
-                    CSV.write(csv_name, csv_data)
+                    CSV.write(csv_name, csv_data,bufsize=2^24)
                 end
 
                 t_hovm = nothing
@@ -335,7 +334,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
     if save_output
         println("Saving output data to CSV")
 
-        csv_name = "./data/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * "_final.csv"
+        csv_name = "../data_ss_batch_02/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * "_final.csv"
         # ψ₁, ψ₂ = vars.ψ[:, :, 1], vars.ψ[:, :, 2]
 
         # should I add streamfunction or PV here?? How would I use them?

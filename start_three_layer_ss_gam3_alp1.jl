@@ -30,12 +30,12 @@ global q0_mag = 1e-7
 global linear = false
 
 # setting type of run
-global run_type = "power_iter"
+global run_type = "yrs_to_ss"
 
 if run_type=="power_iter"
     # renormalization parameters
     Rthresh = 0.01        # Threshold energy ratio for renormalization.
-    cycles  = 3           # Total number of renormalization cycles.
+    cycles  = 1           # Total number of renormalization cycles.
 elseif run_type=="nsteps"
     # number of steps
     nsteps = 30000
@@ -46,27 +46,28 @@ else
 end
 
 # controls ratio of interface densities
-gammas = round.(collect(range(0.1,3,5)),sigdigits=2) # [1.1] #
-gammas = gammas[4:end]
+
+gammas = round.(collect(range(0.1,3,5)),sigdigits=2)
+gammas = [gammas[3]]
 
 # controls ratio of interface shears
-alphas = round.(collect(range(1,5,5)),sigdigits=2) # [2.2] #
+alphas = round.(collect(range(1,5,5)),sigdigits=2)
+alphas = [alphas[1]]
 
 # topo parameters
-h0s = round.(collect(range(0.,500.,6))) # [0.] #      # dimensional topo height 
-kts = round.(collect(range(1.,51.,6))) # [12.] #      # topo wavenumber (no factor of 2pi)
+h0s = round.([0.]) # collect(range(0.,500.,6))      # dimensional topo height
+kts = round.([50.]) # collect(range(1.,50.,6))         # topo wavenumber (no factor of 2pi)
 
-h0s = [h0s[6]]
 
-include("./params_three_layer.jl")
-
-nsubs = 100
+include("./params_three_layer_ss_gam3_alp1.jl")
 
 # running model
 if run_type=="power_iter"
     include("./run_three_layer_power_iter.jl")
 elseif run_type=="nsteps"
-    include("./run_three_layer_nsteps.jl")
+    include("./run_three_layer_steps.jl")
+elseif run_type=="yrs_to_ss"
+    include("./run_three_layer_yrs_ss.jl")
 else
     println("You must choose a valid run type.")
 end

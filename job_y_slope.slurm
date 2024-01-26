@@ -12,4 +12,4 @@
 module purge
 module load julia/1.9.1
 
-julia start_three_layer_h0100.jl
+julia start_three_layer_slope.jl
