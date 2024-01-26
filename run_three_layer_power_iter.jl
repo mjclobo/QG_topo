@@ -436,8 +436,8 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
     # Get growth rate from exponential fit to upper-layer KE time series.
     if calc_growth_rate==true
-        sigma_emp = LinStab.calc_growth(tiempo, [KE1 KE2 KE3 PE32 PE52])
-        sigma_emp_KE1, sigma_emp_KE2, sigma_emp_KE3 = sigma_emp[1], sigma_emp[2], sigma_emp[3]
+        sigma_emp = LinStab.calc_growth(tiempo, [KE1[end-1] KE2[end-1] KE3[end-1] PE32[end-1] PE52[end-1]])
+    	sigma_emp_KE1, sigma_emp_KE2, sigma_emp_KE3 = sigma_emp[1], sigma_emp[2], sigma_emp[3]
         sigma_emp_PE32, sigma_emp_PE52 = sigma_emp[4], sigma_emp[5]
         a = findmax(CV32[end][1])
         k_emp = grid.kr[a[2][1]]
