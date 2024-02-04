@@ -20,6 +20,36 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
     rho[1] = ρ[1] = rho1
 
+    function topo_rand(h_rms, kt, Lx, Nx)
+
+        # Wavenumber grid
+        nkr = Int(Nx / 2 + 1)
+        nl = Nx
+    
+        dk = 2 * pi / Lx
+        dl = dk
+        
+        k = reshape( rfftfreq(Nx, dk * Nx), (nkr, 1) )
+        l = reshape( fftfreq(Nx, dl * Nx), (1, nl) )
+
+        k = @. sqrt(k^2 + l^2)
+
+        # Isotropic Gaussian in wavenumber space about mean, kt, with standard deviation, sigma
+        # with random Fourier phases
+        sigma = sqrt(2) * dk
+
+        seed!(1234)
+        hh = exp.(-(k .- kt*(2*pi/Lx)).^2 ./ (2 * sigma^2)) .* exp.(2 * pi * im .* rand(nkr, nl))
+
+        # Recover h from hh
+        h = irfft(hh, Nx)
+
+        c = h_rms / sqrt.(mean(h.^2))
+        h = c .* h
+
+        return h
+    end
+
     # setting topography
     function topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,type)
         Nx = length(grid_topo.x); Ny = length(grid_topo.y)
@@ -28,12 +58,19 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
         for i=1:Nx
             for j=1:Ny
                 if type=="eggshell"
-                    eta_out[i,j] = (f0/sum(H)) * h0 * cos(2*pi*kt*x[i]/Lx) * cos(2*pi*kt*y[j]/Ly)
+                    eta_out[i,j] = (f0/H[end]) * h0 * cos(2*pi*kt*x[i]/Lx) * cos(2*pi*kt*y[j]/Ly)
                 elseif type=="sinusoid"
-                    eta_out[i,j] = (f0/sum(H)) * h0 * cos(2*pi*kt*x[i]/Lx)
-                end
+                    eta_out[i,j] = (f0/H[end]) * h0 * cos(2*pi*kt*x[i]/Lx)
+                elseif type=="y_slope"
+                    eta_out[i,j] = (f0/H[end]) * ((h0*Lx) * ((j-Ny/2)/Ny))
+               end
             end
         end
+
+        if type=="rand"
+            eta_out = (f0/H[end]) * topo_rand(h0,kt,Lx,Nx)
+        end
+
         return eta_out
     end
 
@@ -43,6 +80,10 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
         eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"eggshell")
     elseif topo_type=="sinusoid"
         eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"sinusoid")
+    elseif topo_type=="y_slope"
+        eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"y_slope")
+    elseif topo_type=="rand"
+        eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"rand")
     else
         eta = 0.
     end
@@ -76,7 +117,11 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
     # output dirs
     filepath = "."
 
-    if linear
+    if topo_type=="y_slope"
+        plotpath_main = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/main/"
+        plotpath_psi  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi/"
+        plotpath_psi_vert  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi_vert/"
+    elseif linear
         plotpath_main = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/main/"
         plotpath_psi  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi/"
         plotpath_psi_vert  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi_vert/"
@@ -334,9 +379,11 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
     if save_output
         println("Saving output data to CSV")
 
-        csv_name = "../data_ss_batch_02/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * "_final.csv"
-        # ψ₁, ψ₂ = vars.ψ[:, :, 1], vars.ψ[:, :, 2]
-
+        if topo_type=="y_slope"
+            csv_name = data_dir*"/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
+            else
+            csv_name = data_dir*"/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
+        end
         # should I add streamfunction or PV here?? How would I use them?
         csv_data = Dict("t" => tiempo, "CV32" => CV32, "CV52" => CV52, "KE1" => KE1, "KE2" => KE2, "KE3" => KE3, "Nz" => nlayers, "L" => L, "H" => H, "rho" => rho, "U" => U,
                         "dt" => dt, "F_profile" => params.F, "beta" => β, "h0" => h0, "kt" => kt,"k_growth_lsa" => k_x[:], "sigma_ls" => sigma_LS_all,"cfl_set" => cfl_glob, "H_T_scale" => H_t,
@@ -345,6 +392,6 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                         "psivert2" => psi_vert2, "psivert3" => psi_vert3, "alpha" => alpha, "gamma" => gamma, "LF1" => LF1, "LF2" => LF2,
                         "LF3" => LF3, "VF32" => VF32, "VF52" => VF52, "TF" => TF)
 
-        CSV.write(csv_name, csv_data)
+        CSV.write(csv_name, csv_data,bufsize=2^24)
     end
 end; end; end; end     # end for loop thru gammas, etc.
