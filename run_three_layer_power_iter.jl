@@ -99,6 +99,8 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
         eta = 0.
     end
 
+    println("Done with topo.")
+
     # define the model problem
     prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, g, H, ρ, U, eta=eta,
     μ, β, dt, stepper, linear, aliased_fraction=1/3)
@@ -189,11 +191,11 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
     # Perform linear stability analysis, if asked
     if perform_ls==true
         # load module
-
+	println("Starting LSA.")
 
         # perform stability analysis
         # eta=0;
-        eve1,eva1,max_eve1,max_eve_phase1,max_eva1,k_x,k_y,qx1,qy1,rd1,vert_modes = LinStab.lin_stab(U,V,H,beta,0.0,Nx,Ny,rho,f0,g,Float64(Lx),Float64(Ly))
+        eve1,eva1,max_eve1,max_eve_phase1,max_eva1,k_x,k_y,qx1,qy1,rd1 = LinStab.lin_stab(U,V,H,beta,0.0,Nx,Ny,rho,f0,g,Float64(Lx),Float64(Ly))
         sigma_LS_all = Array(imag(eva1))
         sigma_LS_mid = sigma_LS_all[:,round(Int,Nx/2)]
 
@@ -201,6 +203,8 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
         global bulk_Bu = (real(rd1[2])/Lx)^2
     end
+
+    println("Done with LSA.")
 
     # trying to run the model now
     startwalltime = time()
@@ -210,6 +214,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
     global t_hovm = nothing
 
     while cyc<cycles
+
         global ell, j 
         global psi1_ot, psi2_ot, psi3_ot
 
@@ -220,7 +225,8 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
         local fluxE = MultiLayerQG.fluxes(prob)
 
         if j % nsubs == 0
-            # updating variables to plot
+
+	# updating variables to plot
             psi1 = vars.ψ[:, :, 1]
             psi2 = vars.ψ[:, :, 2]
             psi3 = vars.ψ[:, :, 3]
@@ -346,7 +352,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
 
             if cyc == cycles-1
-                            # updating variables to plot
+                # updating variables to plot
                 global psi1 = vars.ψ[:, :, 1]
                 global psi2 = vars.ψ[:, :, 2]
                 global psi3 = vars.ψ[:, :, 3]
@@ -436,7 +442,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
     # Get growth rate from exponential fit to upper-layer KE time series.
     if calc_growth_rate==true
-        sigma_emp = LinStab.calc_growth(tiempo, [KE1[end-1] KE2[end-1] KE3[end-1] PE32[end-1] PE52[end-1]])
+        sigma_emp = LinStab.calc_growth(tiempo[1:end-1], [KE1[1:end-1] KE2[1:end-1] KE3[1:end-1] PE32[1:end-1] PE52[1:end-1]])
         sigma_emp_KE1, sigma_emp_KE2, sigma_emp_KE3 = sigma_emp[1], sigma_emp[2], sigma_emp[3]
         sigma_emp_PE32, sigma_emp_PE52 = sigma_emp[4], sigma_emp[5]
         a = findmax(CV32[end][1])
