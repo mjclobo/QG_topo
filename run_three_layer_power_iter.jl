@@ -10,7 +10,7 @@
 for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
     # change variable params
-    U[2] = (U[1] + alpha * U[3] * (H32/H52))/(1 + alpha * (H32/H52))
+    U[1] = U[2] + alpha*(H32/H52)*(U[2]-U[3])
 
     # rho1 = rho[2] - (abs(U[2]-U[1])*(rho[3]-rho[2]))/abs(U[2]-U[3])/gamma
     rho1 = rho[2] - gamma * (rho[3] - rho[2]) * (H32/H52)
@@ -19,7 +19,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
 
     function topo_rand(h_rms, kt, Lx, Nx)
-
+        # Borrowef from Matt Pudig..will change when I start looking at random topo.
         # Wavenumber grid
         nkr = Int(Nx / 2 + 1)
         nl = Nx
@@ -67,19 +67,6 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
         if type=="rand"
             eta_out = (f0/H[end]) * topo_rand(h0,kt,Lx,Nx)
-            # T = eltype(grid_topo)
-            # nx, ny = grid_topo.nx, grid_topo.ny
-            # h, hx, hy = zeros(T, nx, ny), zeros(T, nx, ny), zeros(T, nx, ny)
-            # mfile = matopen("hrand256Km2tk10filtnx32.mat")
-            # h = read(mfile, "h")
-            # close(mfile)
-            # @. h = h*h0*0.5 # ht is rms in random topography. The factor 1/2 is the rms of sin(x)sin(y).
-            # hh = rfft(h)
-            # hxh = @. im * grid_topo.kr * hh
-            # hyh = @. im * grid_topo.l * hh
-            # hx = irfft(hxh, nx)
-            # hy = irfft(hyh, nx)
-            # eta_out = (f0/H[end]) * copy(h)
         end
 
         return eta_out
