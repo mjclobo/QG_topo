@@ -459,7 +459,6 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
     Ri = [((0.5*(H[1]+H[2])*g*(rho[2]-rho[1])/rho[1])/((U[1]-U[2])^2))
             ((0.5*(H[2]+H[3])*g*(rho[3]-rho[2])/rho[1])/((U[2]-U[3])^2))]
 
-
     Bu_11 = (H[1]*g*(rho[2]-rho[1])/rho[1])/f0^2 * Lx^-2
     Bu_12 = (H[2]*g*(rho[2]-rho[1])/rho[1])/f0^2 * Lx^-2
     Bu_22 = (H[2]*g*(rho[3]-rho[2])/rho[1])/f0^2 * Lx^-2
@@ -477,9 +476,9 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 	global data_dir
 
 	if topo_type=="y_slope"
-	    csv_name = data_dir*"/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
+	    csv_name = data_dir*"/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".jld2"
         else
-	    csv_name = data_dir*"/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".csv"
+	    csv_name = data_dir*"/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * ".jld2"
 	end
 	# ψ₁, ψ₂ = vars.ψ[:, :, 1], vars.ψ[:, :, 2]
 
@@ -494,7 +493,9 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                         "LF3" => LF3, "VF32" => VF32, "VF52" => VF52, "TF" => TF, "Ekman_drag" => ED, "biharmonic_diss_1" => BD1, "biharmonic_diss_2" => BD2,
                         "biharmonic_diss_3" => BD3, "eta" => eta, "psi1_full" => psi1, "psi2_full" => psi2, "psi3_full" => psi3)
 
-        CSV.write(csv_name, csv_data,bufsize=2^24)
+        # CSV.write(csv_name, csv_data,bufsize=2^24)
+
+        jldsave(csv_name; csv_data)
     end
 
 end; end; end; end
