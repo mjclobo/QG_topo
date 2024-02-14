@@ -86,6 +86,8 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
         eta = 0.
     end
 
+    println("Done with topo.")
+
     # define the model problem
     prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, g, H, ρ, U, eta=eta,
     μ, β, dt, stepper, linear, aliased_fraction=1/3)
@@ -176,7 +178,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
     # Perform linear stability analysis, if asked
     if perform_ls==true
         # load module
-
+	println("Starting LSA.")
 
         # perform stability analysis
         # eta=0;
@@ -189,6 +191,8 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
         global bulk_Bu = (real(rd1[2])/Lx)^2
     end
 
+    println("Done with LSA.")
+
     # trying to run the model now
     startwalltime = time()
 
@@ -197,6 +201,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
     global t_hovm = nothing
 
     while cyc<cycles
+
         global ell, j 
         global psi1_ot, psi2_ot, psi3_ot
 
@@ -207,7 +212,8 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
         local fluxE = MultiLayerQG.fluxes(prob)
 
         if j % nsubs == 0
-            # updating variables to plot
+
+	# updating variables to plot
             psi1 = vars.ψ[:, :, 1]
             psi2 = vars.ψ[:, :, 2]
             psi3 = vars.ψ[:, :, 3]
@@ -333,7 +339,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
 
             if cyc == cycles-1
-                            # updating variables to plot
+                # updating variables to plot
                 global psi1 = vars.ψ[:, :, 1]
                 global psi2 = vars.ψ[:, :, 2]
                 global psi3 = vars.ψ[:, :, 3]

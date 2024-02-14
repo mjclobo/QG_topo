@@ -12,60 +12,138 @@ using GeophysicalFlows, Plots, Printf, FFTW, LinearAlgebra, Statistics, LaTeXStr
 
 using Random: seed!
 
-# define the model problem
-prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, g, H, ρ, U, eta=eta,
-μ, β, dt, stepper, linear, aliased_fraction=1/3)
 
-sol, clock, params, vars, grid = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
-x, y = grid.x, grid.y
 
-bu_lw = [sqrt(params.g′[1]*(0.5*(H[1]+H[2]))) sqrt(params.g′[2]*(0.5*(H[2]+H[3])))]/f0
+    function topo_rand(h_rms, kt, Lx, Nx)
 
-rd_sum = sum(bu_lw)/pi  # where does pi factor come from?
+        # Wavenumber grid
+        nkr = Int(Nx / 2 + 1)
+        nl = Nx
+    
+        dk = 2 * pi / Lx
+        dl = dk
+        
+        k = reshape( rfftfreq(Nx, dk * Nx), (nkr, 1) )
+        l = reshape( fftfreq(Nx, dl * Nx), (1, nl) )
 
-rd_bulk = sqrt(g*sum(H)*(rho[3]-rho[1])/rho[1])/f0
+        k = @. sqrt(k^2 + l^2)
 
-# setting initial conditions; does it matter where is 0?
-seed!(1234) # reset of the random number generator for reproducibility
-q₀  = q0_mag * device_array(dev)(randn((grid.nx, grid.ny, nlayers)))
-q₀h = prob.timestepper.filter .* rfft(q₀, (1, 2)) # apply rfft  only in dims=1, 2
-q₀  = irfft(q₀h, grid.nx, (1, 2))                 # apply irfft only in dims=1, 2
+        # Isotropic Gaussian in wavenumber space about mean, kt, with standard deviation, sigma
+        # with random Fourier phases
+        sigma = sqrt(2) * dk
 
-MultiLayerQG.set_q!(prob, q₀)
+        seed!(1234)
+        hh = exp.(-(k .- kt*(2*pi/Lx)).^2 ./ (2 * sigma^2)) .* exp.(2 * pi * im .* rand(nkr, nl))
 
-# output dirs
-filepath = "."
-plotpath_main = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_h0"*string(Int(h0))*"_res" * string(Int(Nx)) *"/main/"
-plotpath_psi  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_h0"*string(Int(h0))*"_res" * string(Int(Nx)) *"/psi/"
-plotpath_psi_vert  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_h0"*string(Int(h0))*"_res" * string(Int(Nx)) *"/psi_vert/"
-plotname = "snapshots"
-filename = joinpath(filepath, "2layer.jld2")
+        # Recover h from hh
+        h = irfft(hh, Nx)
 
-include("./plotting_functions.jl")
+        c = h_rms / sqrt.(mean(h.^2))
+        h = c .* h
 
-# file management
-if isfile(filename); rm(filename); end
-if !isdir(plotpath_main); mkpath(plotpath_main); end
-if !isdir(plotpath_psi); mkpath(plotpath_psi); end
-if !isdir(plotpath_psi_vert); mkpath(plotpath_psi_vert); end
+        return h
+    end
 
-# # ``create output'' (?)
-# get_sol(prob) = prob.sol # extracts the Fourier-transformed solution
+    # setting topography
+    function topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,type)
+        Nx = length(grid_topo.x); Ny = length(grid_topo.y)
+        eta_out = zeros(Nx,Ny)
+        x = collect(grid_topo.x); y = collect(grid_topo.y)
+        for i=1:Nx
+            for j=1:Ny
+                if type=="eggshell"
+                    eta_out[i,j] = (f0/H[end]) * h0 * cos(2*pi*kt*x[i]/Lx) * cos(2*pi*kt*y[j]/Ly)
+                elseif type=="sinusoid"
+                    eta_out[i,j] = (f0/H[end]) * h0 * cos(2*pi*kt*x[i]/Lx)
+                elseif type=="y_slope"
+                    eta_out[i,j] = (f0/H[end]) * ((h0*Lx) * ((j-Ny/2)/Ny))
+               end
+            end
+        end
 
-# function get_u(prob)
-#     sol, params, vars, grid = prob.sol, prob.params, prob.vars, prob.grid
+        if type=="rand"
+            eta_out = (f0/H[end]) * topo_rand(h0,kt,Lx,Nx)
+            # T = eltype(grid_topo)
+            # nx, ny = grid_topo.nx, grid_topo.ny
+            # h, hx, hy = zeros(T, nx, ny), zeros(T, nx, ny), zeros(T, nx, ny)
+            # mfile = matopen("hrand256Km2tk10filtnx32.mat")
+            # h = read(mfile, "h")
+            # close(mfile)
+            # @. h = h*h0*0.5 # ht is rms in random topography. The factor 1/2 is the rms of sin(x)sin(y).
+            # hh = rfft(h)
+            # hxh = @. im * grid_topo.kr * hh
+            # hyh = @. im * grid_topo.l * hh
+            # hx = irfft(hxh, nx)
+            # hy = irfft(hyh, nx)
+            # eta_out = (f0/H[end]) * copy(h)
+        end
 
-#     @. vars.qh = sol
-#     streamfunctionfrompv!(vars.ψh, vars.qh, params, grid)
-#     @. vars.uh = -im * grid.l * vars.ψh
-#     invtransform!(vars.u, vars.uh, params)
+        return eta_out
+    end
 
-#     return vars.u
-# end
+    aliased_fraction=1/3; T=Float64;
+    grid_topo = TwoDGrid(dev; nx=Nx, Lx, ny=Ny, Ly, aliased_fraction, T)
+    if topo_type=="eggshell"
+        eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"eggshell")
+    elseif topo_type=="sinusoid"
+        eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"sinusoid")
+    elseif topo_type=="y_slope"
+        eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"y_slope")
+    elseif topo_type=="rand"
+        eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"rand")
+    else
+        eta = 0.
+    end
 
-# out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
+    # define the model problem
+    prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, g, H, ρ, U, eta=eta,
+    μ, β, dt, stepper, linear, aliased_fraction=1/3)
 
-# savename = @sprintf("%s_%04d.png", joinpath(plotpath, plotname), 0)
+    sol, clock, params, vars, grid = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
+    x, y = grid.x, grid.y
+
+    bu_lw = [sqrt(params.g′[1]*(0.5*(H[1]+H[2]))) sqrt(params.g′[2]*(0.5*(H[2]+H[3])))]/f0
+
+    rd_sum = sum(bu_lw)/pi  # where does pi factor come from?
+
+    rd_bulk = sqrt(g*sum(H)*(rho[3]-rho[1])/rho[1])/f0
+
+    # setting initial conditions; does it matter where is 0?
+    seed!(1234) # reset of the random number generator for reproducibility
+    q₀  = q0_mag * device_array(dev)(randn((grid.nx, grid.ny, nlayers)))
+    q₀h = prob.timestepper.filter .* rfft(q₀, (1, 2)) # apply rfft  only in dims=1, 2
+    q₀  = irfft(q₀h, grid.nx, (1, 2))                 # apply irfft only in dims=1, 2
+
+    # q₀[:,:,3] .= 0.0
+
+    MultiLayerQG.set_q!(prob, q₀)
+
+    # output dirs
+    filepath = "."
+
+    if topo_type=="y_slope"
+        plotpath_main = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/main/"
+        plotpath_psi  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi/"
+        plotpath_psi_vert  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi_vert/"
+    elseif linear
+        plotpath_main = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/main/"
+        plotpath_psi  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi/"
+        plotpath_psi_vert  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi_vert/"
+    else
+        plotpath_main = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) *"/main/"
+        plotpath_psi  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) *"/psi/"
+        plotpath_psi_vert  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) *"/psi_vert/"
+    end
+    plotname = "snapshots"
+    filename = joinpath(filepath, "2layer.jld2")
+
+    include("./plotting_functions.jl")
+
+    # file management
+    if isfile(filename); rm(filename); end
+    if !isdir(plotpath_main); mkpath(plotpath_main); end
+    if !isdir(plotpath_psi); mkpath(plotpath_psi); end
+    if !isdir(plotpath_psi_vert); mkpath(plotpath_psi_vert); end
 
 # defining initial diagnostics
 E = MultiLayerQG.energies(prob)
@@ -159,9 +237,9 @@ while j<nsteps
         push!(NL3,[specE[4][:,:,3]])
 
         # finding vertical structure of instability
-        psi_vert1 = abs.(rfft(psi1[:,32]))
-        psi_vert2 = abs.(rfft(psi2[:,32]))
-        psi_vert3 = abs.(rfft(psi3[:,32]))
+        psi_vert1 = abs.(rfft(psi1[:,128]))
+        psi_vert2 = abs.(rfft(psi2[:,128]))
+        psi_vert3 = abs.(rfft(psi3[:,128]))
         psi_vert = [maximum(psi_vert1)
                     maximum(psi_vert2)
                     maximum(psi_vert3)]
