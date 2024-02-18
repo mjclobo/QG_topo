@@ -490,8 +490,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                         "LF3" => LF3, "VF32" => VF32, "VF52" => VF52, "TF" => TF, "Ekman_drag" => ED, "biharmonic_diss_1" => BD1, "biharmonic_diss_2" => BD2,
                         "biharmonic_diss_3" => BD3, "eta" => eta, "psi1_full" => psi1, "psi2_full" => psi2, "psi3_full" => psi3, "nsubs" => nsubs)
 
-        # CSV.write(csv_name, csv_data,bufsize=2^24)
-
+        
         jldsave(csv_name; csv_data)
     end
 
