@@ -419,12 +419,15 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                 println("Renormalization cycle done for gamma = "*string(gamma)*", alpha = "*string(alpha)*", h0 = "* string(round(h0*Lx,digits=9))*", kt = "* string(Int(kt))*".")
 
                 MultiLayerQG.set_q!(prob, vars.q*R)
-                global cyc += 1
 
             end
+
+            global cyc += 1
+
             println("")
             println("Completed renormalization cycle", " ", cyc, "/", cycles)
             println("")
+            
         end
 
     end
