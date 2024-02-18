@@ -19,7 +19,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
 
     function topo_rand(h_rms, kt, Lx, Nx)
-        # Borrowef from Matt Pudig..will change when I start looking at random topo.
+        # Borrowed from Matt Pudig..will change when I start looking at random topo.
         # Wavenumber grid
         nkr = Int(Nx / 2 + 1)
         nl = Nx
@@ -263,22 +263,22 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
             push!(BD2,E[3][2][2])
             push!(BD3,E[3][2][3])
 
-            # # push to spectral flux terms
-            # push!(CV32,[specE[2][:,:,1]])
-            # push!(CV52,[specE[2][:,:,2]])
-            # push!(CL1,[specE[1][:,1]])
-            # push!(CT,[specE[3]])
-            # push!(NL1,[specE[4][:,:,1]])
-            # push!(NL2,[specE[4][:,:,2]])
-            # push!(NL3,[specE[4][:,:,3]])
+            # push to spectral flux terms
+            push!(CV32,[specE[2][:,:,1]])
+            push!(CV52,[specE[2][:,:,2]])
+            push!(CL1,[specE[1][:,1]])
+            push!(CT,[specE[3]])
+            push!(NL1,[specE[4][:,:,1]])
+            push!(NL2,[specE[4][:,:,2]])
+            push!(NL3,[specE[4][:,:,3]])
 
-            # # push flux terms
-            # push!(LF1,fluxE[1][1])
-            # push!(LF2,fluxE[1][2])
-            # push!(LF3,fluxE[1][3])
-            # push!(VF32,fluxE[2][1])
-            # push!(VF52,fluxE[2][2])
-            # push!(TF,fluxE[3])
+            # push flux terms
+            push!(LF1,fluxE[1][1])
+            push!(LF2,fluxE[1][2])
+            push!(LF3,fluxE[1][3])
+            push!(VF32,fluxE[2][1])
+            push!(VF52,fluxE[2][2])
+            push!(TF,fluxE[3])
 
             # finding vertical structure of instability
             # psi_vert = [maximum(psi_vert1[:,end])
@@ -413,13 +413,15 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                 
                 psi_vert = psi_vert./maximum(psi_vert)
 
+            else
+
+                # then reset stuff
+                println("Renormalization cycle done for gamma = "*string(gamma)*", alpha = "*string(alpha)*", h0 = "* string(round(h0*Lx,digits=9))*", kt = "* string(Int(kt))*".")
+
+                MultiLayerQG.set_q!(prob, vars.q*R)
+                global cyc += 1
+
             end
-
-            # then reset stuff
-            println("Renormalization cycle done for gamma = "*string(gamma)*", alpha = "*string(alpha)*", h0 = "* string(round(h0*Lx,digits=9))*", kt = "* string(Int(kt))*".")
-
-            MultiLayerQG.set_q!(prob, vars.q*R)
-            global cyc += 1
             println("")
             println("Completed renormalization cycle", " ", cyc, "/", cycles)
             println("")
@@ -428,6 +430,14 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
     end
 
     # Get growth rate from exponential fit to upper-layer KE time series.
+    # first calculate CSP criterion
+    global psi1_ot, psi2_ot, psi3_ot
+    global psi_ot = [[psi1_ot] [psi2_ot] [psi3_ot]]
+    global cr, cr_dopp = calc_phase_speeds(psi_ot,t_hovm,qy1,U,Lx,Nx)
+    global cr1_dopp = cr_dopp[1]; global cr2_dopp = cr_dopp[2]; global cr3_dopp = cr_dopp[3];
+
+    psi_now = [maximum(abs.(psi1_ot[:,end])), maximum(abs.(psi2_ot[:,end])), maximum(abs.(psi3_ot[:,end]))]
+    global csp_crit, csp_terms = calc_csp_crit(cr,qy1,U,psi_now,length(H))
     if calc_growth_rate==true
         sigma_emp = LinStab.calc_growth(tiempo[1:end-1], [KE1[1:end-1] KE2[1:end-1] KE3[1:end-1] PE32[1:end-1] PE52[1:end-1]])
         sigma_emp_KE1, sigma_emp_KE2, sigma_emp_KE3 = sigma_emp[1], sigma_emp[2], sigma_emp[3]
@@ -478,7 +488,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                         "max_eval" => max_eva1, "PE32" => PE32, "PE52" => PE52, "CT" => CT, "NL1" => NL1, "NL2" => NL2, "NL3" => NL3, "psivert1" => psi_vert1,
                         "psivert2" => psi_vert2, "psivert3" => psi_vert3, "alpha" => alpha, "gamma" => gamma, "cr" => cr, "cr_Dopp" => cr_dopp, "LF1" => LF1, "LF2" => LF2,
                         "LF3" => LF3, "VF32" => VF32, "VF52" => VF52, "TF" => TF, "Ekman_drag" => ED, "biharmonic_diss_1" => BD1, "biharmonic_diss_2" => BD2,
-                        "biharmonic_diss_3" => BD3, "eta" => eta, "psi1_full" => psi1, "psi2_full" => psi2, "psi3_full" => psi3)
+                        "biharmonic_diss_3" => BD3, "eta" => eta, "psi1_full" => psi1, "psi2_full" => psi2, "psi3_full" => psi3, "nsubs" => nsubs)
 
         # CSV.write(csv_name, csv_data,bufsize=2^24)
 
