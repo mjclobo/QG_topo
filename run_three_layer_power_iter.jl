@@ -257,28 +257,28 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
             push!(PE32,E[2][1]/((H[1]+H[2])/2))
             push!(PE52,E[2][2]/((H[2]+H[3])/2))
 
-            # push to bottom drag and biharmonic dissipation
-            push!(ED,E[3][1])
-            push!(BD1,E[3][2][1])
-            push!(BD2,E[3][2][2])
-            push!(BD3,E[3][2][3])
+            # # push to bottom drag and biharmonic dissipation
+            # push!(ED,E[3][1])
+            # push!(BD1,E[3][2][1])
+            # push!(BD2,E[3][2][2])
+            # push!(BD3,E[3][2][3])
 
-            # push to spectral flux terms
-            push!(CV32,[specE[2][:,:,1]])
-            push!(CV52,[specE[2][:,:,2]])
-            push!(CL1,[specE[1][:,1]])
-            push!(CT,[specE[3]])
-            push!(NL1,[specE[4][:,:,1]])
-            push!(NL2,[specE[4][:,:,2]])
-            push!(NL3,[specE[4][:,:,3]])
+            # # push to spectral flux terms
+            # push!(CV32,[specE[2][:,:,1]])
+            # push!(CV52,[specE[2][:,:,2]])
+            # push!(CL1,[specE[1][:,1]])
+            # push!(CT,[specE[3]])
+            # push!(NL1,[specE[4][:,:,1]])
+            # push!(NL2,[specE[4][:,:,2]])
+            # push!(NL3,[specE[4][:,:,3]])
 
-            # push flux terms
-            push!(LF1,fluxE[1][1])
-            push!(LF2,fluxE[1][2])
-            push!(LF3,fluxE[1][3])
-            push!(VF32,fluxE[2][1])
-            push!(VF52,fluxE[2][2])
-            push!(TF,fluxE[3])
+            # # push flux terms
+            # push!(LF1,fluxE[1][1])
+            # push!(LF2,fluxE[1][2])
+            # push!(LF3,fluxE[1][3])
+            # push!(VF32,fluxE[2][1])
+            # push!(VF52,fluxE[2][2])
+            # push!(TF,fluxE[3])
 
             # finding vertical structure of instability
             # psi_vert = [maximum(psi_vert1[:,end])
@@ -427,7 +427,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
             println("")
             println("Completed renormalization cycle", " ", cyc, "/", cycles)
             println("")
-            
+
         end
 
     end
