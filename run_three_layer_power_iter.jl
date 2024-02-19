@@ -218,7 +218,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
             psi2 = vars.ψ[:, :, 2]
             psi3 = vars.ψ[:, :, 3]
         
-            if psi_hovm  # && cyc==(cycles-1) 
+            if psi_hovm  && cyc==(cycles-1) 
                 if isnothing(t_hovm)
                     global psi1_ot = psi1[:,Int(round(Nx/2))]
                     global psi2_ot = psi2[:,Int(round(Nx/2))]
