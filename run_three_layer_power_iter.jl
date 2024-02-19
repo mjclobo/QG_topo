@@ -213,7 +213,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
         if j % nsubs == 0
 
-	# updating variables to plot
+	    # updating variables to plot 
             if psi_hovm  && cyc==(cycles-1)
 
                 psi1 = vars.ψ[:, :, 1]
