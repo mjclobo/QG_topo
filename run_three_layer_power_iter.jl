@@ -213,21 +213,22 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
         if j % nsubs == 0
 
-	# updating variables to plot
-            psi1 = vars.ψ[:, :, 1]
-            psi2 = vars.ψ[:, :, 2]
-            psi3 = vars.ψ[:, :, 3]
-        
-            if psi_hovm  && cyc==(cycles-1) 
+	    # updating variables to plot 
+            if psi_hovm  && cyc==(cycles-1)
+
+                psi1 = vars.ψ[:, :, 1]
+                psi2 = vars.ψ[:, :, 2]
+                psi3 = vars.ψ[:, :, 3]
+
                 if isnothing(t_hovm)
                     global psi1_ot = psi1[:,Int(round(Nx/2))]
                     global psi2_ot = psi2[:,Int(round(Nx/2))]
                     global psi3_ot = psi3[:,Int(round(Nx/2))]
                     global t_hovm = Array([clock.t])
 
-                    global psi_vert1 = abs.(rfft(psi1[:,32]))
-                    global psi_vert2 = abs.(rfft(psi2[:,32]))
-                    global psi_vert3 = abs.(rfft(psi3[:,32]))
+                    # global psi_vert1 = abs.(rfft(psi1[:,32]))
+                    # global psi_vert2 = abs.(rfft(psi2[:,32]))
+                    # global psi_vert3 = abs.(rfft(psi3[:,32]))
                 else
                     global psi1_ot = cat(psi1_ot,psi1[:,Int(round(Nx/2))], dims=2)
                     global psi2_ot = cat(psi2_ot,psi2[:,Int(round(Nx/2))], dims=2)
@@ -235,15 +236,11 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
                     push!(t_hovm,clock.t)
 
-                    global psi_vert1 = cat(psi_vert1,abs.(rfft(psi1[:,32])),dims=2)
-                    global psi_vert2 = cat(psi_vert2,abs.(rfft(psi2[:,32])),dims=2)
-                    global psi_vert3 = cat(psi_vert3,abs.(rfft(psi3[:,32])),dims=2)
+                    # global psi_vert1 = cat(psi_vert1,abs.(rfft(psi1[:,32])),dims=2)
+                    # global psi_vert2 = cat(psi_vert2,abs.(rfft(psi2[:,32])),dims=2)
+                    # global psi_vert3 = cat(psi_vert3,abs.(rfft(psi3[:,32])),dims=2)
                 end
             end
-
-            q1 = transpose(vars.q[:, :, 1])
-            q2 = transpose(vars.q[:, :, 2])
-            q3 = transpose(vars.q[:, :, 3])
             
             # push to time
             push!(tiempo,clock.t)
@@ -290,7 +287,7 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
             # plotting stuff
             global plot_model
             if plot_model==true
-                plot_three_layer(tiempo,[KE1 KE2 KE3],[CV32[ell+1] CV52[ell+1] CL1[ell+1] CT[ell+1] NL1[ell+1] NL2[ell+1] NL3[ell+1]],vars.q,vars.v,grid,kt,h0,plotpath_main,plotname,ell) 
+                # plot_three_layer(tiempo,[KE1 KE2 KE3],[CV32[ell+1] CV52[ell+1] CL1[ell+1] CT[ell+1] NL1[ell+1] NL2[ell+1] NL3[ell+1]],vars.q,vars.v,grid,kt,h0,plotpath_main,plotname,ell) 
 
                 # Should I also plot the LS most unstable vert structure and the model output for most unstable wavenumber?
                 # plot_unstable_vert(H,max_eve1,psi_vert,plotpath_psi,plotname,ell)
@@ -316,27 +313,10 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
         R = KE1_0/E[1][1] # renormalize (KE_{ref}/KE).
         if R<Rthresh
-            # first calculate CSP criterion
-            global psi1_ot, psi2_ot, psi3_ot
-            global psi_ot = [[psi1_ot] [psi2_ot] [psi3_ot]]
-            global cr, cr_dopp = calc_phase_speeds(psi_ot,t_hovm,qy1,U,Lx,Nx)
-            global cr1_dopp = cr_dopp[1]; global cr2_dopp = cr_dopp[2]; global cr3_dopp = cr_dopp[3];
-
-            psi_now = [maximum(abs.(psi1_ot[:,end])), maximum(abs.(psi2_ot[:,end])), maximum(abs.(psi3_ot[:,end]))]
-            global csp_crit, csp_terms = calc_csp_crit(cr,qy1,U,psi_now,length(H))
 
             if cyc<cycles-1
                 global t_hovm = nothing
             end
-            
-            csp = @sprintf("CSP crit.: %.3e, Term 1: %.3e, Term 2: %.3e, Term 3: %.3e", csp_crit, csp_terms[1], csp_terms[2], csp_terms[3])
-
-            println(csp)
-
-            cr_all = @sprintf("c2-c1(dopp) = %.3e, cr_dopp 1: %.3e, cr_dopp 2: %.3e, cr_dopp 3: %.3e", cr_dopp[1]-cr_dopp[2], cr_dopp[1], cr_dopp[2], cr_dopp[3])
-
-            println(cr_all)
-
 
             if cyc == cycles-1
                 # updating variables to plot
@@ -367,9 +347,9 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                     end
                 end
 
-                q1 = transpose(vars.q[:, :, 1])
-                q2 = transpose(vars.q[:, :, 2])
-                q3 = transpose(vars.q[:, :, 3])
+                # q1 = transpose(vars.q[:, :, 1])
+                # q2 = transpose(vars.q[:, :, 2])
+                # q3 = transpose(vars.q[:, :, 3])
                 
                 # push to time
                 push!(tiempo,clock.t)
@@ -488,12 +468,11 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                         "sigma_emp_KE3" => sigma_emp_KE3, "sigma_emp_PE32" => sigma_emp_PE32, "sigma_emp_PE52" => sigma_emp_PE52, "psi1_ot" => psi1_ot, "psi2_ot" => psi2_ot,
                         "psi3_ot" => psi3_ot, "t_hovm" => t_hovm, "k_growth_emp" => k_emp, "k_growth_lsa" => k_x[:], "sigma_ls" => sigma_LS_all,"cfl_set" => cfl_glob, "H_T_scale" => H_t,
                         "Ri" => Ri, "Bu" => Bu, "inv_sqrt_Bu" => inv2_Bu, "csp_crit" => csp_crit, "csp_terms" => csp_terms, "rd_LSA" => rd1, "max_evec" => max_eve1,
-                        "max_eval" => max_eva1, "PE32" => PE32, "PE52" => PE52, "CT" => CT, "NL1" => NL1, "NL2" => NL2, "NL3" => NL3, "psivert1" => psi_vert1,
-                        "psivert2" => psi_vert2, "psivert3" => psi_vert3, "alpha" => alpha, "gamma" => gamma, "cr" => cr, "cr_Dopp" => cr_dopp, "LF1" => LF1, "LF2" => LF2,
+                        "max_eval" => max_eva1, "PE32" => PE32, "PE52" => PE52, "CT" => CT, "NL1" => NL1, "NL2" => NL2, "NL3" => NL3,
+                        "alpha" => alpha, "gamma" => gamma, "cr" => cr, "cr_Dopp" => cr_dopp, "LF1" => LF1, "LF2" => LF2,
                         "LF3" => LF3, "VF32" => VF32, "VF52" => VF52, "TF" => TF, "Ekman_drag" => ED, "biharmonic_diss_1" => BD1, "biharmonic_diss_2" => BD2,
                         "biharmonic_diss_3" => BD3, "eta" => eta, "psi1_full" => psi1, "psi2_full" => psi2, "psi3_full" => psi3, "nsubs" => nsubs)
 
-        
         jldsave(csv_name; csv_data)
     end
 
