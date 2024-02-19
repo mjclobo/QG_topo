@@ -331,9 +331,9 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
                         global psi3_ot = psi3[:,Int(round(Nx/2))]
                         global t_hovm = Array([clock.t])
 
-                        global psi_vert1 = abs.(rfft(psi1[:,32]))
-                        global psi_vert2 = abs.(rfft(psi2[:,32]))
-                        global psi_vert3 = abs.(rfft(psi3[:,32]))
+                        # global psi_vert1 = abs.(rfft(psi1[:,32]))
+                        # global psi_vert2 = abs.(rfft(psi2[:,32]))
+                        # global psi_vert3 = abs.(rfft(psi3[:,32]))
                     else
                         global psi1_ot = cat(psi1_ot,psi1[:,Int(round(Nx/2))], dims=2)
                         global psi2_ot = cat(psi2_ot,psi2[:,Int(round(Nx/2))], dims=2)
@@ -341,9 +341,9 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
                         push!(t_hovm,clock.t)
 
-                        global psi_vert1 = cat(psi_vert1,abs.(rfft(psi1[:,32])),dims=2)
-                        global psi_vert2 = cat(psi_vert2,abs.(rfft(psi2[:,32])),dims=2)
-                        global psi_vert3 = cat(psi_vert3,abs.(rfft(psi3[:,32])),dims=2)
+                        # global psi_vert1 = cat(psi_vert1,abs.(rfft(psi1[:,32])),dims=2)
+                        # global psi_vert2 = cat(psi_vert2,abs.(rfft(psi2[:,32])),dims=2)
+                        # global psi_vert3 = cat(psi_vert3,abs.(rfft(psi3[:,32])),dims=2)
                     end
                 end
 
