@@ -388,12 +388,12 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
                 push!(VF52,fluxE[2][2])
                 push!(TF,fluxE[3])
 
-                # finding vertical structure of instability
-                psi_vert = [maximum(psi_vert1[:,end])
-                            maximum(psi_vert2[:,end])
-                            maximum(psi_vert3[:,end])]
+                # # finding vertical structure of instability
+                # psi_vert = [maximum(psi_vert1[:,end])
+                #             maximum(psi_vert2[:,end])
+                #             maximum(psi_vert3[:,end])]
                 
-                psi_vert = psi_vert./maximum(psi_vert)
+                # psi_vert = psi_vert./maximum(psi_vert)
 
             else
 
