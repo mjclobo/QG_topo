@@ -7,7 +7,9 @@
 # less than 2 orders of magnitude than S.S.
 
 
-for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
+for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
+
+    nsubs = nsubs_all[i]
 
     # change variable params
     U[1] = U[2] + alpha*(H32/H52)*(U[2]-U[3])
