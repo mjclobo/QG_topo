@@ -417,8 +417,8 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
     # Get growth rate from exponential fit to upper-layer KE time series.
     # first calculate CSP criterion
     global psi1_ot, psi2_ot, psi3_ot
-    global psi_ot = [[psi1_ot] [psi2_ot] [psi3_ot]]
-    global cr, cr_dopp = calc_phase_speeds(psi_ot,t_hovm,qy1,U,Lx,Nx)
+    global psi_ot = [[psi1_ot[:,1:end-1]] [psi2_ot[:,1:end-1]] [psi3_ot[:,1:end-1]]]
+    global cr, cr_dopp = calc_phase_speeds(psi_ot,t_hovm[1:end-1],qy1,U,Lx,Nx)
     global cr1_dopp = cr_dopp[1]; global cr2_dopp = cr_dopp[2]; global cr3_dopp = cr_dopp[3];
 
     psi_now = [maximum(abs.(psi1_ot[:,end])), maximum(abs.(psi2_ot[:,end])), maximum(abs.(psi3_ot[:,end]))]
