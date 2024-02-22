@@ -63,6 +63,8 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
                     eta_out[i,j] = (f0/H[end]) * h0 * cos(2*pi*kt*x[i]/Lx)
                 elseif type=="y_slope"
                     eta_out[i,j] = (f0/H[end]) * ((h0*Lx) * ((j-Ny/2)/Ny))
+                elseif type=="x_slope"
+                    eta_out[i,j] = (f0/H[end]) * ((h0*Ly) * ((i-Nx/2)/Nx))
                end
             end
         end
@@ -82,6 +84,8 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
         eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"sinusoid")
     elseif topo_type=="y_slope"
         eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"y_slope")
+    elseif topo_type=="x_slope"
+        eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"x_slope")
     elseif topo_type=="rand"
         eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"rand")
     else
