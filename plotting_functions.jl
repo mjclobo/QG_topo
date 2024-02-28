@@ -1,6 +1,9 @@
 # plotting functions, currently for three layer model
 using Measures, PyPlot
 
+using PyCall
+mpl = pyimport("mpl_toolkits.mplot3d");
+
 function plot_three_layer(tiempo,KE,Cterms,q,v,grid,kt,h0,plotpath,plotname,ell)
 
     q1 = transpose(q[:, :, 1])
@@ -191,6 +194,12 @@ function calc_csp_crit(cr,qy,U,psi,Nz)
     end
     csp_crit = sum(terms)
     return csp_crit, terms
+end
+
+function meshgrid(x, y)
+    X = [i for i in x, j in 1:length(y)]
+    Y = [j for i in 1:length(x), j in y]
+    return X, Y
 end
 
 function plot_box(psi1_full,psi2_full,psi3_full,Lx,Nx,h,plotpath,plotname,ell)
