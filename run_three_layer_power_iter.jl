@@ -121,9 +121,10 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
     filepath = "."
 
     if topo_type=="y_slope"
-        plotpath_main = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/main/"
-        plotpath_psi  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi/"
-        plotpath_psi_vert  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi_vert/"
+        plotpath_main = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) *"/main/"
+        plotpath_psi  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) *"/psi/"
+        plotpath_psi_vert  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) *"/psi_vert/"
+        plotpath_anim = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) *"/anim/"
     elseif linear
         plotpath_main = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/main/"
         plotpath_psi  = "./figs/plots_3layer"*"_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi/"
@@ -141,6 +142,7 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
     # file management
     if isfile(filename); rm(filename); end
     if !isdir(plotpath_main); mkpath(plotpath_main); end
+    if !isdir(plotpath_anim); mkpath(plotpath_anim); end
     if !isdir(plotpath_psi); mkpath(plotpath_psi); end
     if !isdir(plotpath_psi_vert); mkpath(plotpath_psi_vert); end
 
@@ -219,7 +221,7 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
 
         if j % nsubs == 0
 
-	    # updating variables to plot 
+	        # updating variables to plot 
             if psi_hovm  && cyc==(cycles-1)
 
                 psi1 = vars.ψ[:, :, 1]
@@ -299,6 +301,14 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
                 # plot_unstable_vert(H,max_eve1,psi_vert,plotpath_psi,plotname,ell)
 
                 # plot_layerwise_spectra(grid.kr*Lx/(2*pi),[psi_vert1[:,end] psi_vert2[:,end] psi_vert3[:,end]],plotpath_psi_vert,plotname,ell)
+            end
+
+            if plot_box_bool==true
+                psi1_full = vars.ψ[:, :, 1]
+                psi2_full = vars.ψ[:, :, 2]
+                psi3_full = vars.ψ[:, :, 3]
+                
+                plot_box(psi1_full,psi2_full,psi3_full,Lx,Nx,h0,plotpath_anim,plotname,ell)
             end
 
             # increase counter
