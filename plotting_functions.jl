@@ -193,4 +193,80 @@ function calc_csp_crit(cr,qy,U,psi,Nz)
     return csp_crit, terms
 end
 
+function plot_box(psi1_full,psi2_full,psi3_full,Lx,Nx,h,plotpath,plotname,ell)
 
+    psi_west = [psi1_full[1,:]'; psi1_full[1,:]'; psi2_full[1,:]'; psi2_full[1,:]'; psi3_full[1,:]'; psi3_full[1,:]']'
+
+    psi_south = [psi1_full[:,1]'; psi1_full[:,1]'; psi2_full[:,1]'; psi2_full[:,1]'; psi3_full[:,1]'; psi3_full[:,1]']'
+
+    psi_all = [psi1_full; psi2_full; psi3_full];
+
+    cmap = PyPlot.cm.bwr
+    norm_t = matplotlib.colors.TwoSlopeNorm(0,vmin=minimum(psi_all),vmax=maximum(psi_all))
+    norm_w = matplotlib.colors.TwoSlopeNorm(0,vmin=minimum(psi_all),vmax=maximum(psi_all))
+    norm_s = matplotlib.colors.TwoSlopeNorm(0,vmin=minimum(psi_all),vmax=maximum(psi_all))
+
+
+    colors_psi_t = cmap(norm_t(psi1_full));
+    colors_psi_w = cmap(norm_w(psi_west));
+    colors_psi_s = cmap(norm_s(psi_south));
+
+    x = y = collect(range(-Lx/2,Lx/2,Nx))
+
+    eps = 0.01
+    z = [0.0,-500. + eps,-500. - eps, -1500. + eps, -1500. - eps, -4000.] .* 10
+
+    ax1 = PyPlot.figure(figsize=(10,4)).add_subplot(projection="3d")
+
+    # west face
+    yw,zw = meshgrid(y,z)
+
+    ax1.plot_surface(-Lx/2*ones(size(yw)),yw,zw,facecolors=colors_psi_w,shade=false)
+
+    # top
+    xt,yt = meshgrid(x,y)
+    ax1.plot_surface(xt,yt,10 .+ zeros(size(xt)),facecolors=colors_psi_t,shade=false)
+
+    # south face
+    xs,zs = meshgrid(x,z)
+
+    ax1.plot_surface(xs,-Lx/2*ones(size(xs)),zs,facecolors=colors_psi_s,shade=false)
+
+    # sloping bottom
+    codes_sq = [matplotlib.path.Path.MOVETO, matplotlib.path.Path.LINETO, matplotlib.path.Path.LINETO, matplotlib.path.Path.LINETO, matplotlib.path.Path.CLOSEPOLY];
+    codes = [matplotlib.path.Path.MOVETO, matplotlib.path.Path.LINETO, matplotlib.path.Path.LINETO, matplotlib.path.Path.CLOSEPOLY];
+    if h>0
+        verts = [[-Lx/2,-40000],[Lx/2,-40000],[Lx/2,-40000+10*h*Lx],[-Lx/2,-40000.]]
+        pp = matplotlib.patches.PathPatch(matplotlib.path.Path(verts,codes),ec="none",color="gray")
+        ax1.add_patch(pp)
+        mpl.art3d.pathpatch_2d_to_3d(pp, z=-Lx/2, zdir="x")
+    elseif h<0
+        verts = [[Lx/2,-40000],[-Lx/2,-40000-10*h*Lx],[-Lx/2,-40000],[Lx/2,-40000]]
+        pp = matplotlib.patches.PathPatch(matplotlib.path.Path(verts,codes),ec="none",color="gray")
+        ax1.add_patch(pp)
+        mpl.art3d.pathpatch_2d_to_3d(pp, z=-Lx/2, zdir="x")
+
+        verts_sq = [[-Lx/2,-40000-10*h*Lx],[-Lx/2,-40000],[Lx/2,-40000.],[Lx/2,-40000-10*h*Lx],[-Lx/2,-40000-10*h*Lx]]
+        pp = matplotlib.patches.PathPatch(matplotlib.path.Path(verts_sq,codes_sq),ec="none",color="gray")
+        ax1.add_patch(pp)
+        mpl.art3d.pathpatch_2d_to_3d(pp, z=-Lx/2, zdir="y")
+
+    else
+        a=1.
+    end
+
+    # verts = [[0,0],[1,0],[1,1],[0,0]]
+    # p2 = matplotlib.patches.Wedge((0,0), 1,0,20, alpha=1.0)
+
+    ax1.view_init(elev=20., azim=210);
+
+    PyPlot.axis("off");
+
+    ax1.set_ylim(-Lx/2,Lx/2);
+    
+    local savename = @sprintf("%s_%04d.png", joinpath(plotpath, plotname), ell)
+    PyPlot.savefig(savename,bbox_inches="tight")
+
+    PyPlot.close()
+
+end
