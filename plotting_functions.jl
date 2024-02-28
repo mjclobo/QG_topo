@@ -267,7 +267,7 @@ function plot_box(psi1_full,psi2_full,psi3_full,Lx,Nx,h,plotpath,plotname,ell)
     # verts = [[0,0],[1,0],[1,1],[0,0]]
     # p2 = matplotlib.patches.Wedge((0,0), 1,0,20, alpha=1.0)
 
-    ax1.view_init(elev=20., azim=210);
+    ax1.view_init(elev=20., azim=250);
 
     PyPlot.axis("off");
 
