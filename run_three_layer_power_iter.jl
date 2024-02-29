@@ -75,7 +75,7 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
                         eta_out[i,j] = (f0/H[end]) * ((h0*Lx) * ((j-Ny/2)/Ny))
                     elseif type=="x_slope"
                         eta_out[i,j] = (f0/H[end]) * ((h0*Ly) * ((i-Nx/2)/Nx))
-                end
+                    end
                 end
             end
 
