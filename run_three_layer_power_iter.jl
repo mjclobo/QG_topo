@@ -9,15 +9,15 @@
 all_files = readdir(data_dir)
 
 if topo_type=="y_slope"
-    f_name(gam,alp,h,k) = data_dir*"/threelayer_"*run_type*"_gamma"*string(gam)*"_alpha"*string(alp)*"_h0"* string(round(h*Lx,digits=9))*"_kt"* string(Int(k)) *"_res" * string(Int(Nx)) * ".jld2"
-    else
-    f_name(gam,alp,h,k) = data_dir*"/threelayer_"*run_type*"_gamma"*string(gam)*"_alpha"*string(alp)*"_h0"* string(Int(h))*"_kt"* string(Int(k)) *"_res" * string(Int(Nx)) * ".jld2"
+    f_name(gam,alp,h,k) = "/threelayer_"*run_type*"_gamma"*string(gam)*"_alpha"*string(alp)*"_h0"* string(round(h*Lx,digits=9))*"_kt"* string(Int(k)) *"_res" * string(Int(Nx)) * ".jld2"
+else
+    f_name(gam,alp,h,k) = "/threelayer_"*run_type*"_gamma"*string(gam)*"_alpha"*string(alp)*"_h0"* string(Int(h))*"_kt"* string(Int(k)) *"_res" * string(Int(Nx)) * ".jld2"
 end
 
 for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
 
     fil = findall(x->x==f_name(gamma,alpha,h0,kt),all_files)
-    if isempty(fil)==false
+    if isempty(fil)==true
 
         nsubs = nsubs_all[i]
 
