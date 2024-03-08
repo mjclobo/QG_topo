@@ -358,6 +358,8 @@ function spec_integration(k_xr,spec)
     # k_xr is Nx/2
     
     dk = k_xr[2] - k_xr[1]
+
+    Nz = size(spec)[2]
     
     modal_amp = zeros(Nz,)
     for i=range(1,Nz)
