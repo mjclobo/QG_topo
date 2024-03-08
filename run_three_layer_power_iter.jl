@@ -325,6 +325,26 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
                         plot_box(psi1_full,psi2_full,psi3_full,Lx,Nx,h0,plotpath_anim,plotname,ell)
                     end
 
+                    if compute_modes_bool==true
+                        modes,rd,kxr2,kxr,S = vert_modes(ho,h0,g,f0,Lx,Nx)
+                    
+                        psi1_full = mean(vars.ψ[:,:,1],dims=2)
+                        psi2_full = mean(vars.ψ[:,:,2],dims=2)
+                        psi3_full = mean(vars.ψ[:,:,3],dims=2)
+                    
+                        psi_slice = [psi1_full'; psi2_full'; psi3_full'];
+                    
+                        mode_amp_field = project_onto_modes(modes,psi_slice)
+                    
+                        spec = modal_nrg_spec(kxr2,S,mode_amp_field)
+                    
+                        modal_amp = spec_integration(kxr,spec)
+                    
+                        EBT_pct = modal_amp[1]/sum(modal_amp)
+                        BC1_pct = modal_amp[2]/sum(modal_amp)
+                        BC2_pct = modal_amp[3]/sum(modal_amp)
+                    end
+
                     # increase counter
                     global ell+=1
                 
