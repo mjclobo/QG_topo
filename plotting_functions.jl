@@ -279,3 +279,92 @@ function plot_box(psi1_full,psi2_full,psi3_full,Lx,Nx,h,plotpath,plotname,ell)
     PyPlot.close()
 
 end
+
+## function to calculate normal modes of system
+function vert_modes(rho,h0,g,f0,Lx,Nx)
+    Nz = length(rho)
+
+    Ny = Nx
+    Ly = Lx
+
+    # define wavenumbers
+    k_x = reshape(fftfreq(Nx, 2π/Lx*Nx),(1,Nx))
+    k_y = reshape(fftfreq(Ny, 2π/Ly*Ny),(1,Ny))
+    k2  = k_x.^2 + k_y.^2 
+
+    N_x = Nx
+    N_xr = round(Int,Nx/2)
+    k_xr = k_x[1:N_xr]
+    k_xr2 = k_xr.^2
+
+    # define stretching matrix
+    rigid_lid = true
+    S = LinStab.calc_stretching_mat(Nz,rho,f0,H,rho[1],g,rigid_lid,h0)
+    
+    # def rad
+    evals_S = eigvals(-S); evecs_S = eigvecs(-S)
+    sort_ind = sortperm(abs.(evals_S))
+
+    # T2 = eltype(eigvals)
+    r_d = Complex.(zeros(Nz,1))
+    r_d[1] = sqrt(g*sum(H))/f0
+    r_d[2:end] = @. sqrt(Complex(evals_S[sort_ind[2:end]]))^-1
+
+    # normalizing eigenvectors
+    norm_fact = sqrt.(sum(H) ./ (H .* sum( evecs_S .* evecs_S, dims=1)))
+    evecs_S = norm_fact .* evecs_S
+    
+    return evecs_S, r_d, k_xr2, k_xr, S
+end
+    
+## function to project slice of field onto vertical modes
+function project_onto_modes(modes,field)
+    # slice of field is Nx x Nz center slice in domain
+    # modes is Nz x Nz
+    fieldh = rfft(field,2)
+    proj = modes \ fieldh
+    return proj
+end
+
+## function to calculate zonal modal KE spec
+function modal_nrg_spec(kx2,S,A)
+    # k2 is Nx x 1
+    # S is Nz x Nz
+    # A is Nx x Nz
+    Nx = length(kx2)
+    Nz = size(S)[1]
+    
+    Id = Matrix{Float64}(I, Nz,Nz) # identity matrix
+    
+    # inversion matrix is Nz x Nz x Nx x Ny
+    spec = zeros(Nx,Nz)
+    for i=range(1,Nx)
+        for j=range(1,Nz)
+            
+#             M = S .- kx2[i] * Id
+            M = Nx^2
+    
+            spec[i,j] = kx2[i] * ((abs(A[j,i])^2) / (M^2))
+            
+        end
+    end
+    
+    return spec
+end
+
+## integrate modal spectrum to find total energy in each mode
+function spec_integration(k_xr,spec)
+    # spec is Nx x Nz
+    # k_xr is Nx/2
+    
+    dk = k_xr[2] - k_xr[1]
+    
+    modal_amp = zeros(Nz,)
+    for i=range(1,Nz)
+        modal_amp[i] = dk*sum(spec[:,i])
+    end
+    
+    return modal_amp
+end
+
+
