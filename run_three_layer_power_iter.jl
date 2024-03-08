@@ -191,6 +191,10 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
         VF52 = [fluxE[2][2]]
         TF = [fluxE[3]]
 
+        EBT_pct = [0]
+        BC1_pct = [0]
+        BC2_pct = [0]
+
         # initial KE of upper layer, for renormalization
         KE1_0 = E[1][1]
 
@@ -340,9 +344,9 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
                     
                         modal_amp = spec_integration(kxr,spec)
                     
-                        EBT_pct = modal_amp[1]/sum(modal_amp)
-                        BC1_pct = modal_amp[2]/sum(modal_amp)
-                        BC2_pct = modal_amp[3]/sum(modal_amp)
+                        push!(EBT_pct, modal_amp[1]/sum(modal_amp))
+                        push!(BC1_pct, modal_amp[2]/sum(modal_amp))
+                        push!(BC2_pct, modal_amp[3]/sum(modal_amp))
                     end
 
                     # increase counter
@@ -518,7 +522,7 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
                                 "psi3_ot" => psi3_ot, "t_hovm" => t_hovm, "k_growth_emp" => k_emp, "k_growth_lsa" => k_x[:], "sigma_ls" => sigma_LS_all,"cfl_set" => cfl_glob, "H_T_scale" => H_t,
                                 "Ri" => Ri, "Bu" => Bu, "inv_sqrt_Bu" => inv2_Bu, "csp_crit" => csp_crit, "csp_terms" => csp_terms, "rd_LSA" => rd1, "max_evec" => max_eve1,
                                 "max_eval" => max_eva1, "PE32" => PE32, "PE52" => PE52, "CT" => CT, "NL1" => NL1, "NL2" => NL2, "NL3" => NL3,
-                                "alpha" => alpha, "gamma" => gamma, "cr" => cr, "cr_Dopp" => cr_dopp, "LF1" => LF1, "LF2" => LF2,
+                                "alpha" => alpha, "gamma" => gamma, "cr" => cr, "cr_Dopp" => cr_dopp, "LF1" => LF1, "LF2" => LF2, "EBT_pct" => EBT_pct, "BC1_pct" => BC1_pct, "BC2_pct" => BC2_pct,
                                 "LF3" => LF3, "VF32" => VF32, "VF52" => VF52, "TF" => TF, "Ekman_drag" => ED, "biharmonic_diss_1" => BD1, "biharmonic_diss_2" => BD2,
                                 "biharmonic_diss_3" => BD3, "eta" => eta, "psi1_full" => psi1, "psi2_full" => psi2, "psi3_full" => psi3, "nsubs" => nsubs)
 
