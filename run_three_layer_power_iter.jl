@@ -330,7 +330,7 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
                     end
 
                     if compute_modes_bool==true
-                        modes,rd,kxr2,kxr,S = vert_modes(ho,h0,g,f0,Lx,Nx)
+                        modes,rd,kxr2,kxr,S = vert_modes(rho,h0,g,f0,Lx,Nx)
                     
                         psi1_full = mean(vars.ψ[:,:,1],dims=2)
                         psi2_full = mean(vars.ψ[:,:,2],dims=2)
