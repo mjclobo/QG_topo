@@ -191,9 +191,9 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
         VF52 = [fluxE[2][2]]
         TF = [fluxE[3]]
 
-        EBT_pct = [0]
-        BC1_pct = [0]
-        BC2_pct = [0]
+        EBT_pct = [0.]
+        BC1_pct = [0.]
+        BC2_pct = [0.]
 
         # initial KE of upper layer, for renormalization
         KE1_0 = E[1][1]
