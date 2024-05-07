@@ -452,7 +452,7 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
                         # then reset stuff
                         println("Renormalization cycle done for gamma = "*string(gamma)*", alpha = "*string(alpha)*", h0 = "* string(round(h0*Lx,digits=9))*", kt = "* string(Int(kt))*".")
 
-                        MultiLayerQG.set_q!(prob, vars.q*R)
+                        MultiLayerQG.set_q!(prob, vars.q * sqrt(R))
 
                     end
 
