@@ -328,12 +328,12 @@ for gamma=gammas; for alpha=alphas; for h0=h0s; for kt=kts
 
                 if save_output
                     # saving output data            
-		    println("Saving annual data for year: "*string(yr_cnt))
+		            println("Saving annual data for year: "*string(yr_cnt))
                     if topo_type=="y_slope"
-		        csv_name = data_dir*"/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * string(Int(Nx)) *"_yr"*string(yr_cnt)*  ".csv"
-       		    else
-            		csv_name = data_dir*"/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * string(Int(Nx)) *"_yr"*string(yr_cnt)*  ".csv"
-        	    end
+                    csv_name = data_dir*"/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * string(Int(Nx)) *"_yr"*string(yr_cnt)*  ".csv"
+                    else
+                        csv_name = data_dir*"/threelayer_"*run_type*"_gamma"*string(gamma)*"_alpha"*string(alpha)*"_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * string(Int(Nx)) *"_yr"*string(yr_cnt)*  ".csv"
+                    end
 
 		    println("Saving output data to CSV to: "*csv_name)
 

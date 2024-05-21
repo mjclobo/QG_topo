@@ -211,9 +211,9 @@ function plot_box(psi1_full,psi2_full,psi3_full,Lx,Nx,h,plotpath,plotname,ell)
     psi_all = [psi1_full; psi2_full; psi3_full];
 
     cmap = PyPlot.cm.bwr
-    norm_t = matplotlib.colors.TwoSlopeNorm(0,vmin=minimum(psi_all),vmax=maximum(psi_all))
-    norm_w = matplotlib.colors.TwoSlopeNorm(0,vmin=minimum(psi_all),vmax=maximum(psi_all))
-    norm_s = matplotlib.colors.TwoSlopeNorm(0,vmin=minimum(psi_all),vmax=maximum(psi_all))
+    norm_t = matplotlib.colors.TwoSlopeNorm(0,vmin=-maximum(abs.(psi_all)),vmax=maximum(abs.(psi_all)))
+    norm_w = matplotlib.colors.TwoSlopeNorm(0,vmin=-maximum(abs.(psi_all)),vmax=maximum(abs.(psi_all)))
+    norm_s = matplotlib.colors.TwoSlopeNorm(0,vmin=-maximum(abs.(psi_all)),vmax=maximum(abs.(psi_all)))
 
 
     colors_psi_t = cmap(norm_t(psi1_full));
@@ -274,7 +274,7 @@ function plot_box(psi1_full,psi2_full,psi3_full,Lx,Nx,h,plotpath,plotname,ell)
     ax1.set_ylim(-Lx/2,Lx/2);
     
     local savename = @sprintf("%s_%04d.png", joinpath(plotpath, plotname), ell)
-    PyPlot.savefig(savename,bbox_inches="tight")
+    PyPlot.savefig(savename,bbox_inches="tight",transparent=true)
 
     PyPlot.close()
 
