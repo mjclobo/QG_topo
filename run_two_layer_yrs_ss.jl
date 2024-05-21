@@ -225,7 +225,7 @@ for U1=U1s; for rho1=rho1s
         end
         
         # should I add streamfunction or PV here?? How would I use them?
-        jld_data = Dict("t" => t_yrly, "CV32" => CV32, "KE1" => KE1, "KE2" => KE2,
+        jld_data = Dict("t" => t_yrly, "KE1" => KE1, "KE2" => KE2,
                         "Nz" => nlayers, "L" => L, "H" => H, "rho1s" => rho1s, "U1s" => U1s,
                         "dt" => dt, "beta" => β, "cfl_set" => cfl_glob, "PE32" => PE32)
 
