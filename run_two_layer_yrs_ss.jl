@@ -189,8 +189,8 @@ for U1=U1s; for rho1=rho1s
                 jld_data = Dict("t" => t_yrly, "KE1" => KE1, "KE2" => KE2, "Nz" => nlayers,
                                 "L" => L, "H" => H, "rho" => rho, "U" => U,
                                 "dt" => dt, "beta" => β,
-                                "psi1_ot" => view(psi1_ot,:,:,:), "psi2_ot" => view(psi2_ot,:,:,:),
-                                "q1_ot" => view(q1_ot,:,:,:), "q2_ot" => view(q2_ot,:,:,:),
+                                "psi1_ot" => Array(psi1_ot), "psi2_ot" => Array(psi2_ot),
+                                "q1_ot" => Array(q1_ot), "q2_ot" => Array(q2_ot),
                                 "cfl_set" => cfl_glob, "PE32" => PE32)
             
                 jldsave(jld_name; jld_data)
