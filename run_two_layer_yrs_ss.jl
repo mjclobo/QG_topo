@@ -1,12 +1,4 @@
 # This is the kernel for running QG models using GeophysicalFlows.jl.
-# You pass in all relevant params, and this script executes n_iter
-# iterations of the power renormalization method.
-# Still an open question: How do we know what initial conditions are
-# appropriate, given that the condition for reiteration is 100x I.C.?
-# Maybe it is worth running different orders of magnitude of I.C.s and
-# seeing if/how this affects the instability results.
-
-## load packages
 
 for U1=U1s; for rho1=rho1s
 
@@ -197,7 +189,8 @@ for U1=U1s; for rho1=rho1s
                 jld_data = Dict("t" => t_yrly, "KE1" => KE1, "KE2" => KE2, "Nz" => nlayers,
                                 "L" => L, "H" => H, "rho" => rho, "U" => U,
                                 "dt" => dt, "beta" => β,
-                                "psi1_ot" => psi1_ot, "psi2_ot" => psi2_ot, "q1_ot" => q1_ot, "q2_ot" => q2_ot,
+                                "psi1_ot" => view(psi1_ot,:,:,:), "psi2_ot" => view(psi2_ot,:,:,:),
+                                "q1_ot" => view(q1_ot,:,:,:), "q2_ot" => view(q2_ot,:,:,:),
                                 "cfl_set" => cfl_glob, "PE32" => PE32)
             
                 jldsave(jld_name; jld_data)
