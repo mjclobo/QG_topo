@@ -120,7 +120,7 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
         end
 
         if adjust_domain_width==true
-            L = Lx = Ly = dom_width_factor * real(rd1[2])
+            global L = global Lx = global Ly = dom_width_factor * real(rd1[2])
 
             if topo_type=="eggshell"
                 eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"eggshell")
@@ -136,8 +136,8 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
                 eta = 0.
             end
 
-            dx = L/Nx
-            dt = dx*cfl_glob/U[1]/5
+            global dx = L/Nx
+            global dt = dx*cfl_glob/U[1]/5
 
         end
 
