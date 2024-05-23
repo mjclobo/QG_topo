@@ -48,8 +48,14 @@ for U1=U1s; for rho1=rho1s
     b[2] = (g/rho0)*(rho0-rho[2])
 
     # define the model problem
-    prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, b, U, nν, ν,
+    prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, g, U, ρ, nν, ν,
     μ, β, dt, stepper, linear, aliased_fraction=1/3)
+
+    # Problem(::Int64, ::Any; nx, ny, Lx, Ly, f₀, β, g, U, H, ρ, eta, topographic_pv_gradient, μ, ν,
+    # nν, dt, stepper, calcFq, stochastic, linear, aliased_fraction, T)
+
+    # prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, b, U, nν, ν,
+    # μ, β, dt, stepper, linear, aliased_fraction=1/3)
 
     sol, clock, params, vars, grid = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
     x, y = grid.x, grid.y
