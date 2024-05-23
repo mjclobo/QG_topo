@@ -29,7 +29,6 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
 
         rho[1] = ρ[1] = rho1
 
-
         function topo_rand(h_rms, kt, Lx, Nx)
             # Borrowed from Matt Pudig..will change when I start looking at random topo.
             # Wavenumber grid
@@ -103,6 +102,44 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
         end
 
         println("Done with topo.")
+
+        # Perform linear stability analysis, if asked
+        if perform_ls==true
+            # load module
+            println("Starting LSA.")
+
+            # perform stability analysis
+            # eta=0;
+            eve1,eva1,max_eve1,max_eve_phase1,max_eva1,k_x,k_y,qx1,qy1,rd1 = LinStab.lin_stab(U,V,H,beta,0.0,Nx,Ny,rho,f0,g,Float64(Lx),Float64(Ly))
+            sigma_LS_all = Array(imag(eva1))
+            sigma_LS_mid = sigma_LS_all[:,round(Int,Nx/2)]
+
+            # plot_Qy(H,qy1',plotpath_main)
+
+            global bulk_Bu = (real(rd1[2])/Lx)^2
+        end
+
+        if adjust_domain_width==true
+            L = Lx = Ly = dom_width_factor * real(rd1[2])
+
+            if topo_type=="eggshell"
+                eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"eggshell")
+            elseif topo_type=="sinusoid"
+                eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"sinusoid")
+            elseif topo_type=="y_slope"
+                eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"y_slope")
+            elseif topo_type=="x_slope"
+                eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"x_slope")
+            elseif topo_type=="rand"
+                eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"rand")
+            else
+                eta = 0.
+            end
+
+            dx = L/Nx
+            dt = dx*cfl_glob/U[1]/5
+
+        end
 
         # define the model problem
         prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, g, H, ρ, U, eta=eta,
@@ -197,22 +234,6 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
 
         # initial KE of upper layer, for renormalization
         KE1_0 = E[1][1]
-
-        # Perform linear stability analysis, if asked
-        if perform_ls==true
-            # load module
-        println("Starting LSA.")
-
-            # perform stability analysis
-            # eta=0;
-            eve1,eva1,max_eve1,max_eve_phase1,max_eva1,k_x,k_y,qx1,qy1,rd1 = LinStab.lin_stab(U,V,H,beta,0.0,Nx,Ny,rho,f0,g,Float64(Lx),Float64(Ly))
-            sigma_LS_all = Array(imag(eva1))
-            sigma_LS_mid = sigma_LS_all[:,round(Int,Nx/2)]
-
-            # plot_Qy(H,qy1',plotpath_main)
-
-            global bulk_Bu = (real(rd1[2])/Lx)^2
-        end
 
         println("Done with LSA.")
 
