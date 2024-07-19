@@ -186,7 +186,7 @@ while ss_yr_cnt < ss_yr_max
             # saving yearly output
             println("Saving annual data for year: "*string(yr_cnt))
             if topo_type=="y_slope"
-                jld_name = data_dir*"/threelayer_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) * string(Int(Nx)) *"_yr"*string(yr_cnt)*  ".jld"
+                jld_name = data_dir*"/threelayer_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) *"_yr"*string(yr_cnt)*  ".jld"
             elseif topo_type=="sin_sin"
                 jld_name = data_dir*"/threelayer_h0"* string(Int(h0[1]))*"_kt"* string(Int(kt[1])) *"_res" * string(Int(Nx)) *"_yr"*string(yr_cnt)*  ".jld"  
             else
