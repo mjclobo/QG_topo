@@ -174,7 +174,7 @@ while ss_yr_cnt < ss_yr_max
                 global ss_yr_cnt += 1
             end
 
-            if KE[1,end]/KE[1,1] < KE_thresh && ss_yr==false && yr_cnt > 5
+            if KE[1,end]/KE[1,1] < KE_thresh && ss_yr==false && yr_cnt > 10
                 global ss_yr = true
                 global ss_yr_cnt = 1
             end
