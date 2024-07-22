@@ -28,6 +28,7 @@ function topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,type)
     return eta_out
 end
 
+topographic_pv_gradient = (0., 0.)
 aliased_fraction=1/3; T=Float64;
 grid_topo = TwoDGrid(dev; nx=Nx, Lx, ny=Ny, Ly, aliased_fraction, T)
 if topo_type=="eggshell"
@@ -37,9 +38,11 @@ elseif topo_type=="sinusoid"
 elseif topo_type=="sin_sin"
     eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"sin_sin")
 elseif topo_type=="y_slope"
-    eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"y_slope")
+    # eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"y_slope")
+    eta = nothing
+    topographic_pv_gradient = (0., h0*(f0/H[end]))
 else
-    eta = 0.
+    eta = nothing
 end
 
 # define the model problem
@@ -48,7 +51,7 @@ end
 
 b = (g/rho0)*(rho0 .- rho)
 
-prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, b, U, nν, ν, eta,
+prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, b, U, nν, ν, eta, topographic_pv_gradient,
 μ, β, dt, stepper, linear, aliased_fraction=1/3)
 
 sol, clock, params, vars, grid = prob.sol, prob.clock, prob.params, prob.vars, prob.grid

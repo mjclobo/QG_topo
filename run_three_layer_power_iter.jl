@@ -71,9 +71,9 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
                     elseif type=="sinusoid"
                         eta_out[i,j] = (f0/H[end]) * h0 * cos(2*pi*kt*x[i]/Lx)
                     elseif type=="y_slope"
-                        eta_out[i,j] = (f0/H[end]) * ((h0*Lx) * ((j-Ny/2)/Ny))
+                        eta_out[i,j] = 0. # (f0/H[end]) * ((h0*Lx) * ((j-Ny/2)/Ny))
                     elseif type=="x_slope"
-                        eta_out[i,j] = (f0/H[end]) * ((h0*Ly) * ((i-Nx/2)/Nx))
+                        eta_out[i,j] = 0. # (f0/H[end]) * ((h0*Ly) * ((i-Nx/2)/Nx))
                     end
                 end
             end
@@ -85,6 +85,7 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
             return eta_out
         end
 
+        topographic_pv_gradient = (0., 0.)
         aliased_fraction=1/3; T=Float64;
         grid_topo = TwoDGrid(dev; nx=Nx, Lx, ny=Ny, Ly, aliased_fraction, T)
         if topo_type=="eggshell"
@@ -92,9 +93,12 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
         elseif topo_type=="sinusoid"
             eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"sinusoid")
         elseif topo_type=="y_slope"
-            eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"y_slope")
+            # eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"y_slope")
+            eta = nothing
+            topographic_pv_gradient = (0., h0*(f0/H[end]))
         elseif topo_type=="x_slope"
-            eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"x_slope")
+            eta = nothing
+            topographic_pv_gradient = (h0*(f0/H[end]), 0.)
         elseif topo_type=="rand"
             eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"rand")
         else
@@ -127,7 +131,9 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
             elseif topo_type=="sinusoid"
                 eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"sinusoid")
             elseif topo_type=="y_slope"
-                eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"y_slope")
+                # eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"y_slope")
+                eta = nothing
+                topographic_pv_gradient = (0., h0*(f0/H[end]))
             elseif topo_type=="x_slope"
                 eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"x_slope")
             elseif topo_type=="rand"
