@@ -131,11 +131,11 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
             elseif topo_type=="sinusoid"
                 eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"sinusoid")
             elseif topo_type=="y_slope"
-                # eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"y_slope")
                 eta = nothing
                 topographic_pv_gradient = (0., h0*(f0/H[end]))
             elseif topo_type=="x_slope"
-                eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"x_slope")
+                eta = nothing
+                topographic_pv_gradient = (h0*(f0/H[end]), 0.)
             elseif topo_type=="rand"
                 eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"rand")
             else
@@ -148,7 +148,9 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
         end
 
         # define the model problem
-        prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, g, H, ρ, U, eta=eta,
+        b = @. (g/rho0)*(rho0-rho)
+
+        prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, g, ρ, U, eta=eta, topographic_pv_gradient,
         μ, β, dt, stepper, linear, aliased_fraction=1/3)
 
         sol, clock, params, vars, grid = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
