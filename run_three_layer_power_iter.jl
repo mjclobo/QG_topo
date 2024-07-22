@@ -148,9 +148,7 @@ for gamma=gammas; for (i,alpha)=enumerate(alphas); for h0=h0s; for kt=kts
         end
 
         # define the model problem
-        b = (g/rho0)*(rho0 .- rho)
-
-        prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, b, U, eta, topographic_pv_gradient,
+        prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, g, H, ρ, U, eta=eta,
         μ, β, dt, stepper, linear, aliased_fraction=1/3)
 
         sol, clock, params, vars, grid = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
