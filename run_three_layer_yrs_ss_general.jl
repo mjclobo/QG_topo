@@ -206,6 +206,7 @@ while ss_yr_cnt < ss_yr_max
                             "dt" => dt, "beta" => β,
                             "psi_ot" => Array(psi_ot),
                             "q_ot" => Array(q_ot),
+                            "Qy" => Array(params.Qy),
                             "cfl_set" => cfl_glob, "PE" => PE)
         
             jldsave(jld_name; jld_data)
