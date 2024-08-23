@@ -2,6 +2,36 @@
 
 global H_bound = (H[1:end-1] .+ H[2:end]) ./ 2
 
+function topo_rough(h_rms, kt, Lx, Nx)
+    # Borrowed from Matt Pudig..will change when I start looking at random topo.
+    # Wavenumber grid
+    nkr = Int(Nx / 2 + 1)
+    nl = Nx
+
+    dk = 2 * pi / Lx
+    dl = dk
+    
+    k = reshape( rfftfreq(Nx, dk * Nx), (nkr, 1) )
+    l = reshape( fftfreq(Nx, dl * Nx), (1, nl) )
+
+    k = @. sqrt(k^2 + l^2)
+
+    # Isotropic Gaussian in wavenumber space about mean, kt, with standard deviation, sigma
+    # with random Fourier phases
+    sigma = sqrt(2) * dk
+
+    seed!(1234)
+    hh = exp.(-(k .- kt*(2*pi/Lx)).^2 ./ (2 * sigma^2)) .* exp.(2 * pi * im .* rand(nkr, nl))
+
+    # Recover h from hh
+    h = irfft(hh, Nx)
+
+    c = h_rms / sqrt.(mean(h.^2))
+    h = c .* h
+
+    return h
+end
+
 # setting topography
 function topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,type)
     Nx = length(grid_topo.x); Ny = length(grid_topo.y)
@@ -22,7 +52,7 @@ function topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,type)
     end
 
     if type=="rand"
-        eta_out = (f0/H[end]) * topo_rand(h0,kt,Lx,Nx)
+        eta_out = (f0/H[end]) * topo_rough(h0,kt,Lx,Nx)
     end
 
     return eta_out
@@ -41,6 +71,12 @@ elseif topo_type=="y_slope"
     # eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"y_slope")
     eta = nothing
     topographic_pv_gradient = (0., h0*(f0/H[end]))
+elseif topo_type=="rand_slope"
+    eta = topographicPV(grid_topo,h0[2],kt,Lx,Ly,f0,H,"rand")
+    topographic_pv_gradient = (0., h0[1]*(f0/H[end]))
+elseif topo_type=="rand_flat"
+    eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"rand")
+    topographic_pv_gradient = (0., 0.)
 else
     eta = nothing
 end
@@ -76,6 +112,10 @@ if topo_type=="y_slope"
     plotpath_psi  = "./figs/plots_"*string(nlayers)*"layer_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi/"
     plotpath_psi_vert  = "./figs/plots_"*string(nlayers)*"layer_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi_vert/"
 elseif topo_type=="sin_sin"
+    plotpath_main = "./figs/plots_"*string(nlayers)*"layer_h0"* string(round(h0[1]*Lx,digits=9))*"_kt"* string(Int(kt[1])) *"_linear_res" * string(Int(Nx)) *"/main/"
+    plotpath_psi  = "./figs/plots_"*string(nlayers)*"layer_h0"* string(round(h0[1]*Lx,digits=9))*"_kt"* string(Int(kt[1])) *"_linear_res" * string(Int(Nx)) *"/psi/"
+    plotpath_psi_vert  = "./figs/plots_"*string(nlayers)*"layer_h0"* string(round(h0[1]*Lx,digits=9))*"_kt"* string(Int(kt[1])) *"_linear_res" * string(Int(Nx)) *"/psi_vert/"
+elseif topo_type=="rand_slope"
     plotpath_main = "./figs/plots_"*string(nlayers)*"layer_h0"* string(round(h0[1]*Lx,digits=9))*"_kt"* string(Int(kt[1])) *"_linear_res" * string(Int(Nx)) *"/main/"
     plotpath_psi  = "./figs/plots_"*string(nlayers)*"layer_h0"* string(round(h0[1]*Lx,digits=9))*"_kt"* string(Int(kt[1])) *"_linear_res" * string(Int(Nx)) *"/psi/"
     plotpath_psi_vert  = "./figs/plots_"*string(nlayers)*"layer_h0"* string(round(h0[1]*Lx,digits=9))*"_kt"* string(Int(kt[1])) *"_linear_res" * string(Int(Nx)) *"/psi_vert/"
@@ -199,6 +239,8 @@ while ss_yr_cnt < ss_yr_max
 
             if topo_type=="y_slope"
                 jld_name = data_dir*"/threelayer_h0"* string(round(h0*Lx,digits=9))*"_U" * string(round(U[1],digits=6)) * "_rho"* string(round(ρ[1],digits=6)) * lin_str * "mu" * string(round((μ^-1)/86400)) * "res" * string(Int(Nx)) * "_yr"*string(yr_cnt)*  ".jld"
+            elseif topo_type=="y_slope"
+                jld_name = data_dir*"/threelayer_h0"* string(round(h0[1]*Lx,digits=9))* "_hrms"* string(round(h0[2]))*"_kt" * string(round(kt)) * "_U" * string(round(U[1],digits=6)) * "_rho"* string(round(ρ[1],digits=6)) * lin_str * "mu" * string(round((μ^-1)/86400)) * "res" * string(Int(Nx)) * "_yr"*string(yr_cnt)*  ".jld"
             elseif topo_type=="sin_sin"
                 jld_name = data_dir*"/threelayer_h0"* string(Int(h0[1]))* "_U" * string(round(U[1],digits=6)) * "_rho"* string(round(ρ[1],digits=6)) *lin_str * "mu" * string(round((μ^-1)/86400)) * "_res" * string(Int(Nx)) *"_yr"*string(yr_cnt)*  ".jld"  
             else
@@ -212,7 +254,7 @@ while ss_yr_cnt < ss_yr_max
                             "dt" => dt, "beta" => β,
                             "psi_ot" => Array(psi_ot),
                             "q_ot" => Array(q_ot), "nu" => ν, "n_nu" => nν,
-                            "Qy" => Array(params.Qy),
+                            "Qy" => Array(params.Qy), "eta" => eta,
                             "cfl_set" => cfl_glob, "PE" => PE)
         
             jldsave(jld_name; jld_data)
