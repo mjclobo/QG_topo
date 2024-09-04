@@ -238,13 +238,13 @@ while ss_yr_cnt < ss_yr_max
             end
 
             if topo_type=="y_slope"
-                jld_name = data_dir*"/threelayer_h0"* string(round(h0*Lx,digits=9))*"_U" * string(round(U[1],digits=6)) * "_rho"* string(round(ρ[1],digits=6)) * lin_str * "mu" * string(round((μ^-1)/86400)) * "Hr" * string(round(H[1]/H[2]),sigdigits=1) * "res" * string(Int(Nx)) * "_yr"*string(yr_cnt)*  ".jld"
+                jld_name = data_dir*"/threelayer_h0"* string(round(h0*Lx,digits=9))*"_U" * string(round(U[1],digits=6)) * "_rho"* string(round(ρ[1],digits=6)) * lin_str * "mu" * string(round((μ^-1)/86400)) * "Hr" * string(round(H[1]/H[2],sigdigits=1)) * "res" * string(Int(Nx)) * "_yr"*string(yr_cnt)*  ".jld"
             elseif topo_type=="rand_slope"
-                jld_name = data_dir*"/threelayer_h0"* string(round(h0[1]*Lx,digits=9))* "_hrms"* string(round(h0[2]))*"_kt" * string(round(kt)) * "_U" * string(round(U[1],digits=6)) * "_rho"* string(round(ρ[1],digits=6)) * lin_str * "mu" * string(round((μ^-1)/86400)) * "Hr" * string(round(H[1]/H[2]),sigdigits=1)  * "res" * string(Int(Nx)) * "_yr"*string(yr_cnt)*  ".jld"
+                jld_name = data_dir*"/threelayer_h0"* string(round(h0[1]*Lx,digits=9))* "_hrms"* string(round(h0[2]))*"_kt" * string(round(kt)) * "_U" * string(round(U[1],digits=6)) * "_rho"* string(round(ρ[1],digits=6)) * lin_str * "mu" * string(round((μ^-1)/86400)) * "Hr" * string(round(H[1]/H[2],sigdigits=1))  * "res" * string(Int(Nx)) * "_yr"*string(yr_cnt)*  ".jld"
             elseif topo_type=="sin_sin"
-                jld_name = data_dir*"/threelayer_h0"* string(Int(h0[1]))* "_U" * string(round(U[1],digits=6)) * "_rho"* string(round(ρ[1],digits=6)) *lin_str * "mu" * string(round((μ^-1)/86400)) * "Hr" * string(round(H[1]/H[2]),sigdigits=1)  * "_res" * string(Int(Nx)) *"_yr"*string(yr_cnt)*  ".jld"  
+                jld_name = data_dir*"/threelayer_h0"* string(Int(h0[1]))* "_U" * string(round(U[1],digits=6)) * "_rho"* string(round(ρ[1],digits=6)) *lin_str * "mu" * string(round((μ^-1)/86400)) * "Hr" * string(round(H[1]/H[2],sigdigits=1))  * "_res" * string(Int(Nx)) *"_yr"*string(yr_cnt)*  ".jld"  
             else
-                jld_name = data_dir*"/threelayer_h0"* string(Int(h0))* "_U" * string(round(U[1],digits=6)) * "_rho"* string(round(ρ[1],digits=6)) * lin_str * "mu" * string(round((μ^-1)/86400)) * "Hr" * string(round(H[1]/H[2]),sigdigits=1)  * "_res" * string(Int(Nx)) *"_yr"*string(yr_cnt)*  ".jld"
+                jld_name = data_dir*"/threelayer_h0"* string(Int(h0))* "_U" * string(round(U[1],digits=6)) * "_rho"* string(round(ρ[1],digits=6)) * lin_str * "mu" * string(round((μ^-1)/86400)) * "Hr" * string(round(H[1]/H[2],sigdigits=1))  * "_res" * string(Int(Nx)) *"_yr"*string(yr_cnt)*  ".jld"
             end
 
             println("Saving output data to JLD to: "*jld_name)
