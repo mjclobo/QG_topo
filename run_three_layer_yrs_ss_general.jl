@@ -91,7 +91,7 @@ b = (g/rho0)*(rho0 .- rho)
 # μ, β, dt, stepper, linear, aliased_fraction=1/3)
 
 prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, g, ρ, U, nν, ν, eta, topographic_pv_gradient,
-μ, β, dt, stepper, linear, aliased_fraction=1/3)
+μ, β, dt, stepper, linear, aliased_fraction=1/3, drag_bool)
 
 sol, clock, params, vars, grid = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 x, y = grid.x, grid.y
