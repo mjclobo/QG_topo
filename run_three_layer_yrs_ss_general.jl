@@ -157,8 +157,6 @@ while ss_yr_cnt < ss_yr_max
 
         if isnothing(t_yrly)
             global psi_ot = vars.ψ;
-            
-            global q_ot = vars.q;
 
             global t_yrly = Array([clock.t])
 
@@ -173,8 +171,6 @@ while ss_yr_cnt < ss_yr_max
         else
 
             global psi_ot = cat(psi_ot, vars.ψ, dims=4)
-
-            global q_ot = cat(q_ot, vars.q, dims=4)
             
             # defining initial diagnostics
             E = MultiLayerQG.energies(prob)
@@ -231,14 +227,19 @@ while ss_yr_cnt < ss_yr_max
 
             # saving yearly output
             println("Saving annual data for year: "*string(yr_cnt))
-            if linear==true
-                lin_str = "_linear_"
+
+            if drag_bool==true
+                drag_str="_quad_drag_"
+                mu_str = @sprintf "%.2E" μ * Ld
             else
-                lin_str = "_"
+                drag_str="_lin_drag_"
+                mu_str = @sprintf "%.2E" μ * 2 * Ld / U[1]
             end
 
+            nu_str = @sprintf "%.2E" ν / ((Us[1]/2) * (Lx/2/pi)^7)
+
             if topo_type=="y_slope"
-                jld_name = data_dir*"/threelayer_h0"* string(round(h0*Lx,digits=9))*"_U" * string(round(U[1],digits=6)) * "_rho"* string(round(ρ[1],digits=6)) * lin_str * "mu" * string(round((μ^-1)/86400)) * "Hr" * string(round(H[1]/H[2],sigdigits=1)) * "res" * string(Int(Nx)) * "_yr" * string(yr_cnt) *  ".jld"
+                jld_name = data_dir*"/threelayer_h0"* string(round(h0/S32,digits=3))* "_beta" * string(round(β * 2 * Ld^2 / U[1],digits=3)) * "_U" * string(round(U[1],digits=4)) * "_rho"* string(round(ρ[1],digits=6)) * drag_str * "mu" * mu_str * "_nu" * nu_str * "_Hr" * string(round(H[1]/H[2],sigdigits=1)) * "_res" * string(Int(Nx)) * "_yr" * string(yr_cnt) *  ".jld"
             elseif topo_type=="rand_slope"
                 jld_name = data_dir*"/threelayer_h0"* string(round(h0[1]*Lx,digits=9))* "_hrms"* string(round(h0[2]))*"_kt" * string(round(kt)) * "_U" * string(round(U[1],digits=6)) * "_rho"* string(round(ρ[1],digits=6)) * lin_str * "mu" * string(round((μ^-1)/86400)) * "Hr" * string(round(H[1]/H[2],sigdigits=1))  * "res" * string(Int(Nx)) * "_yr"*string(yr_cnt)*  ".jld"
             elseif topo_type=="sin_sin"
@@ -251,9 +252,9 @@ while ss_yr_cnt < ss_yr_max
 
             jld_data = Dict("t" => t_yrly, "KE" => KE, "Nz" => nlayers,
                             "L" => L, "H" => H, "rho" => rho, "U" => U,
-                            "dt" => dt, "beta" => β,
+                            "dt" => dt, "beta" => β, "mu" => μ,
                             "psi_ot" => Array(psi_ot),
-                            "q_ot" => Array(q_ot), "nu" => ν, "n_nu" => nν,
+                            "nu" => ν, "n_nu" => nν, "Ld" => Ld,
                             "Qy" => Array(params.Qy), "eta" => eta,
                             "cfl_set" => cfl_glob, "PE" => PE)
         
