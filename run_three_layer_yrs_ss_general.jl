@@ -97,7 +97,13 @@ else
 end
 
 prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, g, ρ, U, nν, ν, eta, topographic_pv_gradient,
-μ, β, dt, stepper, linear, aliased_fraction=af, drag_bool)
+    μ, β, dt, stepper, linear, aliased_fraction=af, drag_bool)
+
+
+stepper2 = "FilteredRK4"
+prob_filt = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, g, ρ, U, nν, ν, eta, topographic_pv_gradient,
+    μ, β, dt, stepper2, linear, aliased_fraction=af, drag_bool)
+
 
 sol, clock, params, vars, grid = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 x, y = grid.x, grid.y
@@ -105,7 +111,7 @@ x, y = grid.x, grid.y
 # setting initial conditions
 seed!(1234) # reset of the random number generator for reproducibility
 q₀  = q0_mag * device_array(dev)(randn((grid.nx, grid.ny, nlayers)))
-q₀h = prob.timestepper.filter .* rfft(q₀, (1, 2)) # apply rfft  only in dims=1, 2
+q₀h = prob_filt.timestepper.filter .* rfft(q₀, (1, 2)) # apply rfft  only in dims=1, 2
 q₀  = irfft(q₀h, grid.nx, (1, 2))                 # apply irfft only in dims=1, 2
 
 MultiLayerQG.set_q!(prob, q₀)
