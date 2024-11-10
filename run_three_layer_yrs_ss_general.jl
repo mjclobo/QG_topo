@@ -59,7 +59,8 @@ function topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,type)
 end
 
 topographic_pv_gradient = (0., 0.)
-aliased_fraction=1/3; T=Float64;
+# aliased_fraction=1/3;
+T=Float64;
 grid_topo = TwoDGrid(dev; nx=Nx, Lx, ny=Ny, Ly, aliased_fraction, T)
 if topo_type=="eggshell"
     eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"eggshell")
@@ -116,94 +117,35 @@ q₀  = irfft(q₀h, grid.nx, (1, 2))                 # apply irfft only in dims
 
 MultiLayerQG.set_q!(prob, q₀)
 
-# output dirs
-filepath = "."
-
-if topo_type=="y_slope"
-    plotpath_main = "./figs/plots_"*string(nlayers)*"layer_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/main/"
-    plotpath_psi  = "./figs/plots_"*string(nlayers)*"layer_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi/"
-    plotpath_psi_vert  = "./figs/plots_"*string(nlayers)*"layer_h0"* string(round(h0*Lx,digits=9))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi_vert/"
-elseif topo_type=="sin_sin"
-    plotpath_main = "./figs/plots_"*string(nlayers)*"layer_h0"* string(round(h0[1]*Lx,digits=9))*"_kt"* string(Int(kt[1])) *"_linear_res" * string(Int(Nx)) *"/main/"
-    plotpath_psi  = "./figs/plots_"*string(nlayers)*"layer_h0"* string(round(h0[1]*Lx,digits=9))*"_kt"* string(Int(kt[1])) *"_linear_res" * string(Int(Nx)) *"/psi/"
-    plotpath_psi_vert  = "./figs/plots_"*string(nlayers)*"layer_h0"* string(round(h0[1]*Lx,digits=9))*"_kt"* string(Int(kt[1])) *"_linear_res" * string(Int(Nx)) *"/psi_vert/"
-elseif topo_type=="rand_slope"
-    plotpath_main = "./figs/plots_"*string(nlayers)*"layer_h0"* string(round(h0[1]*Lx,digits=9))*"_kt"* string(Int(kt[1])) *"_linear_res" * string(Int(Nx)) *"/main/"
-    plotpath_psi  = "./figs/plots_"*string(nlayers)*"layer_h0"* string(round(h0[1]*Lx,digits=9))*"_kt"* string(Int(kt[1])) *"_linear_res" * string(Int(Nx)) *"/psi/"
-    plotpath_psi_vert  = "./figs/plots_"*string(nlayers)*"layer_h0"* string(round(h0[1]*Lx,digits=9))*"_kt"* string(Int(kt[1])) *"_linear_res" * string(Int(Nx)) *"/psi_vert/"
-elseif linear
-    plotpath_main = "./figs/plots_"*string(nlayers)*"layer_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/main/"
-    plotpath_psi  = "./figs/plots_"*string(nlayers)*"layer_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi/"
-    plotpath_psi_vert  = "./figs/plots_"*string(nlayers)*"layer_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_linear_res" * string(Int(Nx)) *"/psi_vert/"
-else
-    plotpath_main = "./figs/plots_"*string(nlayers)*"layer_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) *"/main/"
-    plotpath_psi  = "./figs/plots_"*string(nlayers)*"layer_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) *"/psi/"
-    plotpath_psi_vert  = "./figs/plots_"*string(nlayers)*"layer_h0"* string(Int(h0))*"_kt"* string(Int(kt)) *"_res" * string(Int(Nx)) *"/psi_vert/"
-end
-plotname = "snapshots"
-include("./plotting_functions.jl")
-
-# file management
-if !isdir(plotpath_main); mkpath(plotpath_main); end
-if !isdir(plotpath_psi); mkpath(plotpath_psi); end
-if !isdir(plotpath_psi_vert); mkpath(plotpath_psi_vert); end
-
 # trying to run the model now
 startwalltime = time()
 
-global ell, j = 1, 0
+global j = 0
 global t_yrly = nothing
 global yr_cnt = 0
 global ss_yr = false
 global ss_yr_cnt = 0
 
 while ss_yr_cnt < ss_yr_max
-    global ell, j 
+    global j 
 
     ##########################
     stepforward!(prob)
     MultiLayerQG.updatevars!(prob)
 
     if j % nsubs == 0
-        local E = MultiLayerQG.energies(prob)
 
         if isnothing(t_yrly)
             global psi_ot = vars.ψ;
 
             global t_yrly = Array([clock.t])
 
-            # defining initial diagnostics
-            E = MultiLayerQG.energies(prob)
-
-            # variables for plotting, that will be pushed to
-            global KE = E[1] ./ H
-
-            global PE = E[2] ./ H_bound
-
         else
 
             global psi_ot = cat(psi_ot, vars.ψ, dims=4)
-            
-            # defining initial diagnostics
-            E = MultiLayerQG.energies(prob)
 
             # push to time
             push!(t_yrly,clock.t)
-
-            # push to layer-wise KE
-            global KE = cat(KE, E[1] ./ H, dims=2)
-
-            # push to interface potential energies
-            global PE = cat(PE, E[2] ./ H_bound, dims=2)
-
-            # plotting stuff
-            global plot_model
-            if plot_model==true
-
-            end
-
-            # increase counter
-            global ell+=1
 
         end
     
@@ -215,7 +157,7 @@ while ss_yr_cnt < ss_yr_max
         
         println(log)
 
-        if E[1][1]==NaN
+        if vars.ψ[1,1,1]==NaN
             global ss_yr_cnt = ss_yr_max
         end
 
@@ -259,16 +201,16 @@ while ss_yr_cnt < ss_yr_max
             else
                 jld_name = data_dir*"/threelayer_h0"* string(Int(h0))* "_U" * string(round(U[1],digits=6)) * "_rho"* string(round(ρ[1],digits=6)) * lin_str * "mu" * string(round((μ^-1)/86400)) * "Hr" * string(round(H[1]/H[2],sigdigits=1))  * "_res" * string(Int(Nx)) *"_yr"*string(yr_cnt)*  ".jld"
             end
-
+            
             println("Saving output data to JLD to: "*jld_name)
 
-            jld_data = Dict("t" => t_yrly, "KE" => KE, "Nz" => nlayers,
+            jld_data = Dict("t" => t_yrly, "Nz" => nlayers,
                             "L" => L, "H" => H, "rho" => rho, "U" => U,
                             "dt" => dt, "beta" => β, "mu" => μ,
                             "psi_ot" => Array(psi_ot),
                             "nu" => ν, "n_nu" => nν, "Ld" => Ld,
                             "Qy" => Array(params.Qy), "eta" => eta,
-                            "cfl_set" => cfl_glob, "PE" => PE)
+                            "cfl_set" => cfl_glob)
         
             jldsave(jld_name; jld_data)
 
