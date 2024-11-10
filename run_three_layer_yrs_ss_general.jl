@@ -154,8 +154,8 @@ while ss_yr_cnt < ss_yr_max
         # reading out stats
         cfl = clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
     
-        log = @sprintf("step: %04d, t: %.1f, cfl: %.2f, KE_1: %.3e, KE_N: %.3e, PE: %.3e, walltime: %.2f min",
-                        clock.step, clock.t, cfl, E[1][1], E[1][end], E[2][1], (time()-startwalltime)/60)
+        log = @sprintf("step: %04d, t: %.1f, cfl: %.2f, walltime: %.2f min",
+                        clock.step, clock.t, cfl, (time()-startwalltime)/60)
         
         println(log)
 
@@ -168,16 +168,11 @@ while ss_yr_cnt < ss_yr_max
             global yr_cnt += 1
             global ell = 0
             # check to see if model has reached s.s.
-            if ss_yr==true
-                global ss_yr_cnt += 1
-            end
+            
+            global ss_yr_cnt += 1
+            
 
-            if KE[1,end]/KE[1,1] < KE_thresh && ss_yr==false && yr_cnt > 10
-                global ss_yr = true
-                global ss_yr_cnt = 1
-            end
-
-            if isnan(KE[1,end])
+            if isnan(vars.ψ[1,1,1])
                 global ss_yr_cnt = ss_yr_max
             end
 
