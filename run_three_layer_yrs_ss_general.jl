@@ -159,7 +159,8 @@ while ss_yr_cnt < ss_yr_max
         
         println(log)
 
-        if psi_ot[1,1,1,end]==NaN
+        nan_check = CUDA.@allowscalar psi_ot[1,1,1,end]
+        if nan_check==NaN
             global ss_yr_cnt = ss_yr_max
         end
 
