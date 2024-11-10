@@ -102,11 +102,9 @@ b = (g/rho0)*(rho0 .- rho)
 prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, g, ρ, U, nν, ν, eta, topographic_pv_gradient,
     μ, β, dt, stepper, linear, aliased_fraction=af, drag_bool)
 
-
 stepper2 = "FilteredRK4"
 prob_filt = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, g, ρ, U, nν, ν, eta, topographic_pv_gradient,
     μ, β, dt, stepper=stepper2, linear, aliased_fraction=af, drag_bool)
-
 
 sol, clock, params, vars, grid = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 x, y = grid.x, grid.y
@@ -126,9 +124,8 @@ global j = 0
 global t_yrly = nothing
 global yr_cnt = 0
 global ss_yr = false
-global ss_yr_cnt = 0
 
-while ss_yr_cnt < ss_yr_max
+while yr_cnt < ss_yr_max
     global j 
 
     ##########################
@@ -141,14 +138,11 @@ while ss_yr_cnt < ss_yr_max
             global psi_ot = vars.ψ;
 
             global t_yrly = Array([clock.t])
-
         else
-
             global psi_ot = cat(psi_ot, vars.ψ, dims=4)
-
+            
             # push to time
             push!(t_yrly,clock.t)
-
         end
     
         # reading out stats
@@ -161,16 +155,13 @@ while ss_yr_cnt < ss_yr_max
 
         nan_check = CUDA.@allowscalar psi_ot[1,1,1,end]
         if nan_check==NaN
-            global ss_yr_cnt = ss_yr_max
+            global yr_cnt = ss_yr_max
         end
 
         # save output and reset params every year
         if ((t_yrly[end] - yr_cnt*365*86400) > 0)
             global yr_cnt += 1
-            global ell = 0
             # check to see if model has reached s.s.
-            
-            global ss_yr_cnt += 1
 
             # saving yearly output
             println("Saving annual data for year: "*string(yr_cnt))
