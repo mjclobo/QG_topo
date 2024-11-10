@@ -135,7 +135,7 @@ while yr_cnt < ss_yr_max
     if j % nsubs == 0
 
         if isnothing(t_yrly)
-            global psi_ot = vars.ψ;
+            global psi_ot = deepcopy(vars.ψ);
 
             global t_yrly = Array([clock.t])
         else
