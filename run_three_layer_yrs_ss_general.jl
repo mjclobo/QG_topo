@@ -159,7 +159,7 @@ while ss_yr_cnt < ss_yr_max
         
         println(log)
 
-        if vars.ψ[1,1,1]==NaN
+        if psi_ot[1,1,1,end]==NaN
             global ss_yr_cnt = ss_yr_max
         end
 
@@ -170,11 +170,6 @@ while ss_yr_cnt < ss_yr_max
             # check to see if model has reached s.s.
             
             global ss_yr_cnt += 1
-            
-
-            if isnan(vars.ψ[1,1,1])
-                global ss_yr_cnt = ss_yr_max
-            end
 
             # saving yearly output
             println("Saving annual data for year: "*string(yr_cnt))
