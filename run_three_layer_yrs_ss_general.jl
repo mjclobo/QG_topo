@@ -58,10 +58,17 @@ function topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,type)
     return eta_out
 end
 
+
+if ν==0.
+    af = 0
+else
+    af=1/3
+end
+
 topographic_pv_gradient = (0., 0.)
-# aliased_fraction=1/3;
+
 T=Float64;
-grid_topo = TwoDGrid(dev; nx=Nx, Lx, ny=Ny, Ly, aliased_fraction, T)
+grid_topo = TwoDGrid(dev; nx=Nx, Lx, ny=Ny, Ly, aliased_fraction=af, T)
 if topo_type=="eggshell"
     eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"eggshell")
 elseif topo_type=="sinusoid"
@@ -91,11 +98,6 @@ b = (g/rho0)*(rho0 .- rho)
 # prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, b, U, nν, ν, eta, topographic_pv_gradient,
 # μ, β, dt, stepper, linear, aliased_fraction=1/3)
 
-if ν==0.
-    af = 0
-else
-    af=1/3
-end
 
 prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, g, ρ, U, nν, ν, eta, topographic_pv_gradient,
     μ, β, dt, stepper, linear, aliased_fraction=af, drag_bool)
