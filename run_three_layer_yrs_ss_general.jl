@@ -153,15 +153,15 @@ while yr_cnt < ss_yr_max
         
         println(log)
 
-        nan_check = CUDA.@allowscalar psi_ot[1,1,1,end]
-        if nan_check==NaN
-            global yr_cnt = ss_yr_max
-        end
-
         # save output and reset params every year
         if ((t_yrly[end] - yr_cnt*365*86400) > 0)
-            global yr_cnt += 1
-            # check to see if model has reached s.s.
+
+            E = MultiLayerQG.energies(prob)
+            if E[1][1]==NaN
+                global yr_cnt = ss_yr_max
+            else
+                global yr_cnt += 1
+            end
 
             # saving yearly output
             println("Saving annual data for year: "*string(yr_cnt))
