@@ -155,15 +155,15 @@ while yr_cnt < ss_yr_max
         # save output and reset params every year
         if ((t_yrly[end] - yr_cnt*365*86400) > 0)
 
+            # saving yearly output
+            println("Saving annual data for year: "*string(yr_cnt))
+
             psi1 = CUDA.@allowscalar vars.ψ[1,1,1]
-            if psi1==NaN
+            if isnan(psi1)
                 global yr_cnt = ss_yr_max
             else
                 global yr_cnt += 1
             end
-
-            # saving yearly output
-            println("Saving annual data for year: "*string(yr_cnt))
 
             if drag_bool==true
                 drag_str="_quad_drag_"
