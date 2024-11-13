@@ -116,11 +116,17 @@ startwalltime = time()
 global j = 0
 global t_yrly = nothing
 global yr_cnt = 0
+global trunc_k = Nx/Lx
 
 while yr_cnt < ss_yr_max
     global j 
 
     ##########################
+    if dyn_nu==true
+        rmsζ = sqrt(mean((irfft(-grid_jl.Krsq .* vars.ψh[:,:,1], grid_jl.ny)).^2))
+        prob.params.ν = νstar * rmsζ * Ld * (Lx/2/pi)^7
+    end
+
     stepforward!(prob)
     MultiLayerQG.updatevars!(prob)
 
