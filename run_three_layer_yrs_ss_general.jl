@@ -58,13 +58,6 @@ function topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,type)
     return eta_out
 end
 
-
-if ν==0.
-    af = 0
-else
-    af=1/3
-end
-
 topographic_pv_gradient = (0., 0.)
 
 T=Float64;
@@ -198,9 +191,10 @@ while yr_cnt < ss_yr_max
             jldsave(jld_name; jld_data)
 
             global t_yrly = nothing
-        end
 
-        GC.gc()
+            GC.gc()
+
+        end
 
     end
 
