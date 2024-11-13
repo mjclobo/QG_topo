@@ -93,11 +93,11 @@ b = (g/rho0)*(rho0 .- rho)
 
 
 prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, g, ρ, U, nν, ν, eta, topographic_pv_gradient,
-    μ, β, dt, stepper, linear, aliased_fraction=af, drag_bool, filt_order)
+    μ, β, dt, stepper, linear, aliased_fraction=af, drag_bool, filt_order, innerK)
 
 stepper2 = "FilteredRK4"
 prob_filt = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, g, ρ, U, nν, ν, eta, topographic_pv_gradient,
-    μ, β, dt, stepper=stepper2, linear, aliased_fraction=af, drag_bool, filt_order)
+    μ, β, dt, stepper=stepper2, linear, aliased_fraction=af, drag_bool, filt_order, innerK)
 
 sol, clock, params, vars, grid = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 x, y = grid.x, grid.y
