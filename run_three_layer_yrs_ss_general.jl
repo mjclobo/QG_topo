@@ -123,7 +123,7 @@ while yr_cnt < ss_yr_max
 
     ##########################
     if dyn_nu==true
-        rmsζ = sqrt(mean((irfft(-grid_jl.Krsq .* vars.ψh[:,:,1], grid_jl.ny)).^2))
+        rmsζ = sqrt(mean((irfft(-grid.Krsq .* prob.vars.ψh[:,:,1], grid.ny)).^2))
         prob.params.ν = νstar * rmsζ * Ld * (Lx/2/pi)^7
     end
 
