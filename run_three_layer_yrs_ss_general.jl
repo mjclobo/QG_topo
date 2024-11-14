@@ -147,8 +147,8 @@ while yr_cnt < ss_yr_max
         # reading out stats
         cfl = clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
     
-        log = @sprintf("step: %04d, t: %.1f, cfl: %.2f, walltime: %.2f min",
-                        clock.step, clock.t, cfl, (time()-startwalltime)/60)
+        log = @sprintf("step: %04d, t: %.1f, cfl: %.2f, walltime: %.2f min, nu_star: %.2E",
+                        clock.step, clock.t, cfl, (time()-startwalltime)/60, prob.params.ν)
         
         println(log)
 
