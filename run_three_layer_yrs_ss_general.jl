@@ -125,7 +125,7 @@ while yr_cnt < ss_yr_max
     ##########################
     if dyn_nu==true
         rmsζ = sqrt(mean((irfft(-grid.Krsq .* prob.vars.ψh[:,:,1], grid.ny)).^2))
-        global prob = @set prob.params.ν = νstar * rmsζ * Ld * (Ld)^7
+        global prob = @set prob.params.ν = νstar * rmsζ * Ld * dx^7
     end
 
     stepforward!(prob)
@@ -173,7 +173,11 @@ while yr_cnt < ss_yr_max
                 mu_str = @sprintf "%.2E" μ * 2 * Ld / U[1]
             end
 
-            nu_str = @sprintf "%.2E" ν / ((Us[1]/2) * (Lx/2/pi)^7)
+            if dyn_nu==true
+                nu_str = @sprintf "%.2E" νstar
+            else
+                nu_str = @sprintf "%.2E" ν / ((Us[1]/2) * (Lx/2/pi)^7)
+            end
 
             if topo_type=="y_slope"
                 jld_name = data_dir*"/twolayer_L2pi_" * string(round(L/2/pi/Ld)) * "_h0"* string(round(h0/S32,digits=3))* "_beta" * string(round(β * 2 * Ld^2 / U[1],digits=3)) * "_U" * string(round(U[1],digits=4)) * "_rho"* string(round(ρ[1],digits=6)) * drag_str * "mu" * mu_str * "_nu" * nu_str * "_Hr" * string(round(H[1]/H[2],sigdigits=1)) * "_res" * string(Int(Nx)) * "_yr" * string(yr_cnt) *  ".jld"
