@@ -92,7 +92,7 @@ b = (g/rho0)*(rho0 .- rho)
 # μ, β, dt, stepper, linear, aliased_fraction=1/3)
 
 
-prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, g, ρ, U, nν, ν, eta, topographic_pv_gradient,
+global prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, g, ρ, U, nν, ν, eta, topographic_pv_gradient,
     μ, β, dt, stepper, linear, aliased_fraction=af, drag_bool, filt_order, innerK)
 
 stepper2 = "FilteredRK4"
@@ -119,12 +119,13 @@ global yr_cnt = 0
 global trunc_k = Nx/Lx
 
 while yr_cnt < ss_yr_max
-    global j 
+    global j
+    global prob
 
     ##########################
     if dyn_nu==true
         rmsζ = sqrt(mean((irfft(-grid.Krsq .* prob.vars.ψh[:,:,1], grid.ny)).^2))
-        prob = @set prob.params.ν = νstar * rmsζ * Ld * (Lx/2/pi)^7
+        global prob = @set prob.params.ν = νstar * rmsζ * Ld * (Lx/2/pi)^7
     end
 
     stepforward!(prob)
