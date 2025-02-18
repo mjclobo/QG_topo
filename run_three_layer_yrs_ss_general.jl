@@ -110,6 +110,33 @@ q₀  = irfft(q₀h, grid.nx, (1, 2))                 # apply irfft only in dims
 
 MultiLayerQG.set_q!(prob, q₀)
 
+function jld_name2(data_dir,μstar, νstar, drag_bool, L,h0,ρ,U,Nx,H,yr_cnt)
+    
+    if drag_bool==true
+        drag_str="_quad_drag_"
+        μ = μstar / Ld
+        mu_str = @sprintf "%.2E" μstar
+    else
+        drag_str="_lin_drag_"
+        mu_str = @sprintf "%.2E" μstar
+    end
+    
+    nu_str = @sprintf "%.2E" νstar
+       
+    return data_dir*"/twolayer_L2pi_" * string(round(L/2/pi/Ld)) * "_h0"* string(round(h0/S32,digits=3))* "_beta" * string(round(β * 2 * Ld^2 / U[1],digits=3)) * "_U" * string(round(U[1],digits=4)) * "_rho"* string(round(ρ[1],digits=6)) * drag_str * "mu" * mu_str * "_nu" * nu_str * "_Hr" * string(round(H[1]/H[2],sigdigits=1)) * "_res" * string(Int(Nx)) * "_yr" * string(yr_cnt) *  ".jld"
+end
+
+if restart_file==true
+    yr_restart = 90  # 
+
+    a = load(jld_name2(restart_data_dir, μstar, νstar, drag_bool, L, h0, ρ, U, Nx, H, yr_restart))
+
+    ψ = a["jld_data"]["psi_ot"][:,:,:,1]
+
+    MultiLayerQG.set_ψ!(sol, params, vars, grid, ψ)   # this also sets q!!!
+
+end
+
 # trying to run the model now
 startwalltime = time()
 
@@ -127,7 +154,7 @@ while yr_cnt < ss_yr_max
         rmsζ = sqrt(mean((irfft(-grid.Krsq .* prob.vars.ψh[:,:,1], grid.ny)).^2))
         global prob = @set prob.params.ν = νstar * rmsζ * Ld * dx^7
     end
-
+    
     stepforward!(prob)
     MultiLayerQG.updatevars!(prob)
 
@@ -162,7 +189,7 @@ while yr_cnt < ss_yr_max
             if isnan(psi1)
                 global yr_cnt = ss_yr_max
             else
-                global yr_cnt += 1
+                global yr_cnt += yr_increment
             end
 
             if drag_bool==true
