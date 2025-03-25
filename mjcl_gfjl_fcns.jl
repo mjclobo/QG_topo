@@ -286,13 +286,23 @@ function run_model(prob, model_params)
             # save output and reset params every year
             if ((t_yrly[end] - yr_cnt*365*86400) > 0)
 
-                jld_data = Dict("t" => t_yrly, "Nz" => Nz,
-                    "L" => L, "H" => H, "rho" => rho, "U" => U,
-                    "dt" => dt, "beta" => β, "mu" => μ, "kappa" => κ,
-                    "psi_ot" => Array(psi_ot),
-                    "nu" => ν, "n_nu" => nν, "Ld" => Ld,
-                    "Qy" => Array(params.Qy), "eta" => eta,
-                    "stepper" => stepper)
+                if yr_cnt==0.0
+
+                    jld_data = Dict("t" => t_yrly, "Nz" => Nz,
+                        "L" => L, "H" => H, "rho" => rho, "U" => U[:,:,1],
+                        "dt" => dt, "beta" => β, "mu" => μ, "kappa" => κ,
+                        "psi_ot" => Array(psi_ot),
+                        "nu" => ν, "n_nu" => nν, "Ld" => Ld,
+                        "Qy" => Array(params.Qy[1,1,:]), "eta" => eta,
+                        "topographic_pv_gradient" => topographic_pv_gradient,
+                        "stepper" => stepper)
+
+                else
+
+                    jld_data = Dict("t" => t_yrly,
+                        "psi_ot" => Array(psi_ot))
+
+                end
 
                 # saving output
 
