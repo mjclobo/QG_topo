@@ -355,11 +355,41 @@ end
 
 
 ####################################################################################
-## 
+## density profile; currently doing a naive approach, should switch to
+# a minimum rmse approach, though
 ####################################################################################
 
 
+function vert_disc(strat_type, rho_top, rho_bottom, H, scale_depth)
+    
+    Nz = length(H)
 
+    rho_out = zeros(Nz)
+
+    z_prof = zeros(Nz)
+
+    for i in range(1,Nz)
+        z_prof[i] = - (sum(H[1:i-1]) + H[i]/2)
+    end
+
+    for (i,z) in enumerate(z_prof)
+        rho_out[i] = vert_profile(strat_type, rho_top, rho_bottom, H, scale_depth, z)
+    end
+
+    return rho_out
+end
+
+
+function vert_profile(strat_type, rho_top, rho_bottom, H, scale_depth, z)
+    if strat_type[1:2] == "SI"
+        return rho_top + (rho_bottom - rho_top) * (1 - exp(z / scale_depth))
+    elseif strat_type[1:3] == "uni"
+        return rho_top - (rho_bottom - rho_top) * (z/sum(H))
+    end
+end
+
+
+# vert_disc("SI_strat", 1026, 1027.5, 1000.0 * ones(4), 750)
 
 ####################################################################################
 ## Auxiliary functions
