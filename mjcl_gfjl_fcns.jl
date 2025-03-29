@@ -8,8 +8,8 @@
 @with_kw struct mod_params
     data_dir::String = "./"
     Nz::Int64 = 2
-    Nx::Int64 = 562
-    Ny::Int64 = 562
+    Nx::Int64 = 512
+    Ny::Int64 = 512
     Lx::Int64 = 1000.e3
     Ly::Int64 = 1000.e3
     Ld::Float64 = 25.e3
