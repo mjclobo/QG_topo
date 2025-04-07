@@ -97,7 +97,7 @@ global prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, b, U, nν,
 
 stepper2 = "FilteredRK4"
 prob_filt = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, b, U, nν, ν, eta, topographic_pv_gradient,
-    μ, κ, β, dt, stepper=stepper2, linear, aliased_fraction=af, drag_bool, filt_order, innerK)
+    μ, κ, β, dt, stepper=stepper2, linear, aliased_fraction=af)
 
 sol, clock, params, vars, grid = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 x, y = grid.x, grid.y
