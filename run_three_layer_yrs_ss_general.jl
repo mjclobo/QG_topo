@@ -92,11 +92,11 @@ b = (g/rho0)*(rho0 .- rho)
 # μ, β, dt, stepper, linear, aliased_fraction=1/3)
 
 
-global prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, g, ρ, U, nν, ν, eta, topographic_pv_gradient,
+global prob = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, b, U, nν, ν, eta, topographic_pv_gradient,
     μ, β, dt, stepper, linear, aliased_fraction=af, drag_bool, filt_order, innerK)
 
 stepper2 = "FilteredRK4"
-prob_filt = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, g, ρ, U, nν, ν, eta, topographic_pv_gradient,
+prob_filt = MultiLayerQG.Problem(nlayers, dev; nx=n, Lx=L, f₀, H, b, U, nν, ν, eta, topographic_pv_gradient,
     μ, β, dt, stepper=stepper2, linear, aliased_fraction=af, drag_bool, filt_order, innerK)
 
 sol, clock, params, vars, grid = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
@@ -151,8 +151,8 @@ while yr_cnt < ss_yr_max
 
     ##########################
     if dyn_nu==true
-        rmsζ = sqrt(mean((irfft(-grid.Krsq .* prob.vars.ψh[:,:,1], grid.ny)).^2))
-        global prob = @set prob.params.ν = νstar * rmsζ * Ld * dx^7
+        rmsζ = maximum(abs.(irfft(-grid.Krsq .* prob.vars.ψh[:,:,1], grid.ny)))  # sqrt(mean((irfft(-grid.Krsq .* prob.vars.ψh[:,:,1], grid.ny)).^2))
+        global prob = @set prob.params.ν = 10 * rmsζ * grid.dx^8
     end
     
     stepforward!(prob)
