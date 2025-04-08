@@ -152,7 +152,7 @@ while yr_cnt < ss_yr_max
     ##########################
     if dyn_nu==true
         rmsζ = maximum(abs.(irfft(-grid.Krsq .* prob.vars.ψh[:,:,1], grid.ny)))  # sqrt(mean((irfft(-grid.Krsq .* prob.vars.ψh[:,:,1], grid.ny)).^2))
-        global prob = @set prob.params.ν = 10 * rmsζ * grid.dx^8
+        global prob = @set prob.params.ν = rmsζ * grid.dx^8
         global sol, clock, params, vars, grid = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
         x, y = grid.x, grid.y
     end
