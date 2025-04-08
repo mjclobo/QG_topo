@@ -605,8 +605,8 @@ function isotropic_mean(arr_in, grid)
     # arr_in: an nkr X nl array that is output of rfft
     # note that we only want real part of this
 
-    dev = grid_jl.device
-    T = eltype(grid_jl)
+    dev = grid.device
+    T = eltype(grid)
     A = device_array(dev)
     
     dk = 2*pi/grid.Lx; dl = 2*pi/grid.Ly;
@@ -641,8 +641,8 @@ function update_two_layered_nrg(vars, params, grid, sol, ψ, model_params, nrgs_
 
     @unpack_mod_params model_params
 
-    dev = grid_jl.device
-    T = eltype(grid_jl)
+    dev = grid.device
+    T = eltype(grid)
     A = device_array(dev)
 
     nlayers = 2
