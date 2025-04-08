@@ -55,7 +55,7 @@ end
     kspace_layered_nrg_budget::Bool = false
     xspace_modal_nrg_budget::Bool = false
     kspace_modal_nrg_budget::Bool = false
-    two_layer_kspace_modal_nrg_budget::Bool = false
+    two_layer_kspace_modal_nrg_budget_bool::Bool = false
 end
 
 ####################################################################################
@@ -313,7 +313,7 @@ function run_model(prob, model_params)
                 push!(t_yrly,clock.t)
             end
 
-            if two_layer_kspace_modal_nrg_budget==true
+            if two_layer_kspace_modal_nrg_budget_bool==true
                 
                 global two_layer_kspace_modal_nrgs = update_two_layer_kspace_modal_nrgs(prob, vars.ψ, model_params, two_layer_kspace_modal_nrgs)
                 global two_layer_xspace_layer_nrgs = update_two_layered_nrg(prob, vars.ψ, model_params, two_layer_xspace_layer_nrgs) 
@@ -345,13 +345,15 @@ function run_model(prob, model_params)
 
                 else
 
-                    if diags.output_psi==true && diags.two_layer_kspace_modal_nrg_budget==false
+                    @unpack_diag_bools diags
+
+                    if psi_out_bool==true && two_layer_kspace_modal_nrg_budget_bool==false
                         jld_data = Dict("t" => t_yrly,
                             "psi_ot" => Array(psi_ot))
-                    elseif diags.output_psi==true && diags.two_layer_kspace_modal_nrg_budget==true
+                    elseif psi_out_bool==true && two_layer_kspace_modal_nrg_budget_bool==true
                         jld_data = Dict("t" => t_yrly,
                             "psi_ot" => Array(psi_ot), "two_layer_kspace_modal_nrg_budget" => two_layer_kspace_modal_nrgs)
-                    elseif diags.output_psi==false && diags.two_layer_kspace_modal_nrg_budget==true
+                    elseif psi_out_bool==false && two_layer_kspace_modal_nrg_budget_bool==true
                         jld_data = Dict("two_layer_kspace_modal_nrg_budget" => two_layer_kspace_modal_nrgs ./ budget_counter,
                             "two_layer_xspace_layer_nrgs" => two_layer_xspace_layer_nrgs ./ budget_counter,
                             "two_layer_vBT_scale" => two_layer_vBT_scale ./ budget_counter)
