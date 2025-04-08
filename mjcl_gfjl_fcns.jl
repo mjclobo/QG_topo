@@ -10,8 +10,8 @@
     Nz::Int64 = 2
     Nx::Int64 = 512
     Ny::Int64 = 512
-    Lx::Int64 = 1000.e3
-    Ly::Int64 = 1000.e3
+    Lx::Float64 = 1000.0e3
+    Ly::Float64 = 1000.0e3
     Ld::Float64 = 25.e3
     f0::Float64 = 8.e-5
     H::Array{Float64} = ones(Nz) * (4000/Nz)
