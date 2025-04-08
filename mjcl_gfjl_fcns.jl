@@ -536,23 +536,23 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ############################################################################################
     # Nonlinear terms in BT budget
     NLBT = zeros(grid_jl.nkr,grid_jl.ny,2) .+ 0im
-    NLBT[:,:,1] = @. conj(ψBTh) * J_ψBT_ζBTh + ψBTh * conj(J_ψBT_ζBTh)  # im * (grid_jl.l * ζBT∂xψBTh - grid_jl.kr * ζBT∂yψBTh)
+    @views NLBT[:,:,1] = @. conj(ψBTh) * J_ψBT_ζBTh + ψBTh * conj(J_ψBT_ζBTh)  # im * (grid_jl.l * ζBT∂xψBTh - grid_jl.kr * ζBT∂yψBTh)
     # NLBT[:,:,1] .+= conj.(NLBT[:,:,1])
 
-    NLBT[:,:,2] = @. conj(ψBTh) * im * (grid_jl.l * ζBC∂xψBCh - grid_jl.kr * ζBC∂yψBCh)
-    NLBT[:,:,2] .+= conj.(NLBT[:,:,2])
+    @views NLBT[:,:,2] = @. conj(ψBTh) * im * (grid_jl.l * ζBC∂xψBCh - grid_jl.kr * ζBC∂yψBCh)
+    @views NLBT[:,:,2] .+= conj.(NLBT[:,:,2])
 
     ############################################################################################
     # Nonlinear terms in BC budget
     NLBC = zeros(grid_jl.nkr,grid_jl.ny,3) .+ 0im
-    NLBC[:,:,1] = @. conj(ψBCh) * im * (grid_jl.l * ζBC∂xψBTh - grid_jl.kr * ζBC∂yψBTh)
-    NLBC[:,:,1] .+= conj.(NLBC[:,:,1])
+    @views NLBC[:,:,1] = @. conj(ψBCh) * im * (grid_jl.l * ζBC∂xψBTh - grid_jl.kr * ζBC∂yψBTh)
+    @views NLBC[:,:,1] .+= conj.(NLBC[:,:,1])
 
-    NLBC[:,:,2] = @. conj(ψBCh) * im * (grid_jl.l * ζBT∂xψBCh - grid_jl.kr * ζBT∂yψBCh)
-    NLBC[:,:,2] .+= conj.(NLBC[:,:,2])
+    @views NLBC[:,:,2] = @. conj(ψBCh) * im * (grid_jl.l * ζBT∂xψBCh - grid_jl.kr * ζBT∂yψBCh)
+    @views NLBC[:,:,2] .+= conj.(NLBC[:,:,2])
 
-    NLBC[:,:,3] = @. - 2 * Ld1^-2 * conj(ψBCh) * im * (grid_jl.l * ψBC∂xψBT - grid_jl.kr * ψBC∂yψBT)
-    NLBC[:,:,3] .+= conj.(NLBC[:,:,3])
+    @views NLBC[:,:,3] = @. - 2 * Ld1^-2 * conj(ψBCh) * im * (grid_jl.l * ψBC∂xψBT - grid_jl.kr * ψBC∂yψBT)
+    @views NLBC[:,:,3] .+= conj.(NLBC[:,:,3])
 
     ############################################################################################
     TopoT = @. -0.5 * (params.f₀ / params.H[2]) * ∂yηb * (conj(ψBTh) * ∂xψBCh + ψBTh * conj(∂xψBCh))
