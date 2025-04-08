@@ -604,6 +604,10 @@ update_two_layer_kspace_modal_nrgs(prob, ψ, model_params, nrgs_in) = update_two
 function isotropic_mean(arr_in, grid)
     # arr_in: an nkr X nl array that is output of rfft
     # note that we only want real part of this
+
+    dev = grid_jl.device
+    T = eltype(grid_jl)
+    A = device_array(dev)
     
     dk = 2*pi/grid.Lx; dl = 2*pi/grid.Ly;
     
@@ -611,7 +615,7 @@ function isotropic_mean(arr_in, grid)
     
     wv = @. sqrt(grid.kr^2 + grid.l^2)
     
-    iso = zeros(length(grid.kr))
+    iso = zeros(dev, T, (length(grid.kr)))
     
     for i in range(1,length(grid.kr))
         # find 2D index values for a wavenumber magnitude
@@ -637,6 +641,10 @@ function update_two_layered_nrg(vars, params, grid, sol, ψ, model_params, nrgs_
 
     @unpack_mod_params model_params
 
+    dev = grid_jl.device
+    T = eltype(grid_jl)
+    A = device_array(dev)
+
     nlayers = 2
     g′ = g * (rho[2] - rho[1]) / rho0[1] # reduced gravity at the interface
     F = (f0^2 / (g′ * sum(params.H)))
@@ -657,9 +665,9 @@ function update_two_layered_nrg(vars, params, grid, sol, ψ, model_params, nrgs_
     APE_d = @. 0.5 * F * (ψ[:,:,1] - ψ[:,:,2])^2
     APE = sum(APE_d) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
     
-    KE_d = zeros(grid.nx, grid.ny, nlayers)
-    KE_d[:,:,1] = @. 0.5 * mod2∇ψ1 
-    KE_d[:,:,2] = @. 0.5 * mod2∇ψ2 
+    KE_d = zeros(dev, T, (grid.nx, grid.ny, nlayers))
+    @views KE_d[:,:,1] = @. 0.5 * mod2∇ψ1 
+    @views KE_d[:,:,2] = @. 0.5 * mod2∇ψ2 
     KE = dropdims(sum(dropdims(sum(KE_d,dims=1),dims=1),dims=1),dims=1) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
 
     # KE_uv = zeros(grid.nx, grid.ny, nlayers)
