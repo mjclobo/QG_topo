@@ -626,7 +626,7 @@ function isotropic_mean(arr_in, grid)
         end
         
         if sum(fkr) > 0
-            iso[i] = mean(real(arr_in[fkr])) # this is average over all combinations of k_x and k_y that are the same, isotropic k
+            @views iso[i] = mean(real(arr_in[fkr])) # this is average over all combinations of k_x and k_y that are the same, isotropic k
         end
         
     end
