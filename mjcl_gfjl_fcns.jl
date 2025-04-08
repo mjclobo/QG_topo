@@ -451,7 +451,7 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     
     U₁, U₂, = view(params.U, :, :, 1), view(params.U, :, :, 2)
     
-    S32 = f0 * U₁[1,1] / g′
+    S32 = CUDA.@allowscalar f0 * U₁[1,1] / g′
 
     # streamfunction stuff
     ∂xψBTh = im * grid_jl.kr .* ψBTh
