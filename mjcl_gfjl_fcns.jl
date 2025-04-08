@@ -435,6 +435,10 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
 
     @unpack_mod_params model_params
 
+    dev = grid_jl.device
+    T = eltype(grid_jl)
+    A = device_array(dev)
+
     # parameters
     nlayers = 2
     δ = [params.H[1]/sum(params.H), params.H[2]/sum(params.H)]
@@ -535,7 +539,7 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
 
     ############################################################################################
     # Nonlinear terms in BT budget
-    NLBT = zeros(grid_jl.nkr,grid_jl.ny,2) .+ 0im
+    NLBT = zeros(dev, T, (grid_jl.nkr,grid_jl.ny,2)) .+ 0im
     @views NLBT[:,:,1] = @. conj(ψBTh) * J_ψBT_ζBTh + ψBTh * conj(J_ψBT_ζBTh)  # im * (grid_jl.l * ζBT∂xψBTh - grid_jl.kr * ζBT∂yψBTh)
     # NLBT[:,:,1] .+= conj.(NLBT[:,:,1])
 
@@ -544,7 +548,7 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
 
     ############################################################################################
     # Nonlinear terms in BC budget
-    NLBC = zeros(grid_jl.nkr,grid_jl.ny,3) .+ 0im
+    NLBC = zeros(dev, T, (grid_jl.nkr,grid_jl.ny,3)) .+ 0im
     @views NLBC[:,:,1] = @. conj(ψBCh) * im * (grid_jl.l * ζBC∂xψBTh - grid_jl.kr * ζBC∂yψBTh)
     @views NLBC[:,:,1] .+= conj.(NLBC[:,:,1])
 
