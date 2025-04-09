@@ -453,7 +453,7 @@ function save_output(vars, jld_data, model_params, yr_cnt)
     if isnan(psi1)
         global yr_cnt = ss_yr_max
     else
-        global yr_cnt += yr_increment
+        global yr_cnt = round(yr_cnt + yr_increment, digits=3)
     end
 
     file_name = jld_name(model_params, yr_cnt - yr_increment)
