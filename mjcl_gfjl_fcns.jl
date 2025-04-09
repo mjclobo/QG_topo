@@ -56,6 +56,8 @@ end
     xspace_modal_nrg_budget::Bool = false
     kspace_modal_nrg_budget::Bool = false
     two_layer_kspace_modal_nrg_budget_bool::Bool = false
+    psi_out_bool_yrs_end::Bool = false
+    only_save_last::Bool = false
 end
 
 ####################################################################################
@@ -272,17 +274,23 @@ function run_model(prob, model_params)
     startwalltime = time()
 
     global j = 0
-    global t_yrly = nothing
+    global t_yrly = Array([clock.t])
     global yr_cnt = restart_yr
     global budget_counter = 0
+    global nsaves = 0
+    global psi_ot = nothing
 
     nterms_two_layer_modal_kspace = 14  # including residual
     global two_layer_kspace_modal_nrgs = zeros(dev, T, (grid.nkr, nterms_two_layer_modal_kspace))
     global two_layer_xspace_layer_nrgs = zeros(dev, T, (3))
     global two_layer_vBT_scale = 0.
 
+    len_nrg = ceil(Int, ss_yr_max * yr_increment * 365 * 24 * 3600 / prob.clock.dt / nsubs)
+    global nrg_ot = zeros(dev, T, (3, len_nrg))
+
     while yr_cnt < ss_yr_max
         global j
+        
         # global prob
 
         if dyn_nu==true
@@ -302,25 +310,23 @@ function run_model(prob, model_params)
         end
 
         if j % nsubs == 0
+            global nsaves+=1
 
             if psi_out_bool==true
-                if isnothing(t_yrly)
+                if isnothing(psi_ot)
                     global psi_ot = deepcopy(vars.ψ);
                 else
                     global psi_ot = cat(psi_ot, vars.ψ, dims=4)
                 end
             end
 
-            if isnothing(t_yrly)
-                global t_yrly = Array([clock.t])
-            else
-                push!(t_yrly,clock.t)
-            end
+            push!(t_yrly,clock.t)
 
             if two_layer_kspace_modal_nrg_budget_bool==true
                 
                 global two_layer_kspace_modal_nrgs = update_two_layer_kspace_modal_nrgs(prob, vars.ψ, model_params, two_layer_kspace_modal_nrgs)
-                global two_layer_xspace_layer_nrgs = update_two_layered_nrg(prob, vars.ψ, model_params, two_layer_xspace_layer_nrgs) 
+                # global nrg_ot_here, two_layer_xspace_layer_nrgs = update_two_layered_nrg(prob, vars.ψ, model_params, two_layer_xspace_layer_nrgs) 
+                global @views nrg_ot[:,nsaves] = update_two_layered_nrg(prob, vars.ψ, model_params, two_layer_xspace_layer_nrgs) 
                 global two_layer_vBT_scale += sqrt(mean((sum(vars.u, dims=2) ./ 2).^2))
                 global budget_counter +=1
 
@@ -356,11 +362,18 @@ function run_model(prob, model_params)
                             "psi_ot" => Array(psi_ot))
                     elseif psi_out_bool==true && two_layer_kspace_modal_nrg_budget_bool==true
                         jld_data = Dict("t" => t_yrly,
-                            "psi_ot" => Array(psi_ot), "two_layer_kspace_modal_nrg_budget" => two_layer_kspace_modal_nrgs)
+                            "psi_ot" => Array(psi_ot), "two_layer_kspace_modal_nrg_budget" => Array(two_layer_kspace_modal_nrgs ./ budget_counter),
+                            "two_layer_xspace_layer_nrgs" => Array(two_layer_xspace_layer_nrgs ./ budget_counter),
+                            "two_layer_vBT_scale" => Float64(two_layer_vBT_scale ./ budget_counter))
+                    elseif psi_out_bool_yrs_end==true && two_layer_kspace_modal_nrg_budget_bool==true
+                            jld_data = Dict("t" => t_yrly,
+                                "psi_yrs_end" => Array(vars.ψ), "two_layer_kspace_modal_nrg_budget" => Array(two_layer_kspace_modal_nrgs ./ budget_counter),
+                                "two_layer_xspace_nrgs_ot" => Array(nrg_ot),
+                                "two_layer_vBT_scale" => Float64(two_layer_vBT_scale ./ budget_counter))
                     elseif psi_out_bool==false && two_layer_kspace_modal_nrg_budget_bool==true
-                        jld_data = Dict("two_layer_kspace_modal_nrg_budget" => two_layer_kspace_modal_nrgs ./ budget_counter,
-                            "two_layer_xspace_layer_nrgs" => two_layer_xspace_layer_nrgs ./ budget_counter,
-                            "two_layer_vBT_scale" => two_layer_vBT_scale ./ budget_counter)
+                        jld_data = Dict("two_layer_kspace_modal_nrg_budget" => Array(two_layer_kspace_modal_nrgs ./ budget_counter),
+                            "two_layer_xspace_nrgs_ot" => Array(nrg_ot),
+                            "two_layer_vBT_scale" => Float64(two_layer_vBT_scale ./ budget_counter))
                     end
 
                 end
@@ -390,6 +403,8 @@ function save_output(vars, jld_data, model_params, yr_cnt)
 
     @unpack_mod_params model_params
 
+    @unpack_diag_bools diags
+
     # saving yearly output
     println("Saving annual data for year: " * string(yr_cnt))
 
@@ -411,7 +426,13 @@ function save_output(vars, jld_data, model_params, yr_cnt)
 
     jldsave(data_dir * file_name; jld_data)
 
-    global t_yrly = nothing
+    if yr_cnt - 2 * yr_increment > 0.0
+        if only_save_last==true
+            rm(data_dir * jld_name(model_params, yr_cnt - 2 * yr_increment))
+        end
+    end
+
+    global psi_ot = nothing
 
 end
 
@@ -724,7 +745,7 @@ function update_two_layered_nrg(vars, params, grid, sol, ψ, model_params, nrgs_
     # KE_uv[:,:,2] = @. 0.5 * mod2v 
     # KE_comp = dropdims(sum(dropdims(sum(KE_uv,dims=1),dims=1),dims=1),dims=1) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
     
-    return CUDA.@allowscalar nrgs_in .+ vcat(KE, APE)
+    return CUDA.@allowscalar Array(vcat(KE, APE)) # , nrgs_in .+ vcat(KE, APE)
 
 end
 
