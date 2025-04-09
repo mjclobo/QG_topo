@@ -362,7 +362,7 @@ function run_model(prob, model_params)
                 global two_layer_kspace_modal_nrgs = update_two_layer_kspace_modal_nrgs(prob, vars.ψ, model_params, two_layer_kspace_modal_nrgs)
                 # global nrg_ot_here, two_layer_xspace_layer_nrgs = update_two_layered_nrg(prob, vars.ψ, model_params, two_layer_xspace_layer_nrgs) 
                 global @views nrg_ot[:,nsaves] = update_two_layered_nrg(prob, vars.ψ, model_params, two_layer_xspace_layer_nrgs) 
-                global two_layer_vBT_scale += sqrt(mean((sum(vars.u, dims=2) ./ 2).^2))
+                global two_layer_vBT_scale += sqrt(mean((sum(vars.u, dims=3) ./ 2).^2))
                 global budget_counter +=1
 
             end
