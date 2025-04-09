@@ -40,6 +40,8 @@
     dev::Any = CPU()
     restart_bool::Bool = false
     restart_yr::Int = 0
+    pre_buoy_restart_file::Bool = false
+    data_dir_pre_buoy::String = "placeholder"
     yr_increment::Float64 = 1.0
     ss_yr_max::Int = 100
     nsubs::Int64 = round(Int64, 5*(Ld / (U[1]/2))/dt)  # save psi field every 5 eddy periods
@@ -104,6 +106,20 @@ function jld_name(model_params, yr_cnt)
     
     return "/" * thick_str * L_str * h_str * beta_str * shear_str * "_" * strat_str * drag_str * hv_str * res_str * yr_str * ".jld"
 end
+
+
+function jld_name_pre_buoy(model_params,yr_cnt)
+
+    @unpack_mod_params model_params
+    
+    drag_str="_lin_drag_"
+    mu_str = @sprintf "%.2E" μ / (((U[1]) / 2) / Ld)
+    
+    nu_str = @sprintf "%.2E" ν / ((U[1]/2) * (Lx/2/pi)^7)
+       
+    return data_dir_pre_buoy*"/twolayer_L2pi_" * string(round(L/2/pi/Ld)) * "_h0"* string(round(h0/S32,digits=3))* "_beta" * string(round(β * 2 * Ld^2 / U[1],digits=3)) * "_U" * string(round(U[1],digits=4)) * "_rho"* string(round(ρ[1],digits=6)) * drag_str * "mu" * mu_str * "_nu" * nu_str * "_Hr" * string(round(H[1]/H[2],sigdigits=1)) * "_res" * string(Int(Nx)) * "_yr" * string(yr_cnt) *  ".jld"
+end
+
 
 ####################################################################################
 ## Topographic stuff
@@ -220,13 +236,27 @@ function set_initial_conditions(prob, prob_filt, model_params)
 
     elseif restart_bool==true
 
-        r_file_name = jld_name(model_params, restart_yr)
+        if pre_buoy_restart_file==true
 
-        a = load(data_dir * r_file_name)
+            r_file_name = jld_name_pre_buoy(model_params, restart_yr)
 
-        ψ = a["jld_data"]["psi_ot"][:,:,:,1]
+            a = load(r_file_name)
 
-        MultiLayerQG.set_ψ!(prob.sol, prob.params, prob.vars, prob.grid, ψ)   # this also sets q!!!
+            ψ = a["jld_data"]["psi_ot"][:,:,:,1]
+
+            MultiLayerQG.set_ψ!(prob.sol, prob.params, prob.vars, prob.grid, ψ)   # this also sets q!!!
+
+        else
+
+            r_file_name = jld_name(model_params, restart_yr)
+
+            a = load(data_dir * r_file_name)
+
+            ψ = a["jld_data"]["psi_ot"][:,:,:,1]
+
+            MultiLayerQG.set_ψ!(prob.sol, prob.params, prob.vars, prob.grid, ψ)   # this also sets q!!!
+
+        end
 
     end
 
@@ -285,7 +315,7 @@ function run_model(prob, model_params)
     global two_layer_xspace_layer_nrgs = zeros(dev, T, (3))
     global two_layer_vBT_scale = 0.
 
-    len_nrg = ceil(Int, ss_yr_max * yr_increment * 365 * 24 * 3600 / prob.clock.dt / nsubs)
+    len_nrg = ceil(Int, (ss_yr_max - yr_cnt) * yr_increment * 365.25 * 24 * 3600 / prob.clock.dt / nsubs)
     global nrg_ot = zeros(dev, T, (3, len_nrg))
 
     while yr_cnt < ss_yr_max
@@ -366,12 +396,13 @@ function run_model(prob, model_params)
                             "two_layer_xspace_layer_nrgs" => Array(two_layer_xspace_layer_nrgs ./ budget_counter),
                             "two_layer_vBT_scale" => Float64(two_layer_vBT_scale ./ budget_counter))
                     elseif psi_out_bool_yrs_end==true && two_layer_kspace_modal_nrg_budget_bool==true
-                            jld_data = Dict("t" => t_yrly,
-                                "psi_yrs_end" => Array(vars.ψ), "two_layer_kspace_modal_nrg_budget" => Array(two_layer_kspace_modal_nrgs ./ budget_counter),
-                                "two_layer_xspace_nrgs_ot" => Array(nrg_ot),
-                                "two_layer_vBT_scale" => Float64(two_layer_vBT_scale ./ budget_counter))
+                        jld_data = Dict("t" => t_yrly,
+                            "psi_yrs_end" => Array(vars.ψ), "two_layer_kspace_modal_nrg_budget" => Array(two_layer_kspace_modal_nrgs ./ budget_counter),
+                            "two_layer_xspace_nrgs_ot" => Array(nrg_ot),
+                            "two_layer_vBT_scale" => Float64(two_layer_vBT_scale ./ budget_counter))
                     elseif psi_out_bool==false && two_layer_kspace_modal_nrg_budget_bool==true
-                        jld_data = Dict("two_layer_kspace_modal_nrg_budget" => Array(two_layer_kspace_modal_nrgs ./ budget_counter),
+                        jld_data = Dict("t" => t_yrly,
+                            "two_layer_kspace_modal_nrg_budget" => Array(two_layer_kspace_modal_nrgs ./ budget_counter),
                             "two_layer_xspace_nrgs_ot" => Array(nrg_ot),
                             "two_layer_vBT_scale" => Float64(two_layer_vBT_scale ./ budget_counter))
                     end
@@ -426,7 +457,7 @@ function save_output(vars, jld_data, model_params, yr_cnt)
 
     jldsave(data_dir * file_name; jld_data)
 
-    if yr_cnt - 2 * yr_increment > 0.0
+    if yr_cnt - 2 * yr_increment > restart_yr
         if only_save_last==true
             rm(data_dir * jld_name(model_params, yr_cnt - 2 * yr_increment))
         end
@@ -654,7 +685,7 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     
     GC.gc()
    
-    # energies are, BTEKE, BCEKE< EAPE; CBC, DBC, DBT; Tflat, Ttopo; NLBCEAPE, NLBCEKE, NLBC2BT; NLBTEKE, NLBT2BC; resid
+    # energies are, BTEKE, BCEKE, EAPE; CBC; Tflat, Ttopo; , DBC, DBT;  NLBCEAPE, NLBCEKE, NLBC2BT; NLBTEKE, NLBT2BC; resid
 
   return nrgs_in .+ hcat(NRGs, CBCh, LF, Drag, NLBTh, NLBCh, resid)
 end
