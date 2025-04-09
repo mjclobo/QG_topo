@@ -456,8 +456,8 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ψBCh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
     ψBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
 
-    mul!(ψBCh, rfftplan, ψBC)
-    mul!(ψBTh, rfftplan, ψBT)
+    mul2D!(ψBCh, rfftplan, ψBC)
+    mul2D!(ψBTh, rfftplan, ψBT)
     
     U₁, U₂, = view(params.U, :, :, 1), view(params.U, :, :, 2)
     
@@ -470,8 +470,8 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ∂xψBT = zeros(dev, T, (grid_jl.nx,grid_jl.ny))
     ∂yψBT = zeros(dev, T, (grid_jl.nx,grid_jl.ny)) 
 
-    ldiv!(∂xψBT, rfftplan, ∂xψBTh)
-    ldiv!(∂yψBT, rfftplan, ∂yψBTh)
+    ldiv2D!(∂xψBT, rfftplan, ∂xψBTh)
+    ldiv2D!(∂yψBT, rfftplan, ∂yψBTh)
 
     ∂xψBCh = im * grid_jl.kr .* ψBCh
     ∂yψBCh = im * grid_jl.l .* ψBCh
@@ -479,8 +479,8 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ∂xψBC = zeros(dev, T, (grid_jl.nx,grid_jl.ny))
     ∂yψBC = zeros(dev, T, (grid_jl.nx,grid_jl.ny)) 
 
-    ldiv!(∂xψBC, rfftplan, ∂xψBCh)
-    ldiv!(∂yψBC, rfftplan, ∂yψBCh)
+    ldiv2D!(∂xψBC, rfftplan, ∂xψBCh)
+    ldiv2D!(∂yψBC, rfftplan, ∂yψBCh)
     
     # nonlinear terms
     # ζ = deepcopy(vars.v)
@@ -494,8 +494,8 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ζBC = zeros(dev, T, (grid_jl.nx,grid_jl.ny))
     ζBT = zeros(dev, T, (grid_jl.nx,grid_jl.ny)) 
 
-    ldiv!(ζBC, rfftplan, ζBCh)
-    ldiv!(ζBT, rfftplan, ζBTh)
+    ldiv2D!(ζBC, rfftplan, ζBCh)
+    ldiv2D!(ζBT, rfftplan, ζBTh)
 
     ∂xζBCh = im * grid_jl.kr .* ζBCh
     ∂xζBTh = im * grid_jl.kr .* ζBTh
@@ -506,14 +506,14 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ∂xζBC = zeros(dev, T, (grid_jl.nx,grid_jl.ny))
     ∂xζBT = zeros(dev, T, (grid_jl.nx,grid_jl.ny)) 
 
-    ldiv!(∂xζBC, rfftplan, ∂xζBCh)
-    ldiv!(∂xζBT, rfftplan, ∂xζBTh)
+    ldiv2D!(∂xζBC, rfftplan, ∂xζBCh)
+    ldiv2D!(∂xζBT, rfftplan, ∂xζBTh)
 
     ∂yζBC = zeros(dev, T, (grid_jl.nx,grid_jl.ny))
     ∂yζBT = zeros(dev, T, (grid_jl.nx,grid_jl.ny)) 
 
-    ldiv!(∂yζBC, rfftplan, ∂yζBCh)
-    ldiv!(∂yζBT, rfftplan, ∂yζBTh)
+    ldiv2D!(∂yζBC, rfftplan, ∂yζBCh)
+    ldiv2D!(∂yζBT, rfftplan, ∂yζBTh)
 
     ##
     ζBT∂xψBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
@@ -532,26 +532,26 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ψBC∂yψBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
 
     
-    ζBT∂xψBTh = mul!(ζBT∂xψBTh, rfftplan, ζBT .* ∂xψBT)
-    ζBT∂yψBTh = mul!(ζBT∂yψBTh, rfftplan, ζBT .* ∂yψBT)
+    ζBT∂xψBTh = mul2D!(ζBT∂xψBTh, rfftplan, ζBT .* ∂xψBT)
+    ζBT∂yψBTh = mul2D!(ζBT∂yψBTh, rfftplan, ζBT .* ∂yψBT)
 
-    ζBC∂xψBCh = mul!(ζBC∂xψBCh, rfftplan, ζBC .* ∂xψBC)
-    ζBC∂yψBCh = mul!(ζBC∂yψBCh, rfftplan, ζBC .* ∂yψBC)
+    ζBC∂xψBCh = mul2D!(ζBC∂xψBCh, rfftplan, ζBC .* ∂xψBC)
+    ζBC∂yψBCh = mul2D!(ζBC∂yψBCh, rfftplan, ζBC .* ∂yψBC)
 
-    ζBC∂xψBTh = mul!(ζBC∂xψBTh, rfftplan, ζBC .* ∂xψBT)
-    ζBC∂yψBTh = mul!(ζBC∂yψBTh, rfftplan, ζBC .* ∂yψBT)
+    ζBC∂xψBTh = mul2D!(ζBC∂xψBTh, rfftplan, ζBC .* ∂xψBT)
+    ζBC∂yψBTh = mul2D!(ζBC∂yψBTh, rfftplan, ζBC .* ∂yψBT)
 
-    ζBT∂xψBCh = mul!(ζBT∂xψBCh, rfftplan, ζBT .* ∂xψBC)
-    ζBT∂yψBCh = mul!(ζBT∂yψBCh, rfftplan, ζBT .* ∂yψBC)
+    ζBT∂xψBCh = mul2D!(ζBT∂xψBCh, rfftplan, ζBT .* ∂xψBC)
+    ζBT∂yψBCh = mul2D!(ζBT∂yψBCh, rfftplan, ζBT .* ∂yψBC)
 
-    ψBC∂xψBTh = mul!(ψBC∂xψBTh, rfftplan, ψBC .* ∂xψBT)
-    ψBC∂yψBTh = mul!(ψBC∂yψBTh, rfftplan, ψBC .* ∂yψBT)
+    ψBC∂xψBTh = mul2D!(ψBC∂xψBTh, rfftplan, ψBC .* ∂xψBT)
+    ψBC∂yψBTh = mul2D!(ψBC∂yψBTh, rfftplan, ψBC .* ∂yψBT)
 
     J_ψBT_ζBT = ∂xψBT .* ∂yζBT .- ∂yψBT .* ∂xζBT
 
     J_ψBT_ζBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
     
-    mul!(J_ψBT_ζBTh, rfftplan, J_ψBT_ζBT)
+    mul2D!(J_ψBT_ζBTh, rfftplan, J_ψBT_ζBT)
 
     # ζ₁h = rfft(ζ₁)
     
@@ -640,6 +640,11 @@ update_two_layer_kspace_modal_nrgs(prob, ψ, model_params, nrgs_in) = update_two
 ####################################################################################
 ## Helpers for k-space budget
 ####################################################################################
+
+mul2D!(varh, rfftplan, var) = mul!(reshape(varh, (size(varh)...,1)), rfftplan, reshape(var, (size(var)...,1)))
+
+ldiv2D!(var, rfftplan, varh) = mul!(reshape(var, (size(var)...,1)), rfftplan, reshape(varh, (size(varh)...,1)))
+
 
 function isotropic_mean(arr_in, grid)
     # arr_in: an nkr X nl array that is output of rfft
