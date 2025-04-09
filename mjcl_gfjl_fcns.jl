@@ -265,8 +265,8 @@ function run_model(prob, model_params)
 
     sol, clock, params, vars, grid = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
 
-    dev = grid_jl.device
-    T = eltype(grid_jl)
+    dev = grid.device
+    T = eltype(grid)
     A = device_array(dev)
 
     startwalltime = time()
