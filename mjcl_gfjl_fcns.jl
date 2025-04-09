@@ -453,8 +453,8 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ψBC = 0.5 * (ψ[:,:,1] .- ψ[:,:,2])
     ψBT = 0.5 * (ψ[:,:,1] .+ ψ[:,:,2])
 
-    ψBCh = deepcopy(vars.uh)
-    ψBTh = deepcopy(vars.uh)
+    ψBCh = deepcopy(vars.uh[:,:,1])
+    ψBTh = deepcopy(vars.uh[:,:,1])
 
     mul2D!(ψBCh, rfftplan, ψBC)
     mul2D!(ψBTh, rfftplan, ψBT)
@@ -467,8 +467,8 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ∂xψBTh = im * grid_jl.kr .* ψBTh
     ∂yψBTh = im * grid_jl.l .* ψBTh
     
-    ∂xψBT = deepcopy(vars.u)
-    ∂yψBT = deepcopy(vars.u)
+    ∂xψBT = deepcopy(vars.u[:,:,1])
+    ∂yψBT = deepcopy(vars.u[:,:,1])
 
     ldiv2D!(∂xψBT, rfftplan, ∂xψBTh)
     ldiv2D!(∂yψBT, rfftplan, ∂yψBTh)
@@ -476,8 +476,8 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ∂xψBCh = im * grid_jl.kr .* ψBCh
     ∂yψBCh = im * grid_jl.l .* ψBCh
 
-    ∂xψBC = deepcopy(vars.u)
-    ∂yψBC = deepcopy(vars.u)
+    ∂xψBC = deepcopy(vars.u[:,:,1])
+    ∂yψBC = deepcopy(vars.u[:,:,1])
 
     ldiv2D!(∂xψBC, rfftplan, ∂xψBCh)
     ldiv2D!(∂yψBC, rfftplan, ∂yψBCh)
@@ -491,8 +491,8 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ζBCh = - grid_jl.Krsq .* ψBCh
     ζBTh = - grid_jl.Krsq .* ψBTh
 
-    ζBC = deepcopy(vars.u)
-    ζBT = deepcopy(vars.u)
+    ζBC = deepcopy(vars.u[:,:,1])
+    ζBT = deepcopy(vars.u[:,:,1])
 
     ldiv2D!(ζBC, rfftplan, ζBCh)
     ldiv2D!(ζBT, rfftplan, ζBTh)
@@ -503,33 +503,33 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ∂yζBCh = im * grid_jl.l .* ζBCh
     ∂yζBTh = im * grid_jl.l .* ζBTh
 
-    ∂xζBC = deepcopy(vars.u)
-    ∂xζBT = deepcopy(vars.u)
+    ∂xζBC = deepcopy(vars.u[:,:,1])
+    ∂xζBT = deepcopy(vars.u[:,:,1])
 
     ldiv2D!(∂xζBC, rfftplan, ∂xζBCh)
     ldiv2D!(∂xζBT, rfftplan, ∂xζBTh)
 
-    ∂yζBC = deepcopy(vars.u)
-    ∂yζBT = deepcopy(vars.u)
+    ∂yζBC = deepcopy(vars.u[:,:,1])
+    ∂yζBT = deepcopy(vars.u[:,:,1])
 
     ldiv2D!(∂yζBC, rfftplan, ∂yζBCh)
     ldiv2D!(∂yζBT, rfftplan, ∂yζBTh)
 
     ##
-    ζBT∂xψBTh = deepcopy(vars.uh)
-    ζBT∂yψBTh = deepcopy(vars.uh)
+    ζBT∂xψBTh = deepcopy(vars.uh[:,:,1])
+    ζBT∂yψBTh = deepcopy(vars.uh[:,:,1])
 
-    ζBC∂xψBCh = deepcopy(vars.uh)
-    ζBC∂yψBCh = deepcopy(vars.uh)
+    ζBC∂xψBCh = deepcopy(vars.uh[:,:,1])
+    ζBC∂yψBCh = deepcopy(vars.uh[:,:,1])
 
-    ζBC∂xψBTh = deepcopy(vars.uh)
-    ζBC∂yψBTh = deepcopy(vars.uh)
+    ζBC∂xψBTh = deepcopy(vars.uh[:,:,1])
+    ζBC∂yψBTh = deepcopy(vars.uh[:,:,1])
 
-    ζBT∂xψBCh = deepcopy(vars.uh)
-    ζBT∂yψBCh = deepcopy(vars.uh)
+    ζBT∂xψBCh = deepcopy(vars.uh[:,:,1])
+    ζBT∂yψBCh = deepcopy(vars.uh[:,:,1])
 
-    ψBC∂xψBTh = deepcopy(vars.uh)
-    ψBC∂yψBTh = deepcopy(vars.uh)
+    ψBC∂xψBTh = deepcopy(vars.uh[:,:,1])
+    ψBC∂yψBTh = deepcopy(vars.uh[:,:,1])
 
     
     ζBT∂xψBTh = mul2D!(ζBT∂xψBTh, rfftplan, ζBT .* ∂xψBT)
@@ -549,7 +549,7 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
 
     J_ψBT_ζBT = ∂xψBT .* ∂yζBT .- ∂yψBT .* ∂xζBT
 
-    J_ψBT_ζBTh = deepcopy(vars.uh)
+    J_ψBT_ζBTh = deepcopy(vars.uh[:,:,1])
     
     mul2D!(J_ψBT_ζBTh, rfftplan, J_ψBT_ζBT)
 
