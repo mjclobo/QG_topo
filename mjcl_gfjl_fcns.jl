@@ -39,9 +39,9 @@
     linear::Bool = false
     dev::Any = CPU()
     restart_bool::Bool = false
-    restart_yr::Int = 0
+    restart_yr::Float64 = 0.
     pre_buoy_restart_file::Bool = false
-    data_dir_pre_buoy::String = "placeholder"
+    data_dir_pre_buoy::String = data_dir
     yr_increment::Float64 = 1.0
     ss_yr_max::Int = 100
     nsubs::Int64 = round(Int64, 5*(Ld / (U[1]/2))/dt)  # save psi field every 5 eddy periods
@@ -246,15 +246,19 @@ function set_initial_conditions(prob, prob_filt, model_params)
 
             MultiLayerQG.set_ψ!(prob.sol, prob.params, prob.vars, prob.grid, ψ)   # this also sets q!!!
 
+            println("Restarting model from: " * r_file_name)
+
         else
 
             r_file_name = jld_name(model_params, restart_yr)
 
             a = load(data_dir * r_file_name)
 
-            ψ = a["jld_data"]["psi_ot"][:,:,:,1]
+            ψ = a["jld_data"]["psi_yrs_end"]
 
             MultiLayerQG.set_ψ!(prob.sol, prob.params, prob.vars, prob.grid, ψ)   # this also sets q!!!
+
+            println("Restarting model from: " * data_dir * r_file_name)
 
         end
 
@@ -304,7 +308,8 @@ function run_model(prob, model_params)
     startwalltime = time()
 
     global j = 0
-    global t_yrly = Array([clock.t])
+    prob.clock.t = restart_yr * 365.25 * 24 * 3600.
+    global t_yrly = Array([prob.clock.t])
     global yr_cnt = restart_yr
     global budget_counter = 0
     global nsaves = 0
@@ -315,7 +320,7 @@ function run_model(prob, model_params)
     global two_layer_xspace_layer_nrgs = zeros(dev, T, (3))
     global two_layer_vBT_scale = 0.
 
-    len_nrg = ceil(Int, (ss_yr_max - yr_cnt) * yr_increment * 365.25 * 24 * 3600 / prob.clock.dt / nsubs)
+    len_nrg = ceil(Int, (ss_yr_max - yr_cnt + 1) * yr_increment * 365.25 * 24 * 3600 / prob.clock.dt / nsubs)
     global nrg_ot = zeros(dev, T, (3, len_nrg))
 
     while yr_cnt < ss_yr_max
@@ -350,7 +355,7 @@ function run_model(prob, model_params)
                 end
             end
 
-            push!(t_yrly,clock.t)
+            push!(t_yrly,prob.clock.t)
 
             if two_layer_kspace_modal_nrg_budget_bool==true
                 
@@ -363,7 +368,7 @@ function run_model(prob, model_params)
             end
         
             # reading out stats
-            cfl = clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
+            cfl = prob.clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
         
             log = @sprintf("step: %04d, t: %.1f day, cfl: %.2f, walltime: %.2f min, nu_star: %.2E",
                             clock.step, clock.t/3600/24, cfl, (time()-startwalltime)/60, prob.params.ν)
@@ -455,7 +460,13 @@ function save_output(vars, jld_data, model_params, yr_cnt)
     
     println("Saving output data to JLD to: " * file_name)
 
-    jldsave(data_dir * file_name; jld_data)
+    if restart_bool==true
+        if yr_cnt>restart_yr
+            jldsave(data_dir * file_name; jld_data)
+        end
+    else
+        jldsave(data_dir * file_name; jld_data)
+    end
 
     if yr_cnt - 2 * yr_increment > restart_yr
         if only_save_last==true
@@ -849,13 +860,15 @@ function redef_mu_kappa_topoPV_h0(model_params, mu, kappa, topo_PV, h0_new)
     H = H,
     rho0 = rho0, rho = rho, strat_str = strat_str,
     shear_str = shear_str, U = U,
-    μ = mu , κ = kappa , nν = nν, ν = ν,
+    μ = mu , κ = kappa , nν = nν, ν = ν, dyn_nu=dyn_nu,
     eta = eta, topographic_pv_gradient = topo_PV, topo_type = topo_type, h0 = h0_new,
     β = β,
     dt = dt,
     stepper = stepper,
     dev = dev,
     restart_bool = restart_bool,
+    restart_yr = restart_yr,
+
     ss_yr_max = ss_yr_max,
     yr_increment = yr_increment,
     nsubs = nsubs);
