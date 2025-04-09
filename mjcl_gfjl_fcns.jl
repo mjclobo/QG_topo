@@ -273,8 +273,8 @@ function run_model(prob, model_params)
     global budget_counter = 0
 
     nterms_two_layer_modal_kspace = 14  # including residual
-    global two_layer_kspace_modal_nrgs = zeros(grid.nkr, nterms_two_layer_modal_kspace)
-    global two_layer_xspace_layer_nrgs = zeros(3)
+    global two_layer_kspace_modal_nrgs = zeros(dev, T, (grid.nkr, nterms_two_layer_modal_kspace))
+    global two_layer_xspace_layer_nrgs = zeros(dev, T, (3))
     global two_layer_vBT_scale = 0.
 
     while yr_cnt < ss_yr_max
@@ -720,7 +720,7 @@ function update_two_layered_nrg(vars, params, grid, sol, ψ, model_params, nrgs_
     # KE_uv[:,:,2] = @. 0.5 * mod2v 
     # KE_comp = dropdims(sum(dropdims(sum(KE_uv,dims=1),dims=1),dims=1),dims=1) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
     
-    return nrgs_in .+ hcat(KE[1], KE[2], APE)
+    return CUDA.@allowscalar nrgs_in .+ vcat(KE, APE)
 
 end
 
