@@ -433,6 +433,8 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     # energies are: BTEKE, BCEKE, EAPE; CBC, DBC, DBT; Tflat, Ttopo; NLBCEAPE, NLBCEKE, NLBC2BT; NLBTEKE, NLBT2BC; resid
     # here we do not define average, just add up the budget...averaging comes later
 
+    rfftplan = plan_flows_rfft(A{T, 3}(undef, grid.nx, grid.ny, 1), [1, 2]; flags=FFTW.MEASURE)
+
     @unpack_mod_params model_params
 
     dev = grid_jl.device
@@ -453,8 +455,8 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ψBCh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
     ψBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
 
-    fwdtransform!(ψBCh, ψBC, params)
-    fwdtransform!(ψBTh, BT, params)
+    mul!(ψBCh, rfftplan, ψBC)
+    mul!(ψBTh, rfftplan, ψBT)
     
     U₁, U₂, = view(params.U, :, :, 1), view(params.U, :, :, 2)
     
@@ -467,8 +469,8 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ∂xψBT = zeros(dev, T, (grid_jl.nx,grid_jl.ny))
     ∂yψBT = zeros(dev, T, (grid_jl.nx,grid_jl.ny)) 
 
-    invtransform!(∂xψBT, ∂xψBTh, params)
-    invtransform!(∂yψBT, ∂yψBTh, params)
+    ldiv!(∂xψBT, rfftplan, ∂xψBTh)
+    ldiv!(∂yψBT, rfftplan, ∂yψBTh)
 
     ∂xψBCh = im * grid_jl.kr .* ψBCh
     ∂yψBCh = im * grid_jl.l .* ψBCh
@@ -476,8 +478,8 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ∂xψBC = zeros(dev, T, (grid_jl.nx,grid_jl.ny))
     ∂yψBC = zeros(dev, T, (grid_jl.nx,grid_jl.ny)) 
 
-    invtransform!(∂xψBC, ∂xψBCh, params)
-    invtransform!(∂yψBC, ∂yψBCh, params)
+    ldiv!(∂xψBC, rfftplan, ∂xψBCh)
+    ldiv!(∂yψBC, rfftplan, ∂yψBCh)
     
     # nonlinear terms
     # ζ = deepcopy(vars.v)
@@ -491,8 +493,8 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ζBC = zeros(dev, T, (grid_jl.nx,grid_jl.ny))
     ζBT = zeros(dev, T, (grid_jl.nx,grid_jl.ny)) 
 
-    invtransform!(ζBC, ζBCh, params)
-    invtransform!(ζBT, ζBTh, params)
+    ldiv!(ζBC, rfftplan, ζBCh)
+    ldiv!(ζBT, rfftplan, ζBTh)
 
     ∂xζBCh = im * grid_jl.kr .* ζBCh
     ∂xζBTh = im * grid_jl.kr .* ζBTh
@@ -503,14 +505,14 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ∂xζBC = zeros(dev, T, (grid_jl.nx,grid_jl.ny))
     ∂xζBT = zeros(dev, T, (grid_jl.nx,grid_jl.ny)) 
 
-    invtransform!(∂xζBC, ∂xζBCh, params)
-    invtransform!(∂xζBT, ∂xζBTh, params)
+    ldiv!(∂xζBC, rfftplan, ∂xζBCh)
+    ldiv!(∂xζBT, rfftplan, ∂xζBTh)
 
     ∂yζBC = zeros(dev, T, (grid_jl.nx,grid_jl.ny))
     ∂yζBT = zeros(dev, T, (grid_jl.nx,grid_jl.ny)) 
 
-    invtransform!(∂yζBC, ∂yζBCh, params)
-    invtransform!(∂yζBT, ∂yζBTh, params)
+    ldiv!(∂yζBC, rfftplan, ∂yζBCh)
+    ldiv!(∂yζBT, rfftplan, ∂yζBTh)
 
     ##
     ζBT∂xψBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
@@ -529,26 +531,26 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ψBC∂yψBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
 
     
-    ζBT∂xψBTh = fwdtransform!(ζBT∂xψBTh, ζBT .* ∂xψBT, params)
-    ζBT∂yψBTh = fwdtransform!(ζBT∂yψBTh, ζBT .* ∂yψBT, params)
+    ζBT∂xψBTh = mul!(ζBT∂xψBTh, rfftplan, ζBT .* ∂xψBT)
+    ζBT∂yψBTh = mul!(ζBT∂yψBTh, rfftplan, ζBT .* ∂yψBT)
 
-    ζBC∂xψBCh = fwdtransform!(ζBC∂xψBCh, ζBC .* ∂xψBC, params)
-    ζBC∂yψBCh = fwdtransform!(ζBC∂yψBCh, ζBC .* ∂yψBC, params)
+    ζBC∂xψBCh = mul!(ζBC∂xψBCh, rfftplan, ζBC .* ∂xψBC)
+    ζBC∂yψBCh = mul!(ζBC∂yψBCh, rfftplan, ζBC .* ∂yψBC)
 
-    ζBC∂xψBTh = fwdtransform!(ζBC∂xψBTh, ζBC .* ∂xψBT, params)
-    ζBC∂yψBTh = fwdtransform!(ζBC∂yψBTh, ζBC .* ∂yψBT, params)
+    ζBC∂xψBTh = mul!(ζBC∂xψBTh, rfftplan, ζBC .* ∂xψBT)
+    ζBC∂yψBTh = mul!(ζBC∂yψBTh, rfftplan, ζBC .* ∂yψBT)
 
-    ζBT∂xψBCh = fwdtransform!(ζBT∂xψBCh, ζBT .* ∂xψBC, params)
-    ζBT∂yψBCh = fwdtransform!(ζBT∂yψBCh, ζBT .* ∂yψBC, params)
+    ζBT∂xψBCh = mul!(ζBT∂xψBCh, rfftplan, ζBT .* ∂xψBC)
+    ζBT∂yψBCh = mul!(ζBT∂yψBCh, rfftplan, ζBT .* ∂yψBC)
 
-    ψBC∂xψBTh = fwdtransform!(ψBC∂xψBTh, ψBC .* ∂xψBT, params)
-    ψBC∂yψBTh = fwdtransform!(ψBC∂yψBTh, ψBC .* ∂yψBT, params)
+    ψBC∂xψBTh = mul!(ψBC∂xψBTh, rfftplan, ψBC .* ∂xψBT)
+    ψBC∂yψBTh = mul!(ψBC∂yψBTh, rfftplan, ψBC .* ∂yψBT)
 
     J_ψBT_ζBT = ∂xψBT .* ∂yζBT .- ∂yψBT .* ∂xζBT
 
     J_ψBT_ζBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
     
-    fwdtransform!(J_ψBT_ζBTh, J_ψBT_ζBT, params)
+    mul!(J_ψBT_ζBTh, rfftplan, J_ψBT_ζBT)
 
     # ζ₁h = rfft(ζ₁)
     
@@ -635,7 +637,7 @@ update_two_layer_kspace_modal_nrgs(prob, ψ, model_params, nrgs_in) = update_two
 
 
 ####################################################################################
-## Helper for k-space budget
+## Helpers for k-space budget
 ####################################################################################
 
 function isotropic_mean(arr_in, grid)
