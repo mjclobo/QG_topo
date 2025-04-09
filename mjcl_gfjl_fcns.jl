@@ -457,7 +457,7 @@ function save_output(vars, jld_data, model_params, yr_cnt)
         global yr_cnt = round(yr_cnt + yr_increment, digits=3)
     end
 
-    file_name = jld_name(model_params, yr_cnt - yr_increment)
+    file_name = jld_name(model_params, round(yr_cnt - yr_increment, digits=3))
     
     println("Saving output data to JLD to: " * file_name)
 
@@ -471,7 +471,7 @@ function save_output(vars, jld_data, model_params, yr_cnt)
 
     if yr_cnt - 2 * yr_increment > restart_yr
         if only_save_last==true
-            rm(data_dir * jld_name(model_params, yr_cnt - 2 * yr_increment))
+            rm(data_dir * jld_name(model_params, round(yr_cnt - 2 * yr_increment, digits=3)))
         end
     end
 
