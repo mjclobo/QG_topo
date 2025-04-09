@@ -450,8 +450,8 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ψBC = 0.5 * (ψ[:,:,1] .- ψ[:,:,2])
     ψBT = 0.5 * (ψ[:,:,1] .+ ψ[:,:,2])
 
-    ψBCh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny,2)) 
-    ψBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny,2)) 
+    ψBCh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
+    ψBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
 
     fwdtransform!(ψBCh, ψBC, params)
     fwdtransform!(ψBTh, BT, params)
@@ -464,8 +464,8 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ∂xψBTh = im * grid_jl.kr .* ψBTh
     ∂yψBTh = im * grid_jl.l .* ψBTh
     
-    ∂xψBT = zeros(dev, T, (grid_jl.nx,grid_jl.ny,2))
-    ∂yψBT = zeros(dev, T, (grid_jl.nx,grid_jl.ny,2)) 
+    ∂xψBT = zeros(dev, T, (grid_jl.nx,grid_jl.ny))
+    ∂yψBT = zeros(dev, T, (grid_jl.nx,grid_jl.ny)) 
 
     invtransform!(∂xψBT, ∂xψBTh, params)
     invtransform!(∂yψBT, ∂yψBTh, params)
@@ -473,8 +473,8 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ∂xψBCh = im * grid_jl.kr .* ψBCh
     ∂yψBCh = im * grid_jl.l .* ψBCh
 
-    ∂xψBC = zeros(dev, T, (grid_jl.nx,grid_jl.ny,2))
-    ∂yψBC = zeros(dev, T, (grid_jl.nx,grid_jl.ny,2)) 
+    ∂xψBC = zeros(dev, T, (grid_jl.nx,grid_jl.ny))
+    ∂yψBC = zeros(dev, T, (grid_jl.nx,grid_jl.ny)) 
 
     invtransform!(∂xψBC, ∂xψBCh, params)
     invtransform!(∂yψBC, ∂yψBCh, params)
@@ -488,8 +488,8 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ζBCh = - grid_jl.Krsq .* ψBCh
     ζBTh = - grid_jl.Krsq .* ψBTh
 
-    ζBC = zeros(dev, T, (grid_jl.nx,grid_jl.ny,2))
-    ζBT = zeros(dev, T, (grid_jl.nx,grid_jl.ny,2)) 
+    ζBC = zeros(dev, T, (grid_jl.nx,grid_jl.ny))
+    ζBT = zeros(dev, T, (grid_jl.nx,grid_jl.ny)) 
 
     invtransform!(ζBC, ζBCh, params)
     invtransform!(ζBT, ζBTh, params)
@@ -500,33 +500,33 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ∂yζBCh = im * grid_jl.l .* ζBCh
     ∂yζBTh = im * grid_jl.l .* ζBTh
 
-    ∂xζBC = zeros(dev, T, (grid_jl.nx,grid_jl.ny,2))
-    ∂xζBT = zeros(dev, T, (grid_jl.nx,grid_jl.ny,2)) 
+    ∂xζBC = zeros(dev, T, (grid_jl.nx,grid_jl.ny))
+    ∂xζBT = zeros(dev, T, (grid_jl.nx,grid_jl.ny)) 
 
     invtransform!(∂xζBC, ∂xζBCh, params)
     invtransform!(∂xζBT, ∂xζBTh, params)
 
-    ∂yζBC = zeros(dev, T, (grid_jl.nx,grid_jl.ny,2))
-    ∂yζBT = zeros(dev, T, (grid_jl.nx,grid_jl.ny,2)) 
+    ∂yζBC = zeros(dev, T, (grid_jl.nx,grid_jl.ny))
+    ∂yζBT = zeros(dev, T, (grid_jl.nx,grid_jl.ny)) 
 
     invtransform!(∂yζBC, ∂yζBCh, params)
     invtransform!(∂yζBT, ∂yζBTh, params)
 
     ##
-    ζBT∂xψBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny,2)) 
-    ζBT∂yψBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny,2)) 
+    ζBT∂xψBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
+    ζBT∂yψBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
 
-    ζBC∂xψBCh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny,2)) 
-    ζBC∂yψBCh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny,2)) 
+    ζBC∂xψBCh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
+    ζBC∂yψBCh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
 
-    ζBC∂xψBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny,2)) 
-    ζBC∂yψBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny,2)) 
+    ζBC∂xψBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
+    ζBC∂yψBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
 
-    ζBT∂xψBCh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny,2)) 
-    ζBT∂yψBCh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny,2)) 
+    ζBT∂xψBCh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
+    ζBT∂yψBCh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
 
-    ψBC∂xψBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny,2)) 
-    ψBC∂yψBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny,2)) 
+    ψBC∂xψBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
+    ψBC∂yψBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
 
     
     ζBT∂xψBTh = fwdtransform!(ζBT∂xψBTh, ζBT .* ∂xψBT, params)
@@ -546,7 +546,7 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
 
     J_ψBT_ζBT = ∂xψBT .* ∂yζBT .- ∂yψBT .* ∂xζBT
 
-    J_ψBT_ζBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny,2)) 
+    J_ψBT_ζBTh = zeros(dev, T, (grid_jl.nkr,grid_jl.ny)) 
     
     fwdtransform!(J_ψBT_ζBTh, J_ψBT_ζBT, params)
 
