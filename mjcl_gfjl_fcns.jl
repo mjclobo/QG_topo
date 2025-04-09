@@ -1,6 +1,6 @@
 # This is a module of functions used for running QG models using GeophysicalFlows.jl.
 # 
-
+import Base: view
 ####################################################################################
 ## User input parameters
 ####################################################################################
@@ -317,7 +317,6 @@ function run_model(prob, model_params)
 
     nterms_two_layer_modal_kspace = 14  # including residual
     global two_layer_kspace_modal_nrgs = zeros(dev, T, (grid.nkr, nterms_two_layer_modal_kspace))
-    global two_layer_xspace_layer_nrgs = zeros(dev, T, (3))
     global two_layer_vBT_scale = 0.
 
     len_nrg = ceil(Int, (ss_yr_max - yr_cnt + 1) * yr_increment * 365.25 * 24 * 3600 / prob.clock.dt / nsubs)
@@ -359,9 +358,9 @@ function run_model(prob, model_params)
 
             if two_layer_kspace_modal_nrg_budget_bool==true
                 
-                global two_layer_kspace_modal_nrgs = update_two_layer_kspace_modal_nrgs(prob, vars.ψ, model_params, two_layer_kspace_modal_nrgs)
+                global uBT_rms, two_layer_kspace_modal_nrgs = update_two_layer_kspace_modal_nrgs(prob, vars.ψ, model_params, two_layer_kspace_modal_nrgs)
                 # global nrg_ot_here, two_layer_xspace_layer_nrgs = update_two_layered_nrg(prob, vars.ψ, model_params, two_layer_xspace_layer_nrgs) 
-                global uBT_rms, view(nrg_ot,:,nsaves) = update_two_layered_nrg(prob, vars.ψ, model_params, two_layer_xspace_layer_nrgs) 
+                global @views nrg_ot[:,nsaves] = update_two_layered_nrg(prob, vars.ψ, model_params) 
                 global two_layer_vBT_scale += uBT_rms
                 global budget_counter +=1
 
@@ -753,7 +752,7 @@ end
 ####################################################################################
 ## x-space layer-wise energies (two-layer for now)
 ####################################################################################
-function update_two_layered_nrg(vars, params, grid, sol, ψ, model_params, nrgs_in)
+function update_two_layered_nrg(vars, params, grid, sol, ψ, model_params)
 
     @unpack_mod_params model_params
 
@@ -795,7 +794,7 @@ function update_two_layered_nrg(vars, params, grid, sol, ψ, model_params, nrgs_
 
 end
 
-update_two_layered_nrg(prob, ψ, model_params, nrgs_in) = update_two_layered_nrg(prob.vars, prob.params, prob.grid, prob.sol, ψ, model_params, nrgs_in)
+update_two_layered_nrg(prob, ψ, model_params) = update_two_layered_nrg(prob.vars, prob.params, prob.grid, prob.sol, ψ, model_params)
 
 ####################################################################################
 ## 
