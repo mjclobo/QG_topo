@@ -117,7 +117,7 @@ function jld_name_pre_buoy(model_params,yr_cnt)
     
     nu_str = @sprintf "%.2E" ν / ((U[1]/2) * (Lx/2/pi)^7)
        
-    return data_dir_pre_buoy*"/twolayer_L2pi_" * string(round(L/2/pi/Ld)) * "_h0"* string(round(h0/S32,digits=3))* "_beta" * string(round(β * 2 * Ld^2 / U[1],digits=3)) * "_U" * string(round(U[1],digits=4)) * "_rho"* string(round(ρ[1],digits=6)) * drag_str * "mu" * mu_str * "_nu" * nu_str * "_Hr" * string(round(H[1]/H[2],sigdigits=1)) * "_res" * string(Int(Nx)) * "_yr" * string(yr_cnt) *  ".jld"
+    return data_dir_pre_buoy*"/twolayer_L2pi_" * string(round(L/2/pi/Ld)) * "_h0"* string(round(h0[1]/S32,digits=3))* "_beta" * string(round(β * 2 * Ld^2 / U[1],digits=3)) * "_U" * string(round(U[1],digits=4)) * "_rho"* string(round(ρ[1],digits=6)) * drag_str * "mu" * mu_str * "_nu" * nu_str * "_Hr" * string(round(H[1]/H[2],sigdigits=1)) * "_res" * string(Int(Nx)) * "_yr" * string(yr_cnt) *  ".jld"
 end
 
 
