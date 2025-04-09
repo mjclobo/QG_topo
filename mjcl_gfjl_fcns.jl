@@ -868,7 +868,8 @@ function redef_mu_kappa_topoPV_h0(model_params, mu, kappa, topo_PV, h0_new)
     dev = dev,
     restart_bool = restart_bool,
     restart_yr = restart_yr,
-
+    pre_buoy_restart_file = pre_buoy_restart_file,
+    data_dir_pre_buoy = data_dir_pre_buoy,
     ss_yr_max = ss_yr_max,
     yr_increment = yr_increment,
     nsubs = nsubs);
