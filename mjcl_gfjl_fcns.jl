@@ -362,7 +362,8 @@ function run_model(prob, model_params)
                 global two_layer_kspace_modal_nrgs = update_two_layer_kspace_modal_nrgs(prob, vars.ψ, model_params, two_layer_kspace_modal_nrgs)
                 # global nrg_ot_here, two_layer_xspace_layer_nrgs = update_two_layered_nrg(prob, vars.ψ, model_params, two_layer_xspace_layer_nrgs) 
                 global @views nrg_ot[:,nsaves] = update_two_layered_nrg(prob, vars.ψ, model_params, two_layer_xspace_layer_nrgs) 
-                global two_layer_vBT_scale += sqrt(mean((sum(vars.u, dims=3) ./ 2).^2))
+                uvBT = sum(((sum(vars.u .+ vars.v, dims=3) ./ 2).^2)) * grid.nx^-2
+                global two_layer_vBT_scale += uvBT^0.5
                 global budget_counter +=1
 
             end
@@ -696,7 +697,7 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     
     GC.gc()
    
-    # energies are, BTEKE, BCEKE, EAPE; CBC; Tflat, Ttopo; , DBC, DBT;  NLBCEAPE, NLBCEKE, NLBC2BT; NLBTEKE, NLBT2BC; resid
+    # energies are, BTEKE, BCEKE, EAPE; CBC; Tflat, Ttopo; , DBT, DBC;  NLBCEAPE, NLBCEKE, NLBC2BT; NLBTEKE, NLBT2BC; resid
 
   return nrgs_in .+ hcat(NRGs, CBCh, LF, Drag, NLBTh, NLBCh, resid)
 end
