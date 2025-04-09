@@ -665,13 +665,13 @@ function isotropic_mean(arr_in, grid)
     for i in range(1,length(grid.kr))
         # find 2D index values for a wavenumber magnitude
         if i==length(grid.kr)
-            fkr = @. (wv>=grid.kr[i]) & (wv<=grid.kr[i]+dkr)
+            fkr = CUDA.@allowscalar  @. (wv>=grid.kr[i]) & (wv<=grid.kr[i]+dkr)
         else
-            fkr = @. (wv>=grid.kr[i]) & (wv<grid.kr[i+1])
+            fkr = CUDA.@allowscalar  @. (wv>=grid.kr[i]) & (wv<grid.kr[i+1])
         end
         
         if sum(fkr) > 0
-            @views iso[i] = mean(real(arr_in[fkr])) # this is average over all combinations of k_x and k_y that are the same, isotropic k
+            CUDA.@allowscalar iso[i] = mean(real(arr_in[fkr])) # this is average over all combinations of k_x and k_y that are the same, isotropic k
         end
         
     end
