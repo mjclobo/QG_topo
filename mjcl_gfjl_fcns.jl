@@ -361,9 +361,8 @@ function run_model(prob, model_params)
                 
                 global two_layer_kspace_modal_nrgs = update_two_layer_kspace_modal_nrgs(prob, vars.ψ, model_params, two_layer_kspace_modal_nrgs)
                 # global nrg_ot_here, two_layer_xspace_layer_nrgs = update_two_layered_nrg(prob, vars.ψ, model_params, two_layer_xspace_layer_nrgs) 
-                global @views nrg_ot[:,nsaves] = update_two_layered_nrg(prob, vars.ψ, model_params, two_layer_xspace_layer_nrgs) 
-                uvBT = sum(((sum(view(vars.u,:,:,:) .+ view(vars.v,:,:,:), dims=3) ./ 2).^2)) * grid.nx^-2
-                global two_layer_vBT_scale += uvBT^0.5
+                global @views uBT_rms, nrg_ot[:,nsaves] = update_two_layered_nrg(prob, vars.ψ, model_params, two_layer_xspace_layer_nrgs) 
+                global two_layer_vBT_scale += uBT_rms
                 global budget_counter +=1
 
             end
@@ -657,12 +656,16 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ############################################################################################
     # Nonlinear terms in BC budget
     NLBC = zeros(dev, T, (grid_jl.nkr,grid_jl.ny,3)) .+ 0im
+
+    #NLBC2BT
     @views NLBC[:,:,1] = @. conj(ψBCh) * im * (grid_jl.l * ζBC∂xψBTh - grid_jl.kr * ζBC∂yψBTh)
     @views NLBC[:,:,1] .+= conj.(NLBC[:,:,1])
 
+    #NLBCEKE
     @views NLBC[:,:,2] = @. conj(ψBCh) * im * (grid_jl.l * ζBT∂xψBCh - grid_jl.kr * ζBT∂yψBCh)
     @views NLBC[:,:,2] .+= conj.(NLBC[:,:,2])
 
+    #NLBCEAPE
     @views NLBC[:,:,3] = @. - 2 * Ld1^-2 * conj(ψBCh) * im * (grid_jl.l * ψBC∂xψBTh - grid_jl.kr * ψBC∂yψBTh)
     @views NLBC[:,:,3] .+= conj.(NLBC[:,:,3])
 
@@ -697,9 +700,9 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     
     GC.gc()
    
-    # energies are, BTEKE, BCEKE, EAPE; CBC; Tflat, Ttopo; , DBT, DBC;  NLBCEAPE, NLBCEKE, NLBC2BT; NLBTEKE, NLBT2BC; resid
+    # energies are, BTEKE, BCEKE, EAPE; CBC; Tflat, Ttopo; , DBT, DBC; NLBC2BT, NLBCEAPE, NLBCEKE; NLBT2BC, NLBTEKE; resid
 
-  return nrgs_in .+ hcat(NRGs, CBCh, LF, Drag, NLBTh, NLBCh, resid)
+  return sqrt(mean(∂xψBT.^2 .+ ∂yψBT.^2)), nrgs_in .+ hcat(NRGs, CBCh, LF, Drag, NLBTh, NLBCh, resid)
 end
 
 update_two_layer_kspace_modal_nrgs(prob, ψ, model_params, nrgs_in) = update_two_layer_kspace_modal_nrgs(prob.vars, prob.params, prob.grid, prob.sol, ψ, model_params, nrgs_in)
