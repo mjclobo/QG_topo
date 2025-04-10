@@ -319,7 +319,7 @@ function run_model(prob, model_params)
     global two_layer_kspace_modal_nrgs = zeros(dev, T, (grid.nkr, nterms_two_layer_modal_kspace))
     global two_layer_vBT_scale = 0.
 
-    len_nrg = ceil(Int, (ss_yr_max - yr_cnt + 1) * yr_increment * 365.25 * 24 * 3600 / prob.clock.dt / nsubs)
+    len_nrg = ceil(Int, (ss_yr_max - yr_cnt + 1) * 365.25 * 24 * 3600 / prob.clock.dt / nsubs)
     global nrg_ot = zeros(dev, T, (3, len_nrg))
 
     while yr_cnt < ss_yr_max
