@@ -315,8 +315,14 @@ function run_model(prob, model_params)
     global nsaves = 0
     global psi_ot = nothing
 
+    global ph_iso    = 0.
+    global ph_slices = 0.
+
     nterms_two_layer_modal_kspace = 14  # including residual
+    nterms_two_layer_modal_xspace = 10  # only one nonlinear term (instead of 5)
     global two_layer_kspace_modal_nrgs = zeros(dev, T, (grid.nkr, nterms_two_layer_modal_kspace))
+    global two_layer_xspace_modal_nrgs = zeros(dev, T, (nterms_two_layer_modal_xspace, 1))
+    global two_layer_modal_length_scales = zeros(dev, T, (2, 1))
     global two_layer_vBT_scale = 0.
 
     len_nrg = ceil(Int, (ss_yr_max - yr_cnt + 1) * 365.25 * 24 * 3600 / prob.clock.dt / nsubs)
@@ -358,10 +364,14 @@ function run_model(prob, model_params)
 
             if two_layer_kspace_modal_nrg_budget_bool==true
                 
-                global uBT_rms, two_layer_kspace_modal_nrgs = update_two_layer_kspace_modal_nrgs(prob, vars.ψ, model_params, two_layer_kspace_modal_nrgs)
+                global uBT_rms, two_layer_kspace_modal_nrgs, two_layer_xspace_modal_nrgs, two_layer_modal_length_scales = update_two_layer_kspace_modal_nrgs(prob, vars.ψ, model_params, two_layer_kspace_modal_nrgs, two_layer_xspace_modal_nrgs, two_layer_modal_length_scales)
                 # global nrg_ot_here, two_layer_xspace_layer_nrgs = update_two_layered_nrg(prob, vars.ψ, model_params, two_layer_xspace_layer_nrgs) 
                 global @views nrg_ot[:,nsaves] = update_two_layered_nrg(prob, vars.ψ, model_params) 
                 global two_layer_vBT_scale += uBT_rms
+
+                global ph_iso    += calc_iso_phase_shift_12(model_params, vars.ψ, prob.grid, prob.vars)
+                global ph_slices += calc_zonal_phase_shift_12(model_params, vars.ψ, prob.grid, prob.vars)
+
                 global budget_counter +=1
 
             end
@@ -402,13 +412,19 @@ function run_model(prob, model_params)
                     elseif psi_out_bool_yrs_end==true && two_layer_kspace_modal_nrg_budget_bool==true
                         jld_data = Dict("t" => t_yrly,
                             "psi_yrs_end" => Array(vars.ψ), "two_layer_kspace_modal_nrg_budget" => Array(two_layer_kspace_modal_nrgs ./ budget_counter),
+                            "two_layer_xspace_modal_nrg_budget" => Array(two_layer_xspace_modal_nrgs ./ budget_counter),
                             "two_layer_xspace_nrgs_ot" => Array(nrg_ot),
-                            "two_layer_vBT_scale" => Float64(two_layer_vBT_scale ./ budget_counter))
+                            "two_layer_vBT_scale" => Float64(two_layer_vBT_scale ./ budget_counter),
+                            "ph_iso" => Float64(ph_iso / budget_counter), "ph_slices" => Float64(ph_slices / budget_counter),
+                            "two_layer_modal_length_scales" => Array(two_layer_modal_length_scales ./ budget_counter))
                     elseif psi_out_bool==false && two_layer_kspace_modal_nrg_budget_bool==true
                         jld_data = Dict("t" => t_yrly,
                             "two_layer_kspace_modal_nrg_budget" => Array(two_layer_kspace_modal_nrgs ./ budget_counter),
+                            "two_layer_xspace_modal_nrg_budget" => Array(two_layer_xspace_modal_nrgs ./ budget_counter),
                             "two_layer_xspace_nrgs_ot" => Array(nrg_ot),
-                            "two_layer_vBT_scale" => Float64(two_layer_vBT_scale ./ budget_counter))
+                            "two_layer_vBT_scale" => Float64(two_layer_vBT_scale ./ budget_counter),
+                            "ph_iso" => Float64(ph_iso / budget_counter), "ph_slices" => Float64(ph_slices / budget_counter),
+                            "two_layer_modal_length_scales" => Array(two_layer_modal_length_scales ./ budget_counter))
                     end
 
                 end
@@ -460,7 +476,7 @@ function save_output(vars, jld_data, model_params, yr_cnt)
     println("Saving output data to JLD to: " * file_name)
 
     if restart_bool==true
-        if yr_cnt>restart_yr
+        if yr_cnt > round(restart_yr + yr_increment, digits=3)
             jldsave(data_dir * file_name; jld_data)
         end
     else
@@ -486,27 +502,117 @@ end
 ## DIAGS: x-space modal budget
 ####################################################################################
 
+using Statistics
+
+function modal_xspace_budget(model_params, vars, params, grid, sol, ψ)
+
+    @unpack_mod_params model_params
+
+    nlayers=Nz
+    δ = params.H[1]/params.H[2]
+    g′ = g * (rho[2] -   rho[1]) / rho0 # reduced gravity at the interface
+    μ = params.μ
+    Ld1 = (params.f₀^2 / (g′ * params.H[1]))^-0.5
+    ∂yηb = params.topographic_pv_gradient[2] / (params.f₀ / params.H[end])
+
+    vars.ψh[:,:,1] = rfft(ψ[:,:,1])
+    vars.ψh[:,:,2] = rfft(ψ[:,:,2])
+
+    ψBC = 0.5 * (ψ[:,:,1] .- ψ[:,:,2])
+    ψBT = 0.5 * (ψ[:,:,1] .+ ψ[:,:,2])
+
+    ψBCh = rfft(ψBC)
+    ψBTh = rfft(ψBT)
+
+    ∂xψBC = irfft(im * grid.kr .* ψBCh, grid.ny)
+    ∂xψBT = irfft(im * grid.kr .* ψBTh, grid.ny)
+
+    ∂yψBC = irfft(im * grid.l .* ψBCh, grid.ny)
+    ∂yψBT = irfft(im * grid.l .* ψBTh, grid.ny)
+
+    ζ = zeros(grid.nx, grid.ny, 2)   # irfft(- grid.Krsq .* ψh, grid.nx)
+    ζ[:,:,1] = irfft(- grid.Krsq .* vars.ψh[:,:,1], grid.nx)
+    ζ[:,:,2] = irfft(- grid.Krsq .* vars.ψh[:,:,2], grid.nx)
+
+    ∂xζ1 = irfft(im * grid.kr .* rfft(ζ[:,:,1]), grid.ny)
+
+    ζBC = irfft(- grid.Krsq .* ψBCh, grid.nx)  # BC
+    ζBT = irfft(- grid.Krsq .* ψBTh, grid.nx)   # BT
+
+    ∂xζBC = irfft(im * grid.kr .* rfft(ζBC), grid.ny)
+    ∂yζBC = irfft(im * grid.l  .* rfft(ζBC), grid.ny)
+
+    ∂xζBT = irfft(im * grid.kr .* rfft(ζBT), grid.ny)
+    ∂yζBT = irfft(im * grid.l  .* rfft(ζBT), grid.ny)
+
+
+    #     vertfluxes, dragfluxes = zeros(grid.nkr,nlayers), zeros(grid.nkr,nlayers+1)
+
+    U₁, U₂ = view(params.U, :, :, 1), view(params.U, :, :, 2)
+
+    S32 = CUDA.@allowscalar params.f₀ * U₁[1,1] ./ g′
+
+
+    # calcing x_space_stuff
+    # Linear modal transfer terms
+    LT_x = @. 0.5 * ψBT * U₁ * ∂xζ1   # BC to BT
+
+    # Topo transfer term
+    TT_x = - 0.5 * ∂yηb * (params.f₀ / params.H[2]) .* ψBT .* ∂xψBC
+    # k-space version: -0.5 * (params.f₀ / params.H[2]) * ∂yηb * (conj(ψBTh) * ∂xψBCh + ψBTh * conj(∂xψBCh))
+
+    # Baroclinic production term
+    BC_x = (params.f₀ / params.H[1]) * S32 .* ψBC .* ∂xψBT
+
+    # Nonlinear transfer term
+    NL_x = ψBT .* (∂xψBC .* ∂yζBC .- ∂yψBC .* ∂xζBC)  # NL BT <--> BC (EKE)
+
+    # Drag terms
+    DBT_x = @. - (μ/2) * ψBT .* (ζBC .- ζBT)     # BT drag term
+    DBC_x = @. (μ/2) * ψBC .* (ζBC .- ζBT)      # BC drag term    
+
+    # integrating in y
+    LT_x = sum(LT_x) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
+    TT_x = sum(TT_x) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
+    BC_x = sum(BC_X) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
+    NL_x = sum(NL_x) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
+    DBT_x = sum(DBT_x) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
+    DBC_x = sum(DBC_x) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
+
+    resid_x = BC_x + DBT_x + DBC_x
+
+    # energies
+    BTKE_x = 0.5 * sum(∂xψBT.^2 .+ ∂yψBT.^2) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
+
+    BCKE_x = 0.5 * sum(∂xψBC.^2 .+ ∂yψBC.^2) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
+
+    BCEAPE_x = 2 * Ld1^-2 * sum(ψBC .* ψBC)  * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
+
+    return 
+end
+
+modal_xspace_budget(model_params, prob, ψ) = modal_xspace_budget(model_params, prob.vars, prob.params, prob.grid, prob.sol, ψ)
 
 
 
 
 
 ####################################################################################
-## DIAGS: k-space budget
+## DIAGS: modal k-space budget
 ####################################################################################
 
-function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, model_params, nrgs_in)
+function update_two_layer_kspace_modal_nrgs(vars, params, grid, sol, ψ, model_params, nrgs_in, nrgs_in_x, lengths_in)
     # energies are: BTEKE, BCEKE, EAPE; CBC, DBC, DBT; Tflat, Ttopo; NLBCEAPE, NLBCEKE, NLBC2BT; NLBTEKE, NLBT2BC; resid
     # here we do not define average, just add up the budget...averaging comes later
 
 
     @unpack_mod_params model_params
 
-    dev = grid_jl.device
-    T = eltype(grid_jl)
+    dev = grid.device
+    T = eltype(grid)
     A = device_array(dev)
 
-    rfftplan = plan_flows_rfft(A{T, 3}(undef, grid_jl.nx, grid_jl.ny, 1), [1, 2]; flags=FFTW.MEASURE)
+    rfftplan = plan_flows_rfft(A{T, 3}(undef, grid.nx, grid.ny, 1), [1, 2]; flags=FFTW.MEASURE)
 
     # parameters
     nlayers = 2
@@ -530,8 +636,8 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     S32 = CUDA.@allowscalar f0 * U₁[1,1] / g′
 
     # streamfunction stuff
-    ∂xψBTh = im * grid_jl.kr .* ψBTh
-    ∂yψBTh = im * grid_jl.l .* ψBTh
+    ∂xψBTh = im * grid.kr .* ψBTh
+    ∂yψBTh = im * grid.l .* ψBTh
     
     ∂xψBT = deepcopy(vars.u[:,:,1])
     ∂yψBT = deepcopy(vars.u[:,:,1])
@@ -539,8 +645,8 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ldiv2D!(∂xψBT, rfftplan, ∂xψBTh)
     ldiv2D!(∂yψBT, rfftplan, ∂yψBTh)
 
-    ∂xψBCh = im * grid_jl.kr .* ψBCh
-    ∂yψBCh = im * grid_jl.l .* ψBCh
+    ∂xψBCh = im * grid.kr .* ψBCh
+    ∂yψBCh = im * grid.l .* ψBCh
 
     ∂xψBC = deepcopy(vars.u[:,:,1])
     ∂yψBC = deepcopy(vars.u[:,:,1])
@@ -549,13 +655,13 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ldiv2D!(∂yψBC, rfftplan, ∂yψBCh)
     
     # nonlinear terms
-    # ζ = deepcopy(vars.v)
-    # ζ[:,:,1] .= irfft(-grid_jl.Krsq .* vars.ψh[:,:,1], grid_jl.ny)
-    # ζ[:,:,2] .= irfft(-grid_jl.Krsq .* vars.ψh[:,:,2], grid_jl.ny)
-    # ζ₁, ζ₂ = view(ζ, :, :, 1), view(ζ, :, :, 2)
+    ζ = deepcopy(vars.v)
+    ζ[:,:,1] .= irfft(-grid.Krsq .* vars.ψh[:,:,1], grid.ny)
+    ζ[:,:,2] .= irfft(-grid.Krsq .* vars.ψh[:,:,2], grid.ny)
+    ζ₁, ζ₂ = view(ζ, :, :, 1), view(ζ, :, :, 2)
 
-    ζBCh = - grid_jl.Krsq .* ψBCh
-    ζBTh = - grid_jl.Krsq .* ψBTh
+    ζBCh = - grid.Krsq .* ψBCh
+    ζBTh = - grid.Krsq .* ψBTh
 
     ζBC = deepcopy(vars.u[:,:,1])
     ζBT = deepcopy(vars.u[:,:,1])
@@ -563,11 +669,11 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     ldiv2D!(ζBC, rfftplan, ζBCh)
     ldiv2D!(ζBT, rfftplan, ζBTh)
 
-    ∂xζBCh = im * grid_jl.kr .* ζBCh
-    ∂xζBTh = im * grid_jl.kr .* ζBTh
+    ∂xζBCh = im * grid.kr .* ζBCh
+    ∂xζBTh = im * grid.kr .* ζBTh
 
-    ∂yζBCh = im * grid_jl.l .* ζBCh
-    ∂yζBTh = im * grid_jl.l .* ζBTh
+    ∂yζBCh = im * grid.l .* ζBCh
+    ∂yζBTh = im * grid.l .* ζBTh
 
     ∂xζBC = deepcopy(vars.u[:,:,1])
     ∂xζBT = deepcopy(vars.u[:,:,1])
@@ -619,17 +725,17 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     
     mul2D!(J_ψBT_ζBTh, rfftplan, J_ψBT_ζBT)
 
-    # ζ₁h = rfft(ζ₁)
+    ζ₁h = rfft(ζ₁)
     
     # ζ₂h = rfft(ζ₂)
     
-    # ∂xζ1h = im * grid_jl.kr .* ζ₁h 
-    # ∂xζ1 = irfft(∂xζ1h, grid_jl.ny)
+    ∂xζ1h = im * grid.kr .* ζ₁h 
+    ∂xζ1 = irfft(∂xζ1h, grid.ny)
 
     ############################################################################################
-    BTEKE = @. 0.5 * (conj(ψBTh) * (grid_jl.kr^2 * ψBTh) + ψBTh * conj(grid_jl.kr^2 * ψBTh))
+    BTEKE = @. 0.5 * (conj(ψBTh) * (grid.kr^2 * ψBTh) + ψBTh * conj(grid.kr^2 * ψBTh))
 
-    BCEKE = @. 0.5 * grid_jl.kr^2 * (conj(ψBCh) * ψBCh + ψBCh * conj(ψBCh))
+    BCEKE = @. 0.5 * grid.kr^2 * (conj(ψBCh) * ψBCh + ψBCh * conj(ψBCh))
     BCEAPE = @. 0.5 * 2 * Ld1^-2 * (conj(ψBCh) * ψBCh + ψBCh * conj(ψBCh))
 
     ############################################################################################
@@ -645,27 +751,27 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
 
     ############################################################################################
     # Nonlinear terms in BT budget
-    NLBT = zeros(dev, T, (grid_jl.nkr,grid_jl.ny,2)) .+ 0im
-    @views NLBT[:,:,1] = @. conj(ψBTh) * J_ψBT_ζBTh + ψBTh * conj(J_ψBT_ζBTh)  # im * (grid_jl.l * ζBT∂xψBTh - grid_jl.kr * ζBT∂yψBTh)
+    NLBT = zeros(dev, T, (grid.nkr,grid.ny,2)) .+ 0im
+    @views NLBT[:,:,1] = @. conj(ψBTh) * J_ψBT_ζBTh + ψBTh * conj(J_ψBT_ζBTh)  # im * (grid.l * ζBT∂xψBTh - grid.kr * ζBT∂yψBTh)
     # NLBT[:,:,1] .+= conj.(NLBT[:,:,1])
 
-    @views NLBT[:,:,2] = @. conj(ψBTh) * im * (grid_jl.l * ζBC∂xψBCh - grid_jl.kr * ζBC∂yψBCh)
+    @views NLBT[:,:,2] = @. conj(ψBTh) * im * (grid.l * ζBC∂xψBCh - grid.kr * ζBC∂yψBCh)
     @views NLBT[:,:,2] .+= conj.(NLBT[:,:,2])
 
     ############################################################################################
     # Nonlinear terms in BC budget
-    NLBC = zeros(dev, T, (grid_jl.nkr,grid_jl.ny,3)) .+ 0im
+    NLBC = zeros(dev, T, (grid.nkr,grid.ny,3)) .+ 0im
 
     #NLBC2BT
-    @views NLBC[:,:,1] = @. conj(ψBCh) * im * (grid_jl.l * ζBC∂xψBTh - grid_jl.kr * ζBC∂yψBTh)
+    @views NLBC[:,:,1] = @. conj(ψBCh) * im * (grid.l * ζBC∂xψBTh - grid.kr * ζBC∂yψBTh)
     @views NLBC[:,:,1] .+= conj.(NLBC[:,:,1])
 
     #NLBCEKE
-    @views NLBC[:,:,2] = @. conj(ψBCh) * im * (grid_jl.l * ζBT∂xψBCh - grid_jl.kr * ζBT∂yψBCh)
+    @views NLBC[:,:,2] = @. conj(ψBCh) * im * (grid.l * ζBT∂xψBCh - grid.kr * ζBT∂yψBCh)
     @views NLBC[:,:,2] .+= conj.(NLBC[:,:,2])
 
     #NLBCEAPE
-    @views NLBC[:,:,3] = @. - 2 * Ld1^-2 * conj(ψBCh) * im * (grid_jl.l * ψBC∂xψBTh - grid_jl.kr * ψBC∂yψBTh)
+    @views NLBC[:,:,3] = @. - 2 * Ld1^-2 * conj(ψBCh) * im * (grid.l * ψBC∂xψBTh - grid.kr * ψBC∂yψBTh)
     @views NLBC[:,:,3] .+= conj.(NLBC[:,:,3])
 
     ############################################################################################
@@ -681,12 +787,12 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
 
     ############################################################################################
     # taking mean at each wavenumber magnitude, i.e., assuming isotropy
-    NRGs = hcat(isotropic_mean(BTEKE,grid_jl), isotropic_mean(BCEKE,grid_jl), isotropic_mean(BCEAPE,grid_jl))
-    CBCh = isotropic_mean(CBC, grid_jl)
-    LF = hcat(isotropic_mean(BC2BT, grid_jl), isotropic_mean(TopoT, grid_jl))
-    Drag = hcat(isotropic_mean(DBT, grid_jl), isotropic_mean(DBC, grid_jl))
-    NLBTh = hcat(isotropic_mean(NLBT[:,:,1], grid_jl), isotropic_mean(NLBT[:,:,2], grid_jl))  # BC2BT transfer, EKE
-    NLBCh = hcat(isotropic_mean(NLBC[:,:,1], grid_jl), isotropic_mean(NLBC[:,:,2], grid_jl), isotropic_mean(NLBC[:,:,3], grid_jl)) # BT2BC, EKE, EAPE
+    NRGs = hcat(isotropic_mean(BTEKE,grid), isotropic_mean(BCEKE,grid), isotropic_mean(BCEAPE,grid))
+    CBCh = isotropic_mean(CBC, grid)
+    LF = hcat(isotropic_mean(BC2BT, grid), isotropic_mean(TopoT, grid))
+    Drag = hcat(isotropic_mean(DBT, grid), isotropic_mean(DBC, grid))
+    NLBTh = hcat(isotropic_mean(NLBT[:,:,1], grid), isotropic_mean(NLBT[:,:,2], grid))  # BC2BT transfer, EKE
+    NLBCh = hcat(isotropic_mean(NLBC[:,:,1], grid), isotropic_mean(NLBC[:,:,2], grid), isotropic_mean(NLBC[:,:,3], grid)) # BT2BC, EKE, EAPE
 
     NRGs = dropdims(NRGs,dims=tuple(findall(size(NRGs).==1)...))
     CBCh = dropdims(CBCh,dims=tuple(findall(size(CBCh).==1)...))
@@ -696,15 +802,60 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid_jl, sol, ψ, mode
     NLBCh = dropdims(NLBCh,dims=tuple(findall(size(NLBCh).==1)...))
 
     resid = CBCh .+ sum(Drag, dims=2) .+ sum(NLBTh, dims=2) .+ sum(NLBCh, dims=2)
-    
+
+    ##############################################################################
+    ## START: x-space budget
+    ##############################################################################
+    # Linear modal transfer terms
+    LT_x = @. 0.5 * ψBT * U₁ * ∂xζ1   # BC to BT
+
+    # Topo transfer term
+    TT_x = - 0.5 * ∂yηb * (params.f₀ / params.H[2]) .* ψBT .* ∂xψBC
+    # k-space version: -0.5 * (params.f₀ / params.H[2]) * ∂yηb * (conj(ψBTh) * ∂xψBCh + ψBTh * conj(∂xψBCh))
+
+    # Baroclinic production term
+    BC_x = (params.f₀ / params.H[1]) * S32 .* ψBC .* ∂xψBT
+
+    # Nonlinear transfer term
+    NL_x = ψBT .* (∂xψBC .* ∂yζBC .- ∂yψBC .* ∂xζBC)  # NL BT <--> BC (EKE)
+
+    # Drag terms
+    DBT_x = @. - (μ/2) * ψBT .* (ζBC .- ζBT)     # BT drag term
+    DBC_x = @. (μ/2) * ψBC .* (ζBC .- ζBT)      # BC drag term    
+
+    # integrating in y
+    LT_x = sum(LT_x) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
+    TT_x = sum(TT_x) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
+    BC_x = sum(BC_x) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
+    NL_x = sum(NL_x) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
+    DBT_x = sum(DBT_x) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
+    DBC_x = sum(DBC_x) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
+
+    resid_x = BC_x + DBT_x + DBC_x
+
+    # energies
+    BTKE_x = 0.5 * sum(∂xψBT.^2 .+ ∂yψBT.^2) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
+
+    BCKE_x = 0.5 * sum(∂xψBC.^2 .+ ∂yψBC.^2) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
+
+    BCEAPE_x = 2 * Ld1^-2 * sum(ψBC .* ψBC)  * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
+
+    ##############################################################################
+    ## END: x-space budget
+    ##############################################################################
+
+    ## defining KE length scales
+    L_BC = sqrt(mean(∂xψBC.^2 .+ ∂yψBC.^2) / mean(ψBC.^2))  # BC
+    L_BT = sqrt(mean(∂xψBT.^2 .+ ∂yψBT.^2) / mean(ψBT.^2))  # BT
+
     GC.gc()
    
-    # energies are, BTEKE, BCEKE, EAPE; CBC; Tflat, Ttopo; , DBT, DBC; NLBC2BT, NLBCEAPE, NLBCEKE; NLBT2BC, NLBTEKE; resid
+    # k-space energies are, BTEKE, BCEKE, EAPE; CBC; Tflat, Ttopo; , DBT, DBC; NLBT2BC, NLBTEKE; NLBC2BT, NLBCEKE, NLBCEAPE resid
 
-  return sqrt(mean(∂xψBT.^2 .+ ∂yψBT.^2)), nrgs_in .+ hcat(NRGs, CBCh, LF, Drag, NLBTh, NLBCh, resid)
+  return sqrt(mean(∂xψBT.^2 .+ ∂yψBT.^2)), nrgs_in .+ hcat(NRGs, CBCh, LF, Drag, NLBTh, NLBCh, resid), nrgs_in_x .+ CuArray(vcat(BTKE_x, BCKE_x, BCEAPE_x, LT_x, TT_x, BC_x, NL_x, DBT_x, DBC_x, resid_x)), lengths_in .+ CuArray(vcat(L_BT, L_BC))
 end
 
-update_two_layer_kspace_modal_nrgs(prob, ψ, model_params, nrgs_in) = update_two_layer_kspace_modal_nrgs(prob.vars, prob.params, prob.grid, prob.sol, ψ, model_params, nrgs_in)
+update_two_layer_kspace_modal_nrgs(prob, ψ, model_params, nrgs_in, nrgs_in_x, lengths_in) = update_two_layer_kspace_modal_nrgs(prob.vars, prob.params, prob.grid, prob.sol, ψ, model_params, nrgs_in, nrgs_in_x, lengths_in)
 
 
 ####################################################################################
@@ -797,6 +948,100 @@ end
 update_two_layered_nrg(prob, ψ, model_params) = update_two_layered_nrg(prob.vars, prob.params, prob.grid, prob.sol, ψ, model_params)
 
 ####################################################################################
+## calculating the phase shift diagnostics (we use two differnent formulations for now)
+####################################################################################
+
+function calc_zonal_phase_shift_12(model_params, psi, grid, vars)
+    
+    @unpack_mod_params model_params
+
+    dev = grid.device
+    T = eltype(grid)
+    A = device_array(dev)
+
+    rfftplan = plan_flows_rfft(A{T, 3}(undef, grid.nx, 1, 1), [1, 2]; flags=FFTW.MEASURE)
+
+    nstep = 20
+
+    nmax = ceil(Int, Ny/nstep)  # 
+    
+    ph = zeros(nmax,ceil(Int, Nx/2+1))
+    ph_wt = zeros(nmax,)
+
+    n=1  # index over all steps
+
+    st = collect(range(1,Ny,step=nstep));
+
+    for k in st   # for each zonal slice where you take an FFT
+        # define zonal slice of psi in each layer
+
+        psi1 = psi[:,k,1]
+        psi2 = psi[:,k,2]
+
+        psi1h = deepcopy(vars.uh[:,1,1])
+        psi2h = deepcopy(vars.uh[:,1,1])
+    
+        
+        mul!(reshape(psi1h, (size(psi1h)...,1,1)), rfftplan, reshape(psi1, (size(psi1)...,1,1)))[:,1,1]
+        mul!(reshape(psi2h, (size(psi2h)...,1,1)), rfftplan, reshape(psi2, (size(psi2)...,1,1)))[:,1,1]
+
+        # define weights as a function of wavenumber for this zonal slice
+        wts = abs2.(psi1h) .+ abs2.(psi2h)
+        wts = wts ./ sum(wts)
+        
+        # ph[n,:] = angle.(psi1 ./ psi2)
+
+        ph_wt[n] = sum(wts .* angle.(psi1h ./ psi2h)) # amplitude-weighted phase at each wavenumber for nth slice
+
+        n+=1
+    end
+
+    # ph_out = median(ph[1:n-1,:],dims=1)   # we take median because we want a characteristic phase shift as a function of zonal wavenumber; mean would work too
+
+    ph_wt_out = mean(ph_wt[1:n-1])  # we take mean because this is an array of the summed weighted phase shift
+
+    return ph_wt_out
+    
+end
+
+
+function calc_iso_phase_shift_12(model_params, psi, grid, vars)
+
+    @unpack_mod_params model_params
+
+    dev = grid.device
+    T = eltype(grid)
+    A = device_array(dev)
+
+    rfftplan = plan_flows_rfft(A{T, 3}(undef, grid.nx, grid.ny, Nz), [1, 2]; flags=FFTW.MEASURE)
+
+    ψh = deepcopy(vars.uh) # zeros(prob.grid.nkr, prob.grid.ny, Nz) .+ 0im #
+    
+    mul!(ψh, rfftplan, psi);
+    
+    wts = isotropic_mean(abs2.(ψh[:,:,1]), grid) .+ isotropic_mean(abs2.(ψh[:,:,2]), grid)
+    wts = wts ./ sum(wts)
+    
+    ph_iso = isotropic_mean(angle.(ψh[:,:,1] ./ ψh[:,:,2]), grid)
+    ph_wts = wts .* ph_iso
+
+    return sum(filter(!isnan, ph_wts))
+end
+
+
+
+
+####################################################################################
+## Diagnosing length scales
+####################################################################################
+
+
+
+
+
+
+
+####################################################################################
 ## 
 ####################################################################################
 
@@ -805,9 +1050,23 @@ update_two_layered_nrg(prob, ψ, model_params) = update_two_layered_nrg(prob.var
 
 
 
+
+
 ####################################################################################
 ## 
 ####################################################################################
+
+
+
+
+
+
+
+
+####################################################################################
+## 
+####################################################################################
+
 
 
 
