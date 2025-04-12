@@ -955,6 +955,8 @@ function calc_zonal_phase_shift_12(model_params, psi, grid, vars)
     
     @unpack_mod_params model_params
 
+    k_max_ind = 256
+
     dev = grid.device
     T = eltype(grid)
     A = device_array(dev)
@@ -986,19 +988,19 @@ function calc_zonal_phase_shift_12(model_params, psi, grid, vars)
         mul!(reshape(psi2h, (size(psi2h)...,1,1)), rfftplan, reshape(psi2, (size(psi2)...,1,1)))[:,1,1]
 
         # define weights as a function of wavenumber for this zonal slice
-        wts = abs2.(psi1h) .+ abs2.(psi2h)
+        wts = abs2.(psi1h[1:k_max_ind]) .+ abs2.(psi2h[1:k_max_ind])
         wts = wts ./ sum(wts)
         
         # ph[n,:] = angle.(psi1 ./ psi2)
 
-        ph_wt[n] = sum(wts .* angle.(psi1h ./ psi2h)) # amplitude-weighted phase at each wavenumber for nth slice
+        ph_wt[n] = sum(wts .* angle.(psi1h[1:k_max_ind] ./ psi2h[1:k_max_ind])) # amplitude-weighted phase at each wavenumber for nth slice
 
         n+=1
     end
 
     # ph_out = median(ph[1:n-1,:],dims=1)   # we take median because we want a characteristic phase shift as a function of zonal wavenumber; mean would work too
 
-    ph_wt_out = mean(ph_wt[1:n-1])  # we take mean because this is an array of the summed weighted phase shift
+    ph_wt_out = mean(ph_wt[1:n-1])  # we take mean because this is an array of the summed weighted phase shift where n is the number of zonal slices
 
     return ph_wt_out
     
