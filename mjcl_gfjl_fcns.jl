@@ -387,7 +387,7 @@ function run_model(prob, model_params)
             # save output and reset params every year
             if ((t_yrly[end] - yr_cnt*365*86400) > 0)
 
-                if yr_cnt==restart_yr
+                if yr_cnt <= restart_yr + yr_increment
 
                     jld_data = Dict("t" => t_yrly, "Nz" => Nz,
                         "L" => L, "H" => H, "rho" => rho, "U" => U[:,:,1],
