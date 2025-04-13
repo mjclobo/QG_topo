@@ -389,7 +389,7 @@ function run_model(prob, model_params)
 
                 if yr_cnt <= restart_yr + yr_increment
 
-                    jld_data = Dict("t" => t_yrly, "Nz" => Nz,
+                    jld_data = Dict("Nz" => Nz, "f0" => f0,
                         "L" => L, "H" => H, "rho" => rho, "U" => U[:,:,1],
                         "dt" => dt, "beta" => β, "mu" => μ, "kappa" => κ,
                         "nu" => ν, "n_nu" => nν, "Ld" => Ld,
@@ -405,10 +405,16 @@ function run_model(prob, model_params)
                         jld_data = Dict("t" => t_yrly,
                             "psi_ot" => Array(psi_ot))
                     elseif psi_out_bool==true && two_layer_kspace_modal_nrg_budget_bool==true
+                        jld_data = Dict("t" => t_yrly, "psi_ot" => Array(psi_ot),
+                            "two_layer_kspace_modal_nrg_budget" => Array(two_layer_kspace_modal_nrgs ./ budget_counter),
+                            "two_layer_xspace_modal_nrg_budget" => Array(two_layer_xspace_modal_nrgs ./ budget_counter),
+                            "two_layer_xspace_nrgs_ot" => Array(nrg_ot),
+                            "two_layer_vBT_scale" => Float64(two_layer_vBT_scale ./ budget_counter),
+                            "ph_iso" => Float64(ph_iso / budget_counter), "ph_slices" => Float64(ph_slices / budget_counter),
+                            "two_layer_modal_length_scales" => Array(two_layer_modal_length_scales ./ budget_counter))
+                    elseif psi_out_bool_yrs_end==true && two_layer_kspace_modal_nrg_budget_bool==false
                         jld_data = Dict("t" => t_yrly,
-                            "psi_ot" => Array(psi_ot), "two_layer_kspace_modal_nrg_budget" => Array(two_layer_kspace_modal_nrgs ./ budget_counter),
-                            "two_layer_xspace_layer_nrgs" => Array(two_layer_xspace_layer_nrgs ./ budget_counter),
-                            "two_layer_vBT_scale" => Float64(two_layer_vBT_scale ./ budget_counter))
+                            "psi_yrs_end" => Array(vars.ψ))
                     elseif psi_out_bool_yrs_end==true && two_layer_kspace_modal_nrg_budget_bool==true
                         jld_data = Dict("t" => t_yrly,
                             "psi_yrs_end" => Array(vars.ψ), "two_layer_kspace_modal_nrg_budget" => Array(two_layer_kspace_modal_nrgs ./ budget_counter),
