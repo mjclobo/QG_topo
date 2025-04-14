@@ -1132,7 +1132,7 @@ function redef_mu_kappa_topoPV_h0(model_params, mu, kappa, topo_PV, h0_new)
     shear_str = shear_str, U = U,
     μ = mu , κ = kappa , nν = nν, ν = ν, dyn_nu=dyn_nu,
     eta = eta, topographic_pv_gradient = topo_PV, topo_type = topo_type, h0 = h0_new,
-    β = β,
+    f0 = f0, β = β,
     dt = dt,
     stepper = stepper,
     dev = dev,
