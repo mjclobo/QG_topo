@@ -169,7 +169,7 @@ function topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,type)
             elseif type=="sinusoid"
                 eta_out[i,j] = (f0/H[end]) * h0 * cos(2*pi*kt*x[i]/Lx)
             elseif type=="y_slope"
-                eta_out[i,j] = (f0/H[end]) * ((h0*Lx) * ((j-Ny/2)/Ny))
+                eta_out[i,j] = 0. # (f0/H[end]) * ((h0*Lx) * ((j-Ny/2)/Ny))
             elseif type=="sin_sin"
                 eta_out[i,j] = (f0/H[end]) * (h0[1] * sin(2*pi*kt[1]*y[j]/Ly) + h0[2] * sin(2*pi*kt[2]*y[j]/Ly))
             end
