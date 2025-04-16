@@ -374,6 +374,8 @@ function run_model(prob, model_params)
 
                 global budget_counter +=1
 
+            elseif xspace_layered_nrg==true
+                global @views nrg_ot[:,nsaves] = update_two_layered_nrg(prob, vars.ψ, model_params) 
             end
         
             # reading out stats
@@ -412,9 +414,12 @@ function run_model(prob, model_params)
                             "two_layer_vBT_scale" => Float64(two_layer_vBT_scale ./ budget_counter),
                             "ph_iso" => Float64(ph_iso / budget_counter), "ph_slices" => Float64(ph_slices / budget_counter),
                             "two_layer_modal_length_scales" => Array(two_layer_modal_length_scales ./ budget_counter))
-                    elseif psi_out_bool_yrs_end==true && two_layer_kspace_modal_nrg_budget_bool==false
+                    elseif psi_out_bool_yrs_end==true && two_layer_kspace_modal_nrg_budget_bool==false && xspace_layered_nrg==false
                         jld_data = Dict("t" => t_yrly,
                             "psi_yrs_end" => Array(vars.ψ))
+                    elseif psi_out_bool_yrs_end==true && two_layer_kspace_modal_nrg_budget_bool==false && xspace_layered_nrg==true
+                        jld_data = Dict("t" => t_yrly,
+                            "psi_yrs_end" => Array(vars.ψ), "layered_nrg_ot" => nrg_ot)        
                     elseif psi_out_bool_yrs_end==true && two_layer_kspace_modal_nrg_budget_bool==true
                         jld_data = Dict("t" => t_yrly,
                             "psi_yrs_end" => Array(vars.ψ), "two_layer_kspace_modal_nrg_budget" => Array(two_layer_kspace_modal_nrgs ./ budget_counter),
