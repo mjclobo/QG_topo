@@ -227,6 +227,11 @@ function set_initial_conditions(prob, prob_filt, model_params)
     grid = prob.grid;
     
     if restart_bool==false
+
+        if restart_yr > 0.
+            throw("If you are not using a restart file, please set restart year to 0, or don't include it as an optional arg.")
+        end
+
         seed!(1234) # reset of the random number generator for reproducibility
         q₀  = q0_mag * device_array(dev)(randn((Nx, Ny, Nz)))
         q₀h = prob_filt.timestepper.filter .* rfft(q₀, (1, 2)) # apply rfft  only in dims=1, 2
@@ -403,10 +408,10 @@ function run_model(prob, model_params)
 
                     @unpack_diag_bools diags
 
-                    if psi_out_bool==true && two_layer_kspace_modal_nrg_budget_bool==false
+                    if psi_out_bool==true && two_layer_kspace_modal_nrg_budget_bool==false && xspace_layered_nrg==false
                         jld_data = Dict("t" => t_yrly,
                             "psi_ot" => Array(psi_ot))
-                    elseif psi_out_bool==true && two_layer_kspace_modal_nrg_budget_bool==true
+                    elseif psi_out_bool==true && two_layer_kspace_modal_nrg_budget_bool==true && xspace_layered_nrg==false
                         jld_data = Dict("t" => t_yrly, "psi_ot" => Array(psi_ot),
                             "two_layer_kspace_modal_nrg_budget" => Array(two_layer_kspace_modal_nrgs ./ budget_counter),
                             "two_layer_xspace_modal_nrg_budget" => Array(two_layer_xspace_modal_nrgs ./ budget_counter),
@@ -966,7 +971,7 @@ function calc_zonal_phase_shift_12(model_params, psi, grid, vars)
     
     @unpack_mod_params model_params
 
-    k_max_ind = 256
+    k_max_ind = round(Int, grid.nx/4)
 
     dev = grid.device
     T = eltype(grid)
