@@ -1147,6 +1147,33 @@ function redef_mu_kappa_topoPV_h0(model_params, mu, kappa, topo_PV, h0_new)
     return mp_out
 end
 
+
+function redef_mu_kappa_beta(model_params, mu, kappa, beta)
+    @unpack_mod_params model_params
+
+    mp_out = mod_params(
+    data_dir = data_dir,
+    Nz = Nz, Nx = Nx, Ny = Ny, Lx = Lx, Ly = Ly, Ld = Ld,
+    H = H,
+    rho0 = rho0, rho = rho, strat_str = strat_str,
+    shear_str = shear_str, U = U,
+    μ = mu , κ = kappa , nν = nν, ν = ν, dyn_nu=dyn_nu,
+    eta = eta, topographic_pv_gradient = topographic_pv_gradient, topo_type = topo_type, h0 = h0,
+    f0 = f0, β = beta,
+    dt = dt,
+    stepper = stepper,
+    dev = dev,
+    restart_bool = restart_bool,
+    restart_yr = restart_yr,
+    pre_buoy_restart_file = pre_buoy_restart_file,
+    data_dir_pre_buoy = data_dir_pre_buoy,
+    ss_yr_max = ss_yr_max,
+    yr_increment = yr_increment,
+    nsubs = nsubs);
+
+    return mp_out
+end
+
 function gp(rho,rho0,g)
     # g_prime = g*(rho[2]-rho[1])/rho0
     g_prime = g*(rho[2]-rho[1])/rho0
