@@ -1585,6 +1585,8 @@ function update_two_layer_kspace_modal_nrgs_plus_EAPE(vars, params, grid, sol, �
     
     # ζ₂h = rfft(ζ₂)
 
+    ∂xζ1 = deepcopy(vars.u[:,:,1])
+
     ldiv2D!(∂xζ1, rfftplan, im * grid.kr .* ζ₁h)
 
 
