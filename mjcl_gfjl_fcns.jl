@@ -507,7 +507,7 @@ function save_output(vars, jld_data, model_params, yr_cnt)
         jldsave(data_dir * file_name; jld_data)
     end
 
-    if yr_cnt - 3 * yr_increment > restart_yr
+    if yr_cnt - 3 * yr_increment > restart_yr && isnan(psi1) == false
         if only_save_last==true
             rm(data_dir * jld_name(model_params, round(yr_cnt - 2 * yr_increment, digits=3)))
         end
