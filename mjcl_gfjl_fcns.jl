@@ -1386,6 +1386,8 @@ function calc_w_int(vars, grid, ψ, params, model_params)
     L⁻¹ = Array{typeofSkl, 2}(undef, (grid.nkr, grid.nl))  # Array of StaticArrays
     calcL⁻¹!(L⁻¹, f0, gr, H, nlayers, grid)
 
+    L⁻¹ = A(L⁻¹)
+
     rhs = - (f0/gr) * (∇2J_ψ2_ψ1h + J_ψ2_fpζ2h - J_ψ1_fpζ1h + w_bh)
 
     omegah = deepcopy(ψh[:,:,1])
