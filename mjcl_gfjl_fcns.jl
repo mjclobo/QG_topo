@@ -1585,7 +1585,7 @@ function update_two_layer_kspace_modal_nrgs_plus_EAPE(vars, params, grid, sol, �
     
     # ζ₂h = rfft(ζ₂)
 
-    ldiv2D!(∂xζ1, rfftplan, im * grid.kr .* ζ₁h )
+    ldiv2D!(∂xζ1, rfftplan, im * grid.kr .* ζ₁h)
 
 
     ############################################################################################
