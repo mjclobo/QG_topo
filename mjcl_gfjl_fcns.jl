@@ -483,7 +483,7 @@ function save_output(vars, jld_data, model_params, yr_cnt)
     # saving yearly output
     println("Saving annual data for year: " * string(yr_cnt))
 
-    if dev==GPU()
+    if dev==GeophysicalFlows.GPU()
         psi1 = CUDA.@allowscalar vars.ψ[1,1,1]
     else
         psi1 = vars.ψ[1,1,1]
