@@ -1562,7 +1562,7 @@ function update_two_layer_kspace_modal_nrgs_plus_EAPE(vars, params, grid, sol, �
 
     ############################################################################################
     w_32h = calc_w_int(vars, grid, ψ, params, model_params)
-    T_Dh = @. (2 * f0 / H[2]) * w_32h * ψBCh
+    T_Dh = @. (2 * f0 / H[2]) * w_32h * conj(ψBCh)
     T_Dh .+= conj.(T_Dh)
 
     w_32 = deepcopy(vars.u[:,:,1])
