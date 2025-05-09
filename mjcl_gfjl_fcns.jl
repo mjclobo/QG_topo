@@ -370,7 +370,7 @@ function run_model(prob, model_params)
             end
 
             push!(t_yrly,prob.clock.t)
-
+            
             if two_layer_kspace_modal_nrg_budget_bool==true
                 
                 if EAPE_two_layer_kspace_modal_nrg_budget_bool==true
@@ -1340,7 +1340,7 @@ function calc_w_int(vars, grid, ψ, params, model_params)
     ∇2J_ψ2_ψ1h = - grid.Krsq .* J_ψ2_ψ1h
 
     ##
-    w_b = μ * H[2] * ζ2 / f0
+    w_b = @. μ * H[2] * ζ2 / f0
 
     w_bh = deepcopy(ψh[:,:,1])
     mul2D!(w_bh, rfftplan, w_b)
@@ -1381,18 +1381,18 @@ function calc_w_int(vars, grid, ψ, params, model_params)
 
     # D = isotropic_mean(D,grid_jl)
 
-    typeofSkl = SArray{Tuple{nlayers, nlayers}, T, 2, nlayers^2} # StaticArrays of type T and dims = (nlayers, nlayers)
+    typeofSkl = SArray{Tuple{nlayers-1, nlayers-1}, T, 2, (nlayers-1)^2} # StaticArrays of type T and dims = (nlayers, nlayers)
 
     L⁻¹ = Array{typeofSkl, 2}(undef, (grid.nkr, grid.nl))  # Array of StaticArrays
     calcL⁻¹!(L⁻¹, f0, gr, H, nlayers, grid)
 
     L⁻¹ = A(L⁻¹)
 
-    rhs = - (f0/gr) * (∇2J_ψ2_ψ1h + J_ψ2_fpζ2h - J_ψ1_fpζ1h + w_bh)
+    rhs_h = @. - (f0/gr) * (∇2J_ψ2_ψ1h + J_ψ2_fpζ2h - J_ψ1_fpζ1h + w_bh)
 
     omegah = deepcopy(ψh[:,:,1])
 
-    omega_equation!(omegah, rhs, L⁻¹, nlayers, grid)
+    omega_equation!(omegah, rhs_h, L⁻¹, nlayers, grid)
     
     return omegah
 end
@@ -1400,17 +1400,16 @@ end
 
 function calcL⁻¹!(L⁻¹, f0, gr, H, nlayers, grid)
     
-
     F2 = 2 * f0^2 / (gr * H[2])
   
     for n=1:grid.nl, m=1:grid.nkr
       k² = CUDA.@allowscalar grid.Krsq[m, n] == 0 ? 1 : grid.Krsq[m, n]
       Skl = - k² - F2
-      L⁻¹[m, n] = SMatrix{nlayers, nlayers}(I / Skl)
+      L⁻¹[m, n] = SMatrix{nlayers-1, nlayers-1}(I / Skl)
     end
   
     T = eltype(grid)
-    L⁻¹[1, 1] = SMatrix{nlayers, nlayers}(zeros(T, (nlayers, nlayers)))
+    L⁻¹[1, 1] = SMatrix{nlayers-1, nlayers-1}(zeros(T, (nlayers-1, nlayers-1)))
   
     return nothing
 end
@@ -1429,7 +1428,7 @@ function omega_equation!(omegah, rhs_h, L⁻¹, nlayers, grid)
     kernel! = pv_streamfunction_kernel!(backend, workgroup, worksize)
   
     # Launch the kernel; i.e., solve for omegah
-    kernel!(omegah, L⁻¹, rhs_h, Val(nlayers))
+    kernel!(omegah, L⁻¹, rhs_h, Val(nlayers-1))
   
     # Ensure that no other operations occur until the kernel has finished
     KernelAbstractions.synchronize(backend)
@@ -1460,7 +1459,6 @@ end
 function update_two_layer_kspace_modal_nrgs_plus_EAPE(vars, params, grid, sol, ψ, model_params, nrgs_in, nrgs_in_x, lengths_in)
     # energies are: BTEKE, BCEKE, EAPE; CBC, DBC, DBT; Tflat, Ttopo; NLBCEAPE, NLBCEKE, NLBC2BT; NLBTEKE, NLBT2BC; resid
     # here we do not define average, just add up the budget...averaging comes later
-
 
     @unpack_mod_params model_params
 
@@ -1560,20 +1558,20 @@ function update_two_layer_kspace_modal_nrgs_plus_EAPE(vars, params, grid, sol, �
     ψBC∂yψBTh = deepcopy(vars.uh[:,:,1])
 
     
-    ζBT∂xψBTh = mul2D!(ζBT∂xψBTh, rfftplan, ζBT .* ∂xψBT)
-    ζBT∂yψBTh = mul2D!(ζBT∂yψBTh, rfftplan, ζBT .* ∂yψBT)
+    mul2D!(ζBT∂xψBTh, rfftplan, ζBT .* ∂xψBT)
+    mul2D!(ζBT∂yψBTh, rfftplan, ζBT .* ∂yψBT)
 
-    ζBC∂xψBCh = mul2D!(ζBC∂xψBCh, rfftplan, ζBC .* ∂xψBC)
-    ζBC∂yψBCh = mul2D!(ζBC∂yψBCh, rfftplan, ζBC .* ∂yψBC)
+    mul2D!(ζBC∂xψBCh, rfftplan, ζBC .* ∂xψBC)
+    mul2D!(ζBC∂yψBCh, rfftplan, ζBC .* ∂yψBC)
 
-    ζBC∂xψBTh = mul2D!(ζBC∂xψBTh, rfftplan, ζBC .* ∂xψBT)
-    ζBC∂yψBTh = mul2D!(ζBC∂yψBTh, rfftplan, ζBC .* ∂yψBT)
+    mul2D!(ζBC∂xψBTh, rfftplan, ζBC .* ∂xψBT)
+    mul2D!(ζBC∂yψBTh, rfftplan, ζBC .* ∂yψBT)
 
-    ζBT∂xψBCh = mul2D!(ζBT∂xψBCh, rfftplan, ζBT .* ∂xψBC)
-    ζBT∂yψBCh = mul2D!(ζBT∂yψBCh, rfftplan, ζBT .* ∂yψBC)
+    mul2D!(ζBT∂xψBCh, rfftplan, ζBT .* ∂xψBC)
+    mul2D!(ζBT∂yψBCh, rfftplan, ζBT .* ∂yψBC)
 
-    ψBC∂xψBTh = mul2D!(ψBC∂xψBTh, rfftplan, ψBC .* ∂xψBT)
-    ψBC∂yψBTh = mul2D!(ψBC∂yψBTh, rfftplan, ψBC .* ∂yψBT)
+    mul2D!(ψBC∂xψBTh, rfftplan, ψBC .* ∂xψBT)
+    mul2D!(ψBC∂yψBTh, rfftplan, ψBC .* ∂yψBT)
 
     J_ψBT_ζBT = ∂xψBT .* ∂yζBT .- ∂yψBT .* ∂xζBT
 
@@ -1581,12 +1579,13 @@ function update_two_layer_kspace_modal_nrgs_plus_EAPE(vars, params, grid, sol, �
     
     mul2D!(J_ψBT_ζBTh, rfftplan, J_ψBT_ζBT)
 
-    ζ₁h = rfft(ζ₁)
+    ζ₁h = deepcopy(vars.uh[:,:,1])
+    
+    mul2D!(ζ₁h, rfftplan, ζ₁)
     
     # ζ₂h = rfft(ζ₂)
-    
-    ∂xζ1h = im * grid.kr .* ζ₁h 
-    ∂xζ1 = irfft(∂xζ1h, grid.ny)
+
+    ldiv2D!(∂xζ1, rfftplan, im * grid.kr .* ζ₁h )
 
 
     ############################################################################################
