@@ -1355,7 +1355,7 @@ function calc_w_int(vars, grid, ψ, params, model_params)
 
 
     L⁻¹ = (-grid.Krsq .- 2 * f0^2 / (gr * H[2])).^-1
-    L⁻¹[1,1] = 0.
+    CUDA.@allowscalar L⁻¹[1,1] = 0.
     L⁻¹ = A(L⁻¹)
 
     rhs_h = @. - (f0/gr) * (∇2J_ψ2_ψ1h + J_ψ2_fpζ2h - J_ψ1_fpζ1h + (f0 / H[2]) * w_bh)
