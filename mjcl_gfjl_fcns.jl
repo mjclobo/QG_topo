@@ -1347,52 +1347,23 @@ function calc_w_int(vars, grid, ψ, params, model_params)
 
     # ############################################################################################
     # ############################################################################################
-    # TKE1 = @. 0.5 * conj(ψ1h) * J_ψ1_ζ1h
-    # TKE1 .+= conj.(TKE1)
 
-    # TKE2 = @. 0.5 * conj(ψ2h) * J_ψ2_ζ2h
-    # TKE2 .+= conj.(TKE2)
+    # typeofSkl = SArray{Tuple{nlayers-1, nlayers-1}, T, 2, (nlayers-1)^2} # StaticArrays of type T and dims = (nlayers, nlayers)
 
-    # ############################################################################################
-    # ############################################################################################
-    # TPE1 = @. - conj(ψ1h) * J_ψ1_ψ2h / (4 * Ld^2)
-    # TPE1 .+= conj.(TPE1)
+    # L⁻¹ = Array{typeofSkl, 2}(undef, (grid.nkr, grid.nl))  # Array of StaticArrays
+    # calcL⁻¹!(L⁻¹, f0, gr, H, nlayers, grid)
 
-    # TPE2 = @. conj(ψ2h) * J_ψ1_ψ2h / (4 * Ld^2)
-    # TPE2 .+= conj.(TPE2)
 
-    # ############################################################################################
-    # ############################################################################################
-    # D = @. μ * grid_jl.Krsq * conj(ψ2h) * ψ2h / 2
-    # D .+= conj.(D)
-
-    # ############################################################################################
-    # ############################################################################################
-
-    # # taking mean at each wavenumber magnitude
-    # TKE1 = isotropic_mean(TKE1,grid_jl)
-    # TKE2 = isotropic_mean(TKE2,grid_jl)
-
-    # TPE1 = isotropic_mean(TKE1,grid_jl)
-    # TPE2 = isotropic_mean(TKE2,grid_jl)
-
-    # C1 = isotropic_mean(C1,grid_jl)
-    # C2 = isotropic_mean(C2,grid_jl)
-
-    # D = isotropic_mean(D,grid_jl)
-
-    typeofSkl = SArray{Tuple{nlayers-1, nlayers-1}, T, 2, (nlayers-1)^2} # StaticArrays of type T and dims = (nlayers, nlayers)
-
-    L⁻¹ = Array{typeofSkl, 2}(undef, (grid.nkr, grid.nl))  # Array of StaticArrays
-    calcL⁻¹!(L⁻¹, f0, gr, H, nlayers, grid)
-
+    L⁻¹ = (-grid.Krsq .- 2 * f0^2 / (gr * H[2])).^-1
+    L⁻¹[1,1] = 0.
     L⁻¹ = A(L⁻¹)
 
-    rhs_h = @. - (f0/gr) * (∇2J_ψ2_ψ1h + J_ψ2_fpζ2h - J_ψ1_fpζ1h + w_bh)
+    rhs_h = @. - (f0/gr) * (∇2J_ψ2_ψ1h + J_ψ2_fpζ2h - J_ψ1_fpζ1h + (f0 / H[2]) * w_bh)
 
-    omegah = deepcopy(ψh[:,:,1])
+    omegah = L⁻¹ .* rhs_h
 
-    omega_equation!(omegah, rhs_h, L⁻¹, nlayers, grid)
+    # omegah = deepcopy(ψh[:,:,1])
+    # omega_equation!(omegah, rhs_h, L⁻¹, nlayers, grid)
     
     return omegah
 end
@@ -1589,10 +1560,13 @@ function update_two_layer_kspace_modal_nrgs_plus_EAPE(vars, params, grid, sol, �
 
     ldiv2D!(∂xζ1, rfftplan, im * grid.kr .* ζ₁h)
 
-
     ############################################################################################
     w_32h = calc_w_int(vars, grid, ψ, params, model_params)
     T_Dh = @. (2 * f0 / H[2]) * w_32h * ψBCh
+    T_Dh .+= conj.(T_Dh)
+
+    w_32 = deepcopy(vars.u[:,:,1])
+    ldiv2D!(w_32, rfftplan, w_32h)
 
     ############################################################################################
     BTEKE = @. 0.5 * (conj(ψBTh) * (grid.kr^2 * ψBTh) + ψBTh * conj(grid.kr^2 * ψBTh))
