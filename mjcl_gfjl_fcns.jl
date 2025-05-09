@@ -325,7 +325,7 @@ function run_model(prob, model_params)
     global ph_slices = 0.
 
     nterms_two_layer_modal_kspace = 14  # including residual
-    if EAPE_kspace_modal_nrg_budget==true
+    if EAPE_two_layer_kspace_modal_nrg_budget_bool==true
         nterms_two_layer_modal_kspace = 15  # including residual
     end
     nterms_two_layer_modal_xspace = 10  # only one nonlinear term (instead of 5)
@@ -1254,26 +1254,28 @@ two_layer_kspace_layerwise(prob, ψ, q) = two_layer_kspace_layerwise(prob.vars, 
 ## Diagnosing vertical velocity at interface
 ####################################################################################
 
-function calc_w_int(vars, grid, ψ, model_params)
+function calc_w_int(vars, grid, ψ, params, model_params)
 
     @unpack_mod_params model_params
+
+    nlayers = Nz
 
     dev = grid.device
     T = eltype(grid)
     A = device_array(dev)
 
+    rfftplanlayered = plan_flows_rfft(A{T, 3}(undef, grid.nx, grid.ny, nlayers), [1, 2]; flags=FFTW.MEASURE)
     rfftplan = plan_flows_rfft(A{T, 3}(undef, grid.nx, grid.ny, 1), [1, 2]; flags=FFTW.MEASURE)
 
     # parameters
     gr = gp(rho[1:2],rho0,g) 
-    nlayers = Nz
 
     Ld = sqrt(gr * sum(H)) / (2 * f0)
     # ∂yηb = topographic_pv_gradient[2] / (f0 / H[end])
     
     ψh = deepcopy(vars.ψh)
 
-    mul!(ψh, rfftplan, ψ)
+    mul!(ψh, rfftplanlayered, ψ)
 
     # uh .= -im * grid_jl.l  .* ψh
     # vh .=  im * grid_jl.kr .* ψh
@@ -1281,8 +1283,8 @@ function calc_w_int(vars, grid, ψ, model_params)
     u = deepcopy(ψ)
     v = deepcopy(ψ)
 
-    ldiv!(u, rfftplan, -im * grid_jl.l  .* ψh)
-    ldiv!(v, rfftplan, im * grid_jl.kr  .* ψh)
+    ldiv!(u, rfftplanlayered, -im * grid.l  .* ψh)
+    ldiv!(v, rfftplanlayered, im * grid.kr  .* ψh)
 
     U₁, U₂, = view(params.U, :, :, 1), view(params.U, :, :, 2)
     u1, v1 = view(u, :, :, 1), view(v, :, :, 1)
@@ -1304,18 +1306,18 @@ function calc_w_int(vars, grid, ψ, model_params)
     ψ₁h, ψ₂h = view(ψh, :, :, 1), view(ψh, :, :, 2)
     
     # nonlinear terms
-    ζh = -grid_jl.Krsq .* ψh
+    ζh = -grid.Krsq .* ψh
 
     ζ = deepcopy(v)
-    ldiv!(ζ, rfftplan, ζh)
+    ldiv!(ζ, rfftplanlayered, ζh)
 
-    # ζ₁, ζ₂ = view(ζ, :, :, 1), view(ζ, :, :, 2)
+    ζ1, ζ2 = view(ζ, :, :, 1), view(ζ, :, :, 2)
 
     ∂xζ = deepcopy(ψ)
-    ldiv!(∂xζ, rfftplan, im .* grid_jl.kr .* ζh)
+    ldiv!(∂xζ, rfftplanlayered, im .* grid.kr .* ζh)
 
     ∂yζ = deepcopy(ψ)
-    ldiv!(∂yζ, rfftplan, im .* grid_jl.l .* ζh)
+    ldiv!(∂yζ, rfftplanlayered, im .* grid.l .* ζh)
 
     ∂xζ1, ∂xζ2 = view(∂xζ, :, :, 1), view(∂xζ, :, :, 2)
     ∂yζ1, ∂yζ2 = view(∂yζ, :, :, 1), view(∂yζ, :, :, 2)
@@ -1323,22 +1325,24 @@ function calc_w_int(vars, grid, ψ, model_params)
     J_ψ1_fpζ1 = @. u1 * ∂xζ1 + v1 * ∂yζ1 + v1 * β
     J_ψ2_fpζ2 = @. u2 * ∂xζ2 + v2 * ∂yζ2 + v2 * β
 
-    J_ψ1_fpζ1h = deepcopy(ψh)
+    J_ψ1_fpζ1h = deepcopy(ψh[:,:,1])
     mul2D!(J_ψ1_fpζ1h, rfftplan, J_ψ1_fpζ1)
 
-    J_ψ2_fpζ2h = deepcopy(ψh)
+    J_ψ2_fpζ2h = deepcopy(ψh[:,:,1])
     mul2D!(J_ψ2_fpζ2h, rfftplan, J_ψ2_fpζ2)
 
     ##
     J_ψ2_ψ1 = @. v1 * u2 - u1 * v2
 
-    ∇2J_ψ2_ψ1h = deepcopy(ψh)
-    mul2D!(∇2J_ψ2_ψ1h, rfftplan, - grid.Krsq .* J_ψ2_ψ1)
+    J_ψ2_ψ1h = deepcopy(ψh[:,:,1])
+    mul2D!(J_ψ2_ψ1h, rfftplan, J_ψ2_ψ1)
+
+    ∇2J_ψ2_ψ1h = - grid.Krsq .* J_ψ2_ψ1h
 
     ##
     w_b = μ * H[2] * ζ2 / f0
 
-    w_bh = deepcopy(ψh)
+    w_bh = deepcopy(ψh[:,:,1])
     mul2D!(w_bh, rfftplan, w_b)
 
     # ############################################################################################
@@ -1377,15 +1381,14 @@ function calc_w_int(vars, grid, ψ, model_params)
 
     # D = isotropic_mean(D,grid_jl)
 
-
     typeofSkl = SArray{Tuple{nlayers, nlayers}, T, 2, nlayers^2} # StaticArrays of type T and dims = (nlayers, nlayers)
 
-    L⁻¹ = Array{typeofSkl, 2}(undef, (nkr, nl))  # Array of StaticArrays
-    calcL⁻¹!(L⁻¹, Fp, Fm, nlayers, grid)
+    L⁻¹ = Array{typeofSkl, 2}(undef, (grid.nkr, grid.nl))  # Array of StaticArrays
+    calcL⁻¹!(L⁻¹, f0, gr, H, nlayers, grid)
 
     rhs = - (f0/gr) * (∇2J_ψ2_ψ1h + J_ψ2_fpζ2h - J_ψ1_fpζ1h + w_bh)
 
-    omegah = deepcopy(ψh)
+    omegah = deepcopy(ψh[:,:,1])
 
     omega_equation!(omegah, rhs, L⁻¹, nlayers, grid)
     
@@ -1420,7 +1423,7 @@ function omega_equation!(omegah, rhs_h, L⁻¹, nlayers, grid)
     worksize = grid.nkr, grid.nl
   
     # Instantiates the kernel for relevant backend device
-    backend = KernelAbstractions.get_backend(ψh)
+    backend = KernelAbstractions.get_backend(omegah)
     kernel! = pv_streamfunction_kernel!(backend, workgroup, worksize)
   
     # Launch the kernel; i.e., solve for omegah
@@ -1430,8 +1433,23 @@ function omega_equation!(omegah, rhs_h, L⁻¹, nlayers, grid)
     KernelAbstractions.synchronize(backend)
   
     return nothing
-  end
+end
 
+@kernel function pv_streamfunction_kernel!(y, M, x, ::Val{N}) where N
+    i, j = @index(Global, NTuple)
+
+    x_tuple = ntuple(Val(N)) do n
+        @inbounds x[i, j, n]
+    end
+
+    T = eltype(x)
+    x_sv = SVector{N, T}(x_tuple)
+    y_sv = @inbounds M[i, j] * x_sv
+
+    ntuple(Val(N)) do n
+        @inbounds y[i, j, n] = y_sv[n]
+    end
+end
 
 ####################################################################################
 ## Alternate modal budget where we also split BC EKE and EAPE
@@ -1570,7 +1588,7 @@ function update_two_layer_kspace_modal_nrgs_plus_EAPE(vars, params, grid, sol, �
 
 
     ############################################################################################
-    w_32h = calc_w_int(vars, grid, ψ, model_params)
+    w_32h = calc_w_int(vars, grid, ψ, params, model_params)
     T_Dh = @. (2 * f0 / H[2]) * w_32h * ψBCh
 
     ############################################################################################
