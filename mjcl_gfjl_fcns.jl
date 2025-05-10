@@ -1144,7 +1144,7 @@ function two_layer_kspace_layerwise(vars, params, grid, sol, ψ_all, ψ_ind, mod
     ζh = -grid_jl.Krsq .* ψh
 
     ζ = deepcopy(v)
-    ldiv!(ζ, rfftplan, ζh)
+    ldiv!(ζ, rfftplan, -grid_jl.Krsq .* ψh)
 
     # ζ₁, ζ₂ = view(ζ, :, :, 1), view(ζ, :, :, 2)
 
@@ -1562,11 +1562,11 @@ function update_two_layer_kspace_modal_nrgs_plus_EAPE(vars, params, grid, sol, �
 
     ############################################################################################
     w_32h = calc_w_int(vars, grid, ψ, params, model_params)
-    T_Dh = @. (2 * f0 / H[2]) * w_32h * conj(ψBCh)
+    T_Dh = @. - (f0 / H[2]) * w_32h * conj(ψBCh)
     T_Dh .+= conj.(T_Dh)
 
-    w_32 = deepcopy(vars.u[:,:,1])
-    ldiv2D!(w_32, rfftplan, w_32h)
+    # w_32 = deepcopy(vars.u[:,:,1])
+    # ldiv2D!(w_32, rfftplan, w_32h)
 
     ############################################################################################
     BTEKE = @. 0.5 * (conj(ψBTh) * (grid.kr^2 * ψBTh) + ψBTh * conj(grid.kr^2 * ψBTh))
