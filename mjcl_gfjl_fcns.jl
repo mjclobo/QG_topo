@@ -1340,6 +1340,7 @@ function calc_w_int(vars, grid, ψ, params, model_params)
     ∇2J_ψ2_ψ1h = - grid.Krsq .* J_ψ2_ψ1h
 
     ##
+    v2h = im .* grid.kr .* ψ2h
     J_ψ2_S32h = v2h .* f0 .* U₁ ./ gr
 
     ∇2J_ψ2_S32h = - grid.Krsq .* J_ψ2_S32h
