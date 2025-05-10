@@ -1309,7 +1309,7 @@ function calc_w_int(vars, grid, ψ, params, model_params)
     ζh = -grid.Krsq .* ψh
 
     ζ = deepcopy(v)
-    ldiv!(ζ, rfftplanlayered, ζh)
+    ldiv!(ζ, rfftplanlayered, -grid.Krsq .* ψh)
 
     ζ1, ζ2 = view(ζ, :, :, 1), view(ζ, :, :, 2)
 
