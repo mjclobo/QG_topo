@@ -1346,6 +1346,10 @@ function calc_w_int(vars, grid, ψ, params, model_params)
     ∇2J_ψ2_S32h = - grid.Krsq .* J_ψ2_S32h
 
     ##
+    U1_∂xfpζ1h = deepcopy(ψh[:,:,1])
+    mul2D!(U1_∂xfpζ1h, rfftplan, U₁ .* ∂xζ1 )
+
+    ##
     w_b = @. μ * H[2] * ζ2 / f0
 
     w_bh = deepcopy(ψh[:,:,1])
@@ -1364,7 +1368,7 @@ function calc_w_int(vars, grid, ψ, params, model_params)
     CUDA.@allowscalar L⁻¹[1,1] = 0.
     L⁻¹ = A(L⁻¹)
 
-    rhs_h = @. - (f0/gr) * (∇2J_ψ2_ψ1h + J_ψ2_fpζ2h - J_ψ1_fpζ1h + (f0 / H[2]) * w_bh) + ∇2J_ψ2_S32h
+    rhs_h = @. - (f0/gr) * (∇2J_ψ2_ψ1h + J_ψ2_fpζ2h - J_ψ1_fpζ1h - U1_∂xfpζ1h + (f0 / H[2]) * w_bh) + ∇2J_ψ2_S32h
 
     omegah = L⁻¹ .* rhs_h
 
