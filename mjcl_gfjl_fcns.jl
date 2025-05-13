@@ -1718,11 +1718,11 @@ function update_two_layer_kspace_modal_nrgs_plus_EAPE(vars, params, grid, sol, Ï
     ## Coherence terms for baroclinic EKE budget
     ##############################################################################
     # we compute four sets of coherences
-    coh_NLBCEKE_NLBC2BT = coherence_terms(NLBC[:,:,2], NLBC[:,:,1])
-    coh_NLBCEKE_TD = coherence_terms(NLBC[:,:,2], -T_D)
+    coh_NLBCEKE_NLBC2BT = coherence_terms(NLBC[:,:,2], NLBC[:,:,1], T)
+    coh_NLBCEKE_TD = coherence_terms(NLBC[:,:,2], -T_D, T)
 
-    coh_DBC_TD = coherence_terms(DBC, -T_D)
-    coh_DBC_NLBC2BT = coherence_terms(DBC, NLBC[:,:,1])
+    coh_DBC_TD = coherence_terms(DBC, -T_D, T)
+    coh_DBC_NLBC2BT = coherence_terms(DBC, NLBC[:,:,1], T)
 
     GC.gc()
    
@@ -1745,7 +1745,7 @@ update_two_layer_kspace_modal_nrgs_plus_EAPE(prob, Ïˆ, model_params, nrgs_in, nr
 ## spectral coherence terms
 ####################################################################################
 
-function coherence_terms(Ai,Bi)
+function coherence_terms(Ai,Bi,T)
     # Here we assume A and B are 2D FT outputs for some k-space energy budget term
     rs = size(Ai)
     return [reshape(T.(Ai .* conj.(Bi)), (rs...,1));;; reshape(T.(conj.(Ai) .* Bi), (rs...,1));;; reshape(T.(Ai .* conj.(Ai)), (rs...,1));;; reshape(T.(Bi .* conj.(Bi)), (rs...,1))]
