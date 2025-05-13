@@ -327,6 +327,7 @@ function run_model(prob, model_params)
     nterms_two_layer_modal_kspace = 14  # including residual
     if EAPE_two_layer_kspace_modal_nrg_budget_bool==true
         nterms_two_layer_modal_kspace = 15  # including residual
+        global NL_BC_EAPE_out = zeros(dev, T, (grid.nkr, grid.nl))
     end
     nterms_two_layer_modal_xspace = 10  # only one nonlinear term (instead of 5)
     global two_layer_kspace_modal_nrgs = zeros(dev, T, (grid.nkr, nterms_two_layer_modal_kspace))
@@ -374,7 +375,7 @@ function run_model(prob, model_params)
             if two_layer_kspace_modal_nrg_budget_bool==true
                 
                 if EAPE_two_layer_kspace_modal_nrg_budget_bool==true
-                    global uBT_rms, two_layer_kspace_modal_nrgs, two_layer_xspace_modal_nrgs, two_layer_modal_length_scales = update_two_layer_kspace_modal_nrgs_plus_EAPE(prob, vars.ψ, model_params, two_layer_kspace_modal_nrgs, two_layer_xspace_modal_nrgs, two_layer_modal_length_scales)
+                    global uBT_rms, two_layer_kspace_modal_nrgs, two_layer_xspace_modal_nrgs, two_layer_modal_length_scales, NL_BC_EAPE_out = update_two_layer_kspace_modal_nrgs_plus_EAPE(prob, vars.ψ, model_params, two_layer_kspace_modal_nrgs, two_layer_xspace_modal_nrgs, two_layer_modal_length_scales, NL_BC_EAPE_out)
                 else
                     global uBT_rms, two_layer_kspace_modal_nrgs, two_layer_xspace_modal_nrgs, two_layer_modal_length_scales = update_two_layer_kspace_modal_nrgs(prob, vars.ψ, model_params, two_layer_kspace_modal_nrgs, two_layer_xspace_modal_nrgs, two_layer_modal_length_scales)
                 end
@@ -426,7 +427,8 @@ function run_model(prob, model_params)
                             "two_layer_xspace_nrgs_ot" => Array(nrg_ot),
                             "two_layer_vBT_scale" => Float64(two_layer_vBT_scale ./ budget_counter),
                             "ph_iso" => Float64(ph_iso / budget_counter), "ph_slices" => Float64(ph_slices / budget_counter),
-                            "two_layer_modal_length_scales" => Array(two_layer_modal_length_scales ./ budget_counter))
+                            "two_layer_modal_length_scales" => Array(two_layer_modal_length_scales ./ budget_counter),
+                            "NL_BC_EAPE" => Array(NL_BC_EAPE_out ./ budget_counter))
                     elseif psi_out_bool_yrs_end==true && two_layer_kspace_modal_nrg_budget_bool==false && xspace_layered_nrg==false
                         jld_data = Dict("t" => t_yrly,
                             "psi_yrs_end" => Array(vars.ψ))
@@ -440,7 +442,8 @@ function run_model(prob, model_params)
                             "two_layer_xspace_nrgs_ot" => Array(nrg_ot),
                             "two_layer_vBT_scale" => Float64(two_layer_vBT_scale ./ budget_counter),
                             "ph_iso" => Float64(ph_iso / budget_counter), "ph_slices" => Float64(ph_slices / budget_counter),
-                            "two_layer_modal_length_scales" => Array(two_layer_modal_length_scales ./ budget_counter))
+                            "two_layer_modal_length_scales" => Array(two_layer_modal_length_scales ./ budget_counter),
+                            "NL_BC_EAPE" => Array(NL_BC_EAPE_out ./ budget_counter))
                     elseif psi_out_bool==false && two_layer_kspace_modal_nrg_budget_bool==true
                         jld_data = Dict("t" => t_yrly,
                             "two_layer_kspace_modal_nrg_budget" => Array(two_layer_kspace_modal_nrgs ./ budget_counter),
@@ -448,7 +451,8 @@ function run_model(prob, model_params)
                             "two_layer_xspace_nrgs_ot" => Array(nrg_ot),
                             "two_layer_vBT_scale" => Float64(two_layer_vBT_scale ./ budget_counter),
                             "ph_iso" => Float64(ph_iso / budget_counter), "ph_slices" => Float64(ph_slices / budget_counter),
-                            "two_layer_modal_length_scales" => Array(two_layer_modal_length_scales ./ budget_counter))
+                            "two_layer_modal_length_scales" => Array(two_layer_modal_length_scales ./ budget_counter),
+                            "NL_BC_EAPE" => Array(NL_BC_EAPE_out ./ budget_counter))
                     end
 
                 end
@@ -1437,7 +1441,7 @@ end
 ## Alternate modal budget where we also split BC EKE and EAPE
 ####################################################################################
 
-function update_two_layer_kspace_modal_nrgs_plus_EAPE(vars, params, grid, sol, ψ, model_params, nrgs_in, nrgs_in_x, lengths_in)
+function update_two_layer_kspace_modal_nrgs_plus_EAPE(vars, params, grid, sol, ψ, model_params, nrgs_in, nrgs_in_x, lengths_in, NL_BC_EAPE_in)
     # energies are: BTEKE, BCEKE, EAPE; CBC, DBC, DBT; Tflat, Ttopo; NLBCEAPE, NLBCEKE, NLBC2BT; NLBTEKE, NLBT2BC; resid
     # here we do not define average, just add up the budget...averaging comes later
 
@@ -1700,7 +1704,7 @@ function update_two_layer_kspace_modal_nrgs_plus_EAPE(vars, params, grid, sol, �
    
     # k-space energies are, BTEKE, BCEKE, EAPE; CBC; Tflat, Ttopo; , DBT, DBC; NLBT2BC, NLBTEKE; NLBC2BT, NLBCEKE, NLBCEAPE resid
 
-  return sqrt(mean(∂xψBT.^2 .+ ∂yψBT.^2)), nrgs_in .+ hcat(NRGs, T_Dh, CBCh, LF, Drag, NLBTh, NLBCh, resid), nrgs_in_x .+ CuArray(vcat(BTKE_x, BCKE_x, BCEAPE_x, LT_x, TT_x, BC_x, NL_x, DBT_x, DBC_x, resid_x)), lengths_in .+ CuArray(vcat(L_BT, L_BC))
+  return sqrt(mean(∂xψBT.^2 .+ ∂yψBT.^2)), nrgs_in .+ hcat(NRGs, T_Dh, CBCh, LF, Drag, NLBTh, NLBCh, resid), nrgs_in_x .+ CuArray(vcat(BTKE_x, BCKE_x, BCEAPE_x, LT_x, TT_x, BC_x, NL_x, DBT_x, DBC_x, resid_x)), lengths_in .+ CuArray(vcat(L_BT, L_BC)), NL_BC_EAPE_in .+ abs.(NLBC[:,:,3])
 end
 
 update_two_layer_kspace_modal_nrgs_plus_EAPE(prob, ψ, model_params, nrgs_in, nrgs_in_x, lengths_in) = update_two_layer_kspace_modal_nrgs_plus_EAPE(prob.vars, prob.params, prob.grid, prob.sol, ψ, model_params, nrgs_in, nrgs_in_x, lengths_in)
