@@ -1728,7 +1728,7 @@ function update_two_layer_kspace_modal_nrgs_plus_EAPE(vars, params, grid, sol, �
    
     # k-space energies are, BTEKE, BCEKE, EAPE; CBC; Tflat, Ttopo; , DBT, DBC; NLBT2BC, NLBTEKE; NLBC2BT, NLBCEKE, NLBCEAPE resid
 
-  return sqrt(mean(∂xψBT.^2 .+ ∂yψBT.^2)), nrgs_in .+ hcat(NRGs, T_Dh, CBCh, LF, Drag, NLBTh, NLBCh, resid), nrgs_in_x .+ A(vcat(BTKE_x, BCKE_x, BCEAPE_x, LT_x, TT_x, BC_x, NL_x, DBT_x, DBC_x, resid_x)), lengths_in .+ A(vcat(L_BT, L_BC)), NL_BC_EAPE_in .+ abs.(NLBC[:,:,3]), coh_in .+ A([coh_NLBCEKE_NLBC2BT;;; coh_NLBCEKE_TD;;; coh_DBC_TD;;; coh_DBC_NLBC2BT])
+  return sqrt(mean(∂xψBT.^2 .+ ∂yψBT.^2)), nrgs_in .+ hcat(NRGs, T_Dh, CBCh, LF, Drag, NLBTh, NLBCh, resid), nrgs_in_x .+ A(vcat(BTKE_x, BCKE_x, BCEAPE_x, LT_x, TT_x, BC_x, NL_x, DBT_x, DBC_x, resid_x)), lengths_in .+ A(vcat(L_BT, L_BC)), NL_BC_EAPE_in .+ abs.(NLBC[:,:,3]), coh_in .+ A(cat(dims=3, coh_NLBCEKE_NLBC2BT, coh_NLBCEKE_TD, coh_DBC_TD, coh_DBC_NLBC2BT))
 end
 
 update_two_layer_kspace_modal_nrgs_plus_EAPE(prob, ψ, model_params, nrgs_in, nrgs_in_x, lengths_in, NL_BC_EAPE_in, coh_in) = update_two_layer_kspace_modal_nrgs_plus_EAPE(prob.vars, prob.params, prob.grid, prob.sol, ψ, model_params, nrgs_in, nrgs_in_x, lengths_in, NL_BC_EAPE_in, coh_in)
