@@ -1748,7 +1748,7 @@ update_two_layer_kspace_modal_nrgs_plus_EAPE(prob, ψ, model_params, nrgs_in, nr
 function coherence_terms(Ai,Bi)
     # Here we assume A and B are 2D FT outputs for some k-space energy budget term
     rs = size(Ai)
-    return cat(dims=3, reshape(Ai .* conj.(Bi), (rs...,1));;; reshape(conj.(Ai) .* Bi, (rs...,1));;; reshape(Ai .* conj.(Ai), (rs...,1));;; reshape(Bi .* conj.(Bi), (rs...,1)))
+    return cat(dims=3, reshape(Ai .* conj.(Bi), (rs...,1)), reshape(conj.(Ai) .* Bi, (rs...,1)), reshape(Ai .* conj.(Ai), (rs...,1)), reshape(Bi .* conj.(Bi), (rs...,1)))
 end
 
 
