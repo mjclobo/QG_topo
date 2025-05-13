@@ -1745,10 +1745,10 @@ update_two_layer_kspace_modal_nrgs_plus_EAPE(prob, ψ, model_params, nrgs_in, nr
 ## spectral coherence terms
 ####################################################################################
 
-function coherence_terms(A,B)
+function coherence_terms(Ai,Bi)
     # Here we assume A and B are 2D FT outputs for some k-space energy budget term
-    rs = size(A)
-    return [reshape(A .* conj.(B), (rs...,1));;; reshape(conj.(A) .* B, (rs...,1));;; reshape(A .* conj.(A), (rs...,1));;; reshape(B .* conj.(B), (rs...,1))]
+    rs = size(Ai)
+    return [reshape(T.(Ai .* conj.(Bi)), (rs...,1));;; reshape(T.(conj.(Ai) .* Bi), (rs...,1));;; reshape(T.(Ai .* conj.(Ai)), (rs...,1));;; reshape(T.(Bi .* conj.(Bi)), (rs...,1))]
 end
 
 
