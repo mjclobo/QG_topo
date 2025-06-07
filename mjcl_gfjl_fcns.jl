@@ -163,22 +163,23 @@ function topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,type)
     Nx = length(grid_topo.x); Ny = length(grid_topo.y)
     eta_out = zeros(Nx,Ny)
     x = collect(grid_topo.x); y = collect(grid_topo.y)
-    for i=1:Nx
-        for j=1:Ny
-            if type=="eggshell"
-                eta_out[i,j] = (f0/H[end]) * h0 * cos(2*pi*kt*x[i]/Lx) * cos(2*pi*kt*y[j]/Ly)
-            elseif type=="sinusoid"
-                eta_out[i,j] = (f0/H[end]) * h0 * cos(2*pi*kt*x[i]/Lx)
-            elseif type=="y_slope"
-                eta_out[i,j] = 0. # (f0/H[end]) * ((h0*Lx) * ((j-Ny/2)/Ny))
-            elseif type=="sin_sin"
-                eta_out[i,j] = (f0/H[end]) * (h0[1] * sin(2*pi*kt[1]*y[j]/Ly) + h0[2] * sin(2*pi*kt[2]*y[j]/Ly))
+
+    if type=="rough"
+        eta_out = (f0/H[end]) * topo_rough(h0,kt,Lx,Nx)
+    else
+        for i=1:Nx
+            for j=1:Ny
+                if type=="eggshell"
+                    eta_out[i,j] = (f0/H[end]) * h0 * cos(2*pi*kt*x[i]/Lx) * cos(2*pi*kt*y[j]/Ly)
+                elseif type=="sinusoid"
+                    eta_out[i,j] = (f0/H[end]) * h0 * cos(2*pi*kt*x[i]/Lx)
+                elseif type=="y_slope"
+                    eta_out[i,j] = 0. # (f0/H[end]) * ((h0*Lx) * ((j-Ny/2)/Ny))
+                elseif type=="sin_sin"
+                    eta_out[i,j] = (f0/H[end]) * (h0[1] * sin(2*pi*kt[1]*y[j]/Ly) + h0[2] * sin(2*pi*kt[2]*y[j]/Ly))
+                end
             end
         end
-    end
-
-    if type=="rand"
-        eta_out = (f0/H[end]) * topo_rough(h0,kt,Lx,Nx)
     end
 
     return eta_out
@@ -203,11 +204,11 @@ function define_topo(model_params)
         # eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"y_slope")
         eta = nothing
         topographic_pv_gradient = (0., h0[1]*(f0/H[end]))
-    elseif topo_type=="rand_slope"
-        eta = topographicPV(grid_topo,h0[2],kt,Lx,Ly,f0,H,"rand")
+    elseif topo_type=="rough_slope"
+        eta = topographicPV(grid_topo, h0[2],kt,Lx,Ly,f0,H,"rough")
         topographic_pv_gradient = (0., h0[1]*(f0/H[end]))
-    elseif topo_type=="rand_flat"
-        eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"rand")
+    elseif topo_type=="rough_flat"
+        eta = topographicPV(grid_topo,h0,kt,Lx,Ly,f0,H,"rough")
         topographic_pv_gradient = (0., 0.)
     else
         eta = nothing
@@ -315,31 +316,8 @@ function run_model(prob, model_params)
 
     global j = 0
     prob.clock.t = restart_yr * 365.25 * 24 * 3600.
-    global t_yrly = Array([prob.clock.t])
-    global yr_cnt = restart_yr
-    global budget_counter = 0
-    global nsaves = 0
-    global psi_ot = nothing
 
-    global ph_iso    = 0.
-    global ph_slices = 0.
-
-    nterms_two_layer_modal_kspace = 14  # including residual
-    if EAPE_two_layer_kspace_modal_nrg_budget_bool==true
-        nterms_two_layer_modal_kspace = 15  # including residual
-        global NL_BC_EAPE_out = zeros(dev, T, (grid.nkr, grid.nl))
-        global CBC_out = zeros(dev, T, (grid.nkr, grid.nl))
-        global TD_out = zeros(dev, T, (grid.nkr, grid.nl))
-        global coh_out = zeros(dev, ComplexF64, (grid.nkr, grid.nl, 16))
-    end
-    nterms_two_layer_modal_xspace = 10  # only one nonlinear term (instead of 5)
-    global two_layer_kspace_modal_nrgs = zeros(dev, T, (grid.nkr, nterms_two_layer_modal_kspace))
-    global two_layer_xspace_modal_nrgs = zeros(dev, T, (nterms_two_layer_modal_xspace, 1))
-    global two_layer_modal_length_scales = zeros(dev, T, (2, 1))
-    global two_layer_vBT_scale = 0.
-
-    len_nrg = ceil(Int, (ss_yr_max - yr_cnt + 1) * 365.25 * 24 * 3600 / prob.clock.dt / nsubs)
-    global nrg_ot = zeros(dev, T, (3, len_nrg))
+    preallocate_global_diag_arrays(prob, grid, dev, nsubs, restart_yr, EAPE_two_layer_kspace_modal_nrg_budget_bool)
 
     while yr_cnt < ss_yr_max
         global j
@@ -489,6 +467,35 @@ function run_model(prob, model_params)
 end
 
 
+function preallocate_global_diag_arrays(prob, grid, dev, nsubs, restart_yr, EAPE_two_layer_kspace_modal_nrg_budget_bool)
+    global t_yrly = Array([prob.clock.t])
+    global yr_cnt = restart_yr
+    global budget_counter = 0
+    global nsaves = 0
+    global psi_ot = nothing
+
+    global ph_iso    = 0.
+    global ph_slices = 0.
+
+    nterms_two_layer_modal_kspace = 14  # including residual
+    if EAPE_two_layer_kspace_modal_nrg_budget_bool==true
+        nterms_two_layer_modal_kspace = 15  # including residual
+        global NL_BC_EAPE_out = zeros(dev, T, (grid.nkr, grid.nl))
+        global CBC_out = zeros(dev, T, (grid.nkr, grid.nl))
+        global TD_out = zeros(dev, T, (grid.nkr, grid.nl))
+        global coh_out = zeros(dev, ComplexF64, (grid.nkr, grid.nl, 16))
+    end
+    nterms_two_layer_modal_xspace = 10  # only one nonlinear term (instead of 5)
+    global two_layer_kspace_modal_nrgs = zeros(dev, T, (grid.nkr, nterms_two_layer_modal_kspace))
+    global two_layer_xspace_modal_nrgs = zeros(dev, T, (nterms_two_layer_modal_xspace, 1))
+    global two_layer_modal_length_scales = zeros(dev, T, (2, 1))
+    global two_layer_vBT_scale = 0.
+
+    len_nrg = ceil(Int, (ss_yr_max - yr_cnt + 1) * 365.25 * 24 * 3600 / prob.clock.dt / nsubs)
+    global nrg_ot = zeros(dev, T, (3, len_nrg))
+end
+
+
 ####################################################################################
 ## Save output
 ####################################################################################
@@ -500,7 +507,7 @@ function save_output(vars, jld_data, model_params, yr_cnt)
     @unpack_diag_bools diags
 
     # saving yearly output
-    println("Saving annual data for year: " * string(yr_cnt))
+    println("Saving data for year: " * string(yr_cnt))
 
     if dev==GeophysicalFlows.GPU()
         psi1 = CUDA.@allowscalar vars.ψ[1,1,1]
@@ -536,10 +543,280 @@ function save_output(vars, jld_data, model_params, yr_cnt)
 
 end
 
+function save_output_PI(vars, jld_data, model_params, yr_cnt)
+
+    @unpack_mod_params model_params
+
+    @unpack_diag_bools diags
+
+    # saving yearly output
+    println("Saving data for year: " * string(yr_cnt))
+
+    if dev==GeophysicalFlows.GPU()
+        psi1 = CUDA.@allowscalar vars.ψ[1,1,1]
+    else
+        psi1 = vars.ψ[1,1,1]
+    end
+
+    if isnan(psi1)
+        global cyc = cycles
+    else
+        global yr_cnt = round(yr_cnt + yr_increment, digits=3)
+    end
+
+    file_name = jld_name(model_params, round(yr_cnt - yr_increment, digits=3))
+    
+    println("Saving output data to JLD to: " * file_name)
+
+    if restart_bool==true
+        if yr_cnt > round(restart_yr + yr_increment, digits=3)
+            jldsave(data_dir * file_name; jld_data)
+        end
+    else
+        jldsave(data_dir * file_name; jld_data)
+    end
+
+    if yr_cnt - 3 * yr_increment > restart_yr && isnan(psi1) == false
+        if only_save_last==true
+            rm(data_dir * jld_name(model_params, round(yr_cnt - 2 * yr_increment, digits=3)))
+        end
+    end
+
+    global psi_ot = nothing
+
+end
+
 
 # function set_output_dict(diags)
 
 # end
+
+
+####################################################################################
+## Power iteration runs, hopefully easily integrated with current set of functions...
+####################################################################################
+# I want to only calculate diagnostics for final iteration
+
+function run_power_iter(prob, model_params)
+
+    @unpack_diag_bools diags
+
+    @unpack_mod_params model_params
+
+    sol, clock, params, vars, grid = prob.sol, prob.clock, prob.params, prob.vars, prob.grid
+
+    dev = grid.device
+    T = eltype(grid)
+    A = device_array(dev)
+
+    startwalltime = time()
+
+    global j = 0
+    prob.clock.t = restart_yr * 365.25 * 24 * 3600.
+
+    global save_bool=false
+
+    # preallocate_rough_diag_arrays(prob, grid, dev)
+
+    nrg_init = update_layered_nrg(vars, params, grid, sol, ψ, model_params)
+    KE1_0 = nrg_init[1]
+    Rthresh = 10^-4
+
+    while cyc < cycles
+        global j
+        
+        stepforward!(prob)
+        MultiLayerQG.updatevars!(prob)
+
+        if (j % nsubs == 0) && save_bool==true
+            global nsaves+=1
+
+            if isnothing(psi_ot)
+                global psi_ot = deepcopy(vars.ψ);
+            elseif size(psi_ot)==size(vars.ψ)
+                global psi_ot = cat(psi_ot, vars.ψ, dims=4)
+            else
+                global psi_ot = cat(psi_ot[:,:,:,end], vars.ψ, dims=4)
+            end
+
+            push!(t_yrly,prob.clock.t)
+            
+            # calculate diags
+            global @views nrg_ot[:,nsaves] = update_layered_nrg(prob, vars.ψ, model_params) 
+
+            global ph_slices .+= calc_layered_phase_shift_slice(model_params, prob.grid, prob.vars)
+
+            global CV, CVhk, psih, drag, drag_scale = rough_init_diags(model_params, vars, params, grid, t_yrly, sol, CV, CVhk, psih, drag, drag_scale)
+
+            budget_counter+=1
+
+            # reading out stats
+            cfl = prob.clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
+        
+            log = @sprintf("step: %04d, t: %.1f day, cfl: %.2f, walltime: %.2f min, nu_star: %.2E",
+                            clock.step, clock.t/3600/24, cfl, (time()-startwalltime)/60, prob.params.ν)
+            
+            println(log)
+
+            # save output and reset params based on provided save period
+            if ((t_yrly[end] - yr_cnt*365*86400) > 0)
+
+                # don't need to worry about restart year here
+                # also not worrying about different sets of diags based on provided bools
+
+                @unpack_diag_bools diags
+
+                # vertical profile of CVK, CVK scale, bottom drag value, bottom drag scale, KE profile, PE profile, phase shifts (slices), psi profile (via FFT)
+
+                jld_data = Dict("t" => t_yrly, "CV" => Array(CV ./ budget_counter),
+                    "CVhk" => Array(CVhk ./ budget_counter), Array("psi_profile" => psih ./ budget_counter),
+                    "drag" => Array(drag ./ budget_counter), "drag_scale" => Float64(drag_scale / budget_counter),
+                    "ph_slices" => Array(ph_slices ./ budget_counter))
+
+                # saving output
+                save_output_PI(vars, jld_data, model_params, yr_cnt)
+
+                GC.gc()
+
+            end
+
+        end
+
+        # look to see when KE threshold is hit
+        R = KE1_0/nrgs_ot[1,nsaves] # renormalize (KE_{ref}/KE).
+
+        if R<Rthresh
+
+            if cyc<cycles-2
+                # need to just reset fields here
+                global cyc += 1
+
+                MultiLayerQG.set_q!(prob, vars.q * sqrt(R))
+
+            elseif cyc == cycles-2
+                # here is where I start to calculate diags
+                global cyc+=1
+
+                MultiLayerQG.set_q!(prob, vars.q * sqrt(R))
+
+                global save_bool=true
+                preallocate_rough_diag_arrays(prob, grid, dev, nsubs, restart_yr, EAPE_two_layer_kspace_modal_nrg_budget_bool)
+
+            elseif cyc == cycles-1
+                # we have completed the last power iteration;
+                # should we save everything one last time?
+                # Yes. This doesn't affect sampling period (a previous issue)
+                # plus we need to add the calculated growth rate
+
+                # calculate growth rate using surface KE
+                sigma = calc_growth(t_yrly, nrg_ot[1, 1:nsaves])
+
+                # save all
+                jld_data = Dict("t" => t_yrly, "CV" => Array(CV ./ budget_counter),
+                    "sigma" => Float64(sigma), "nrgs" => Array(nrg_ot[:,1:nsaves]),
+                    "CVhk" => Array(CVhk ./ budget_counter), Array("psi_profile" => psih ./ budget_counter),
+                    "drag" => Array(drag ./ budget_counter), "drag_scale" => Float64(drag_scale / budget_counter),
+                    "ph_slices" => Array(ph_slices ./ budget_counter))
+
+                # saving output
+                save_output(vars, jld_data, model_params, yr_cnt)
+
+                GC.gc()
+
+            end
+
+        end
+
+        global j+=1
+        ###############################
+
+    end
+
+end
+
+
+####################################################################################
+## DIAGS: Initial considerations for sloping & rough topo runs
+####################################################################################
+
+function rough_init_diags(model_params, vars, params, grid, t, sol, CV, CVhk, psih, drag, drag_scale)
+    # vertical profile of CVK, CVK scale, bottom drag value, bottom drag scale, psi profile (via FFT)
+    # have to normalize where it makes sense to do so
+
+    @unpack_mod_params model_params
+
+    dev = grid.device
+    T = eltype(grid)
+    A = device_array(dev)
+
+    rfftplan = plan_flows_rfft(A{T, 3}(undef, grid.nx, grid.ny, 1), [1, 2]; flags=FFTW.MEASURE)
+
+    nlayers=Nz
+    δ = H ./ sum(H)
+    gp = @. g * (rho[2:end] - rho[1:end-1]) / rho0 # reduced gravity at the interface(s)
+    μ = params.μ
+    κ = params.κ
+
+    # ∂yηb = params.topographic_pv_gradient[2] / (params.f₀ / params.H[end])
+
+    dU = U[1:end-1] - U[2:end]
+
+    nrg_tendency = sum(nrg_ot[:,nsaves]) - sum(nrg_ot[:,nsaves-1]) / (t[end] - t[end-1])
+
+    for i in range(1,Nz)
+
+        if i < Nz
+            CV[i] = 2 * f0^2 / (gp[i] * sum(H)) * dU[i] * mean(vars.v[:,:,i+1] .* vars.ψ[:,:,i]) / nrg_tendency
+        end
+
+        # bCVhb[i] = sum(abs.(vars.ψh[:,:,i]))
+        CVh = @. im * grid.kr * 2 * f0^2 / (gp[i] * sum(H)) * dU[i] * conj(vars.ψh[:,:,i+1]) .* vars.ψh[:,:,i]
+        CVh .+= conj.(CVh)
+
+        CVhk[i] += grid.Krsq[argmax(abs.(CVh))]
+
+        psih_loc = maximum(abs.(vars.ψh[:,:,i]))
+        psih[i] .+= psih_loc ./ psih_loc[1]
+
+    end
+
+    ##
+    ζN = deepcopy(vars.u[:,:,1])
+
+    ζNh = - grid.Krsq .* vars.ψh[:,:,end]
+
+    ldiv2D!(ζN, rfftplan, deepcopy(ζNh))
+    
+    drag = δ[Nz] * μ * ψN * ζN / nrg_tendency
+
+    dragh = δ[Nz] * μ * conj.(vars.ψ[:,:,end]) .* ζNh
+    dragh += conj.(dragh)
+
+    drag_scale += grid.Krsq[argmax(abs.(dragh))]
+
+    return CV, CVhk, psih, drag, drag_scale
+end
+
+
+function preallocate_rough_diag_arrays(prob, grid, dev)
+    global CV = zeros(dev, T, (Nz-1))
+    global CVhk = zeros(dev, T, (Nz-1))
+    global bCVhb = zeros(dev, T, (Nz))
+    global psih = zeros(dev, T, (Nz))
+    global drag = 0.
+    global drag_scale = 0.
+
+    global t_yrly = Array([prob.clock.t])
+    global yr_cnt = restart_yr
+    global nsaves = 0
+    global psi_ot = nothing
+
+    global budget_counter = 0.
+
+    len_nrg = 1000 # ceil(Int, (ss_yr_max - yr_cnt + 1) * 365.25 * 24 * 3600 / prob.clock.dt / nsubs)
+    global nrg_ot = zeros(dev, T, (2*Nz - 1, len_nrg))
+end
+
 
 ####################################################################################
 ## DIAGS: x-space modal budget
@@ -751,7 +1028,7 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid, sol, ψ, model_p
     ζBT∂yψBTh = mul2D!(ζBT∂yψBTh, rfftplan, ζBT .* ∂yψBT)
 
     ζBC∂xψBCh = mul2D!(ζBC∂xψBCh, rfftplan, ζBC .* ∂xψBC)
-    ζBC∂yψBCh = mul2D!(ζBC∂yψBCh, rfftplan, ζBC .* ∂yψBC)
+    ζBC∂yψBCh = mul2D!(ζBC∂yψBCh, rfftplan, ζBC .* ∂yψBC)maximum(a["jld_data"]["coh_NLBCEKE_NLBC2BT"])
 
     ζBC∂xψBTh = mul2D!(ζBC∂xψBTh, rfftplan, ζBC .* ∂xψBT)
     ζBC∂yψBTh = mul2D!(ζBC∂yψBTh, rfftplan, ζBC .* ∂yψBT)
@@ -990,9 +1267,72 @@ end
 
 update_two_layered_nrg(prob, ψ, model_params) = update_two_layered_nrg(prob.vars, prob.params, prob.grid, prob.sol, ψ, model_params)
 
+
+
+#####################################
+function update_layered_nrg(vars, params, grid, sol, ψ, model_params)
+
+    @unpack_mod_params model_params
+
+    dev = grid.device
+    T = eltype(grid)
+    A = device_array(dev)
+
+    nlayers = Nz
+    g′ = g * (rho[2] - rho[1]) / rho0[1] # reduced gravity at the interface
+    F = (f0^2 / (g′ * sum(params.H)))
+    μ = params.μ
+    Ld = F^-0.5
+
+    KE = zeros(dev, T, (grid.nx, grid.ny, nlayers))
+    APE = zeros(dev, T, (grid.nx, grid.ny, nlayers-1))
+
+    for i in range(1,Nz)
+            
+        ψh = view(vars.ψh, :, :, i)
+        
+
+        ∂ψ∂x = irfft(im * grid.kr .* ψh, grid.nx)
+        ∂ψ∂y = irfft(im * grid.l  .* ψh, grid.nx)
+        
+        mod2∇ψ = @. ∂ψ∂x^2 + ∂ψ∂y^2
+
+        if i < Nz
+            ψ = view(vars.ψ, :, :, i:i+1)
+            APE_d = @. 0.5 * F * (ψ[:,:,i] - ψ[:,:,i+1])^2
+            @views APE[i] = mean(APE_d)
+        end
+        
+        
+        KE_d = @. 0.5 * mod2∇ψ
+
+        @views KE[i] = mean(KE_d)
+
+    end
+
+    return CUDA.@allowscalar Array(vcat(KE, APE)) # , nrgs_in .+ vcat(KE, APE)
+
+end
+
+update_layered_nrg(prob, ψ, model_params) = update_two_layered_nrg(prob.vars, prob.params, prob.grid, prob.sol, ψ, model_params)
+
 ####################################################################################
 ## calculating the phase shift diagnostics (we use two differnent formulations for now)
 ####################################################################################
+
+function calc_layered_phase_shift_slice(model_params, grid, vars)
+    @unpack_mod_params model_params
+
+    phase_shift = zeros(dev, T, (nlayers-1))
+
+    for i in range(1,Nz-1)
+
+        phase_shift[i] = calc_zonal_phase_shift_12(model_params, vars.ψ[:,:,i:i+1], grid, vars)
+
+    end
+
+    return phase_shift
+end
 
 function calc_zonal_phase_shift_12(model_params, psi, grid, vars)
     
@@ -1744,6 +2084,43 @@ update_two_layer_kspace_modal_nrgs_plus_EAPE(prob, ψ, model_params, nrgs_in, nr
 
 
 ####################################################################################
+## Growth rate from KE time series
+####################################################################################
+
+function calc_growth(t, E_in)
+    i_start = zeros(length(E_in))
+    i_end   = zeros(length(E_in))
+  
+    for i = range(3,length(E_in))
+      i_start[i] = (E_in[i]-E_in[i-1]) > (E_in[i-1] - E_in[i-2]) 
+      i_end[i]   = (E_in[i]-E_in[i-1]) < (E_in[i-1] - E_in[i-2]) 
+    end
+  
+    g_start = findall(x->x==1,i_start)[1]+2
+    g_end   = findall(x->x==1,i_end)[1]-2
+  
+    t, KE_new = t[g_start:g_end], E_in[g_start:g_end]   # construct time series from last section of growth in upper layer
+    
+    sigma_KE  = growth_rate(t,KE_new)
+  
+    return g_end, sigma_KE
+  end
+  
+  function growth_rate(t,E)
+  
+      n = size(t)[1]
+      d = Matrix(reshape(log.(E), (1, n)))
+      gm = Matrix(reshape(t, (1, n)))
+      Gm = Matrix([ones(n, 1) gm'])
+      GmT = Gm'
+      mv = inv(GmT*Gm)*(GmT*d')
+      sigma = mv[2]
+  
+      return sigma
+  end
+  
+
+####################################################################################
 ## spectral coherence terms
 ####################################################################################
 
@@ -1808,6 +2185,32 @@ function redef_mu_kappa_topoPV_h0(model_params, mu, kappa, topo_PV, h0_new)
     shear_str = shear_str, U = U,
     μ = mu , κ = kappa , nν = nν, ν = ν, dyn_nu=dyn_nu,
     eta = eta, topographic_pv_gradient = topo_PV, topo_type = topo_type, h0 = h0_new,
+    f0 = f0, β = β,
+    dt = dt,
+    stepper = stepper,
+    dev = dev,
+    restart_bool = restart_bool,
+    restart_yr = restart_yr,
+    pre_buoy_restart_file = pre_buoy_restart_file,
+    data_dir_pre_buoy = data_dir_pre_buoy,
+    ss_yr_max = ss_yr_max,
+    yr_increment = yr_increment,
+    nsubs = nsubs);
+
+    return mp_out
+end
+
+function redef_mu_kappa_topoPV_h0_eta(model_params, mu, kappa, topo_PV, h0_new, eta_new)
+    @unpack_mod_params model_params
+
+    mp_out = mod_params(
+    data_dir = data_dir,
+    Nz = Nz, Nx = Nx, Ny = Ny, Lx = Lx, Ly = Ly, Ld = Ld,
+    H = H,
+    rho0 = rho0, rho = rho, strat_str = strat_str,
+    shear_str = shear_str, U = U,
+    μ = mu , κ = kappa , nν = nν, ν = ν, dyn_nu=dyn_nu,
+    eta = eta_new, topographic_pv_gradient = topo_PV, topo_type = topo_type, h0 = h0_new,
     f0 = f0, β = β,
     dt = dt,
     stepper = stepper,
