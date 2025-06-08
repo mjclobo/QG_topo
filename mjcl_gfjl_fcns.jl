@@ -755,7 +755,7 @@ function run_power_iter(prob, model_params)
                     "sigma" => Float64(sigma), "nrgs" => Array(nrg_ot[:,1:nsaves]),
                     "CVhk" => Array(CVhk ./ budget_counter), "psi_profile" => Array(psih ./ budget_counter),
                     "drag" => Float64(drag ./ budget_counter), "drag_scale" => Float64(drag_scale / budget_counter),
-                    "ph_slices" => Array(ph_slices ./ budget_counter))
+                    "ph_slices" => Array(ph_slices ./ budget_counter), "psi_end" => Array(vars.ψ))
 
                 # saving output
                 save_output(vars, jld_data, model_params, yr_cnt)
