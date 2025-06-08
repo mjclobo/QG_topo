@@ -613,7 +613,7 @@ function run_power_iter(prob, model_params)
 
     global j = 0
     global cyc = 1
-    global cycles = 1
+    global cycles = 3
     prob.clock.t = restart_yr * 365.25 * 24 * 3600.
 
     if cyc==cycles
@@ -629,7 +629,7 @@ function run_power_iter(prob, model_params)
 
     nrg_init = update_layered_nrg(vars, params, grid, sol, vars.ψ, model_params)
     KE1_0 = nrg_init[1]
-    Rthresh = 10^-2
+    Rthresh = 10^-4
 
     while cyc < cycles+1
         global j
