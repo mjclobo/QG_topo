@@ -613,7 +613,7 @@ function run_power_iter(prob, model_params)
 
     global j = 0
     global cyc = 1
-    global cycles = 3
+    global cycles = 2
     prob.clock.t = restart_yr * 365.25 * 24 * 3600.
 
     if cyc==cycles
@@ -802,12 +802,12 @@ function rough_init_diags(model_params, vars, params, grid, t, sol, CV, CVhk, ps
 
     dU = U[1:end-1] - U[2:end]
 
-    nrg_tendency = sum(nrg_ot[:,nsaves]) - sum(nrg_ot[:,nsaves-1]) / (t[end] - t[end-1])
+    nrg_tendency = (sum(nrg_ot[:,nsaves]) - sum(nrg_ot[:,nsaves-1])) / (t[end] - t[end-1]) 
 
     for i in range(1,Nz)
 
         if i < Nz
-            @views CV[i:i] = 2 * f0^2 / (gp[i] * sum(H)) * dU[i] * mean(vars.v[:,:,i+1] .* vars.ψ[:,:,i]) / nrg_tendency
+            @views CV[i:i] = -2 * f0^2 / (gp[i] * sum(H)) * dU[i] * mean(vars.v[:,:,i+1] .* vars.ψ[:,:,i]) / nrg_tendency
 
             # bCVhb[i] = sum(abs.(vars.ψh[:,:,i]))
             CVh = im * grid.kr * 2 * f0^2 / (gp[i] * sum(H)) * dU[i] .* conj.(vars.ψh[:,:,i+1]) .* vars.ψh[:,:,i]
@@ -816,8 +816,7 @@ function rough_init_diags(model_params, vars, params, grid, t, sol, CV, CVhk, ps
             @views CVhk[i:i] .+= Array(grid.Krsq)[argmax(abs.(CVh))]
         end
 
-        psih_loc = maximum(abs.(vars.ψh[:,:,i]))
-        @views psih[i:i] .+= psih_loc ./ psih_loc[1]
+        @views psih[i:i] .+= maximum(abs.(vars.ψh[:,:,i])) / maximum(abs.(vars.ψh[:,:,1]))
 
     end
 
@@ -1327,6 +1326,7 @@ function update_layered_nrg(vars, params, grid, sol, ψ, model_params)
     A = device_array(dev)
 
     nlayers = Nz
+    δ = H ./ sum(H)
     g′ = @. g * (rho[2:end] - rho[1:end-1]) / rho0 # reduced gravity at the interface
     F = (f0^2 ./ (g′ .* sum(params.H)))
     μ = params.μ
@@ -1349,7 +1349,7 @@ function update_layered_nrg(vars, params, grid, sol, ψ, model_params)
             @views APE[i:i] = sum(APE_d) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
         end
         
-        KE_d = @. 0.5 * mod2∇ψ
+        KE_d = @. 0.5 * δ[i] * mod2∇ψ
 
         @views KE[i:i] = sum(KE_d) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
 
@@ -1807,21 +1807,16 @@ end
 
 
 function omega_equation!(omegah, rhs_h, L⁻¹, nlayers, grid)
-    # Larger workgroups are generally more efficient. For more generality, we could put an
-    # if statement that incurs different behavior when either nkl or nl are less than 8.
+    # Code structure is taken from GeophysicalFlows.jl code; thanks to M. Pudig
     workgroup = 8, 8
   
-    # The worksize determines how many times the kernel is run
     worksize = grid.nkr, grid.nl
   
-    # Instantiates the kernel for relevant backend device
     backend = KernelAbstractions.get_backend(omegah)
     kernel! = pv_streamfunction_kernel!(backend, workgroup, worksize)
   
-    # Launch the kernel; i.e., solve for omegah
     kernel!(omegah, L⁻¹, rhs_h, Val(nlayers-1))
   
-    # Ensure that no other operations occur until the kernel has finished
     KernelAbstractions.synchronize(backend)
   
     return nothing
