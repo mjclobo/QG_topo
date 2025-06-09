@@ -614,6 +614,7 @@ function run_power_iter(prob, model_params)
     global j = 0
     global cyc = 1
     global cycles = 2
+    global psi_lagged_bool = false
     prob.clock.t = restart_yr * 365.25 * 24 * 3600.
 
     if cyc==cycles
@@ -653,11 +654,18 @@ function run_power_iter(prob, model_params)
             # calculate diags
             global @views nrg_ot[:,nsaves] = update_layered_nrg(prob, vars.ψ, model_params) 
 
-            global ph_slices .+= calc_layered_phase_shift_slice(model_params, prob.grid, prob.vars)
+            if psi_lagged_bool==true
+                global ph_slices .+= calc_layered_phase_shift_slice(model_params, prob.grid, prob.vars)
 
-            global CV, CVhk, psih, drag, drag_scale = rough_init_diags(model_params, vars, params, grid, t_yrly, sol, CV, CVhk, psih, drag, drag_scale)
+                global CV, CVhk, psih, drag, drag_scale = rough_init_diags(model_params, psi_lagged, params, grid, t_yrly, sol, CV, CVhk, psih, drag, drag_scale)
 
-            global budget_counter+=1
+                global budget_counter+=1
+            else
+                psi_lagged_bool = true # first round we only calculate energies, since we need these for the centered difference in diags
+                # alternately, we need to have psi_lagged defined before calling diags function
+            end
+
+            global psi_lagged = deepcopy(vars.ψ)
 
             # reading out stats
             cfl = prob.clock.dt * maximum([maximum(vars.u) / grid.dx, maximum(vars.v) / grid.dy])
@@ -687,13 +695,15 @@ function run_power_iter(prob, model_params)
 
                 # vertical profile of CVK, CVK scale, bottom drag value, bottom drag scale, KE profile, PE profile, phase shifts (slices), psi profile (via FFT)
 
-                jld_data = Dict("t" => t_yrly, "CV" => Array(CV ./ budget_counter),
-                    "CVhk" => Array(CVhk ./ budget_counter), "psi_profile" => Array(psih ./ budget_counter),
-                    "drag" => Float64(drag / budget_counter), "drag_scale" => Float64(drag_scale / budget_counter),
-                    "ph_slices" => Array(ph_slices ./ budget_counter))
+                if psi_lagged_bool==true
+                    jld_data = Dict("t" => t_yrly, "CV" => Array(CV ./ budget_counter),
+                        "CVhk" => Array(CVhk ./ budget_counter), "psi_profile" => Array(psih ./ budget_counter),
+                        "drag" => Float64(drag / budget_counter), "drag_scale" => Float64(drag_scale / budget_counter),
+                        "ph_slices" => Array(ph_slices ./ budget_counter))
 
-                # saving output
-                save_output_PI(vars, jld_data, model_params, yr_cnt)
+                    # saving output
+                    save_output_PI(vars, jld_data, model_params, yr_cnt)
+                end
 
                 GC.gc()
 
@@ -779,7 +789,7 @@ end
 ## DIAGS: Initial considerations for sloping & rough topo runs
 ####################################################################################
 
-function rough_init_diags(model_params, vars, params, grid, t, sol, CV, CVhk, psih, drag, drag_scale)
+function rough_init_diags(model_params, ψ, params, grid, t, sol, CV, CVhk, psih, drag, drag_scale)
     # vertical profile of CVK, CVK scale, bottom drag value, bottom drag scale, psi profile (via FFT)
     # have to normalize where it makes sense to do so
 
@@ -801,34 +811,44 @@ function rough_init_diags(model_params, vars, params, grid, t, sol, CV, CVhk, ps
 
     dU = U[1:end-1] - U[2:end]
 
-    nrg_tendency = (sum(nrg_ot[:,nsaves]) - sum(nrg_ot[:,nsaves-1])) / (t[end] - t[end-1]) 
+    nrg_tendency = (sum(nrg_ot[:,nsaves]) - sum(nrg_ot[:,nsaves-2])) / (2*(t[end] - t[end-1]))
+
+    # streamfunction field is lagged by one sampling period, to match centered difference for nrg tendency
+    ψh = deepcopy(prob.vars.ψh)
+    fwdtransform!(ψh, deepcopy(ψ), prob.params)
+
+    v = deepcopy(prob.vars.v)
+    u = deepcopy(prob.vars.u)
+
+    invtransform!(v, im .* prob.grid.kr .* ψh, prob.params)
+    invtransform!(u,-im .* prob.grid.l  .* ψh, prob.params)
 
     for i in range(1,Nz)
 
         if i < Nz
-            @views CV[i:i] .+= 2 * f0^2 / (gp[i] * sum(H)) * dU[i] * mean(vars.v[:,:,i+1] .* vars.ψ[:,:,i]) / nrg_tendency
+            @views CV[i:i] .+= 2 * f0^2 / (gp[i] * sum(H)) * dU[i] * mean(v[:,:,i+1] .* ψ[:,:,i]) / nrg_tendency
 
             # bCVhb[i] = sum(abs.(vars.ψh[:,:,i]))
-            CVh = im * grid.kr * 2 * f0^2 / (gp[i] * sum(H)) * dU[i] .* conj.(vars.ψh[:,:,i+1]) .* vars.ψh[:,:,i]
+            CVh = im * grid.kr * 2 * f0^2 / (gp[i] * sum(H)) * dU[i] .* conj.(ψh[:,:,i+1]) .* ψh[:,:,i]
             CVh .+= conj.(CVh)
 
             @views CVhk[i:i] .+= Array(grid.Krsq)[argmax(abs.(CVh))]
         end
 
-        @views psih[i:i] .+= maximum(abs.(vars.ψh[:,:,i])) / maximum(abs.(vars.ψh[:,:,1]))
+        @views psih[i:i] .+= maximum(abs.(ψh[:,:,i])) / maximum(abs.(ψh[:,:,1]))
 
     end
 
     ##
-    ζN = deepcopy(vars.u[:,:,1])
+    ζN = deepcopy(prob.vars.u[:,:,1])
 
-    ζNh = - grid.Krsq .* vars.ψh[:,:,end]
+    ζNh = - grid.Krsq .* ψh[:,:,end]
 
     ldiv2D!(ζN, rfftplan, deepcopy(ζNh))
     
-    drag += mean(δ[Nz] * μ * vars.ψ[:,:,end] * ζN) / nrg_tendency
+    drag += mean(δ[Nz] * μ * ψ[:,:,end] * ζN) / nrg_tendency
 
-    dragh = δ[Nz] * μ * conj.(vars.ψh[:,:,end]) .* ζNh
+    dragh = δ[Nz] * μ * conj.(ψh[:,:,end]) .* ζNh
     dragh += conj.(dragh)
 
     drag_scale += Array(grid.Krsq)[argmax(abs.(dragh))]
@@ -1294,12 +1314,12 @@ function update_two_layered_nrg(vars, params, grid, sol, ψ, model_params)
     # mod2u = @. ∂ψ∂y[:,:,1]^2 + ∂ψ∂y[:,:,2]^2
     # mod2v = @. ∂ψ∂x[:,:,1]^2 + ∂ψ∂x[:,:,2]^2
 
-    APE_d = @. 0.5 * F * (ψ[:,:,1] - ψ[:,:,2])^2
+    APE_d = @. F * (ψ[:,:,1] - ψ[:,:,2])^2
     APE = sum(APE_d) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
     
     KE_d = zeros(dev, T, (grid.nx, grid.ny, nlayers))
-    @views KE_d[:,:,1] = @. 0.5 * mod2∇ψ1 
-    @views KE_d[:,:,2] = @. 0.5 * mod2∇ψ2 
+    @views KE_d[:,:,1] = @. mod2∇ψ1 
+    @views KE_d[:,:,2] = @. mod2∇ψ2 
     KE = dropdims(sum(dropdims(sum(KE_d,dims=1),dims=1),dims=1),dims=1) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
 
     # KE_uv = zeros(grid.nx, grid.ny, nlayers)
@@ -1344,11 +1364,11 @@ function update_layered_nrg(vars, params, grid, sol, ψ, model_params)
 
         if i < Nz
             ψ = view(vars.ψ, :, :, i:i+1)
-            APE_d = @. 0.5 * F[i] * (ψ[:,:,1] - ψ[:,:,2])^2
+            APE_d = @. F[i] * (ψ[:,:,1] - ψ[:,:,2])^2
             @views APE[i:i] = sum(APE_d) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
         end
         
-        KE_d = @. 0.5 * δ[i] * mod2∇ψ
+        KE_d = @. δ[i] * mod2∇ψ
 
         @views KE[i:i] = sum(KE_d) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
 
