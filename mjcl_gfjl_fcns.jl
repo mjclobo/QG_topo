@@ -806,7 +806,7 @@ function rough_init_diags(model_params, vars, params, grid, t, sol, CV, CVhk, ps
     for i in range(1,Nz)
 
         if i < Nz
-            @views CV[i:i] = -2 * f0^2 / (gp[i] * sum(H)) * dU[i] * mean(vars.v[:,:,i+1] .* vars.ψ[:,:,i]) / nrg_tendency
+            @views CV[i:i] .+= 2 * f0^2 / (gp[i] * sum(H)) * dU[i] * mean(vars.v[:,:,i+1] .* vars.ψ[:,:,i]) / nrg_tendency
 
             # bCVhb[i] = sum(abs.(vars.ψh[:,:,i]))
             CVh = im * grid.kr * 2 * f0^2 / (gp[i] * sum(H)) * dU[i] .* conj.(vars.ψh[:,:,i+1]) .* vars.ψh[:,:,i]
@@ -826,14 +826,14 @@ function rough_init_diags(model_params, vars, params, grid, t, sol, CV, CVhk, ps
 
     ldiv2D!(ζN, rfftplan, deepcopy(ζNh))
     
-    drag = δ[Nz] * μ * vars.ψ[:,:,end] * ζN / nrg_tendency
+    drag += mean(δ[Nz] * μ * vars.ψ[:,:,end] * ζN) / nrg_tendency
 
     dragh = δ[Nz] * μ * conj.(vars.ψh[:,:,end]) .* ζNh
     dragh += conj.(dragh)
 
     drag_scale += Array(grid.Krsq)[argmax(abs.(dragh))]
 
-    return CV, CVhk, psih, mean(drag), drag_scale
+    return CV, CVhk, psih, drag, drag_scale
 end
 
 
