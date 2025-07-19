@@ -379,9 +379,13 @@ function run_model(prob, model_params)
                 global ph_slices += calc_zonal_phase_shift_12(model_params, vars.ψ, prob.grid, prob.vars)
 
                 global budget_counter +=1
-
-            elseif xspace_layered_nrg==true
-                global @views nrg_ot[:,nsaves] = update_two_layered_nrg(prob, vars.ψ, model_params) 
+            end
+            # elseif xspace_layered_nrg==true
+            #     global @views nrg_ot[:,nsaves] = update_two_layered_nrg(prob, vars.ψ, model_params) 
+            # end
+            
+            if xspace_layered_nrg==true
+                global @views nrg_ot[:,nsaves] = update_layered_nrg(prob, vars.ψ, model_params) 
             end
         
             # reading out stats
@@ -410,7 +414,10 @@ function run_model(prob, model_params)
                     @unpack_diag_bools diags
 
                     if psi_out_bool==true && two_layer_kspace_modal_nrg_budget_bool==false && xspace_layered_nrg==false
-                        jld_data = Dict("t" => t_yrly,
+                        jld_data = Dict("t" => t_yrly,  "layered_nrg_ot" => Array(nrg_ot),
+                            "psi_ot" => Array(psi_ot))
+                    elseif psi_out_bool==true && two_layer_kspace_modal_nrg_budget_bool==false && xspace_layered_nrg==true
+                        jld_data = Dict("t" => t_yrly, 
                             "psi_ot" => Array(psi_ot))
                     elseif psi_out_bool==true && two_layer_kspace_modal_nrg_budget_bool==true && xspace_layered_nrg==false
                         jld_data = Dict("t" => t_yrly, "psi_ot" => Array(psi_ot),
@@ -507,7 +514,7 @@ function preallocate_global_diag_arrays(prob, grid, dev, nsubs, restart_yr, EAPE
     global two_layer_vBT_scale = 0.
 
     len_nrg = ceil(Int, (ss_yr_max - yr_cnt + 1) * 365.25 * 24 * 3600 / prob.clock.dt / nsubs)
-    global nrg_ot = zeros(dev, T, (3, len_nrg))
+    global nrg_ot = zeros(dev, T, (2*Nz-1, len_nrg))
 end
 
 
