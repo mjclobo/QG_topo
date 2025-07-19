@@ -153,9 +153,9 @@ function jld_name_2L(model_params, yr_cnt)
     yr_str = "_yr" * string(yr_cnt)
 
     # geometry
-    L_str = "_L_" * (@sprintf "%.3E" Lx)
+    L_str = "_L_2pi" * (@sprintf "%.3E" Lx)
 
-    thick_str = "layer" * string(Nz) * "_H_" * string(sum(H))
+    thick_str = "layer" * string(Nz) * "_Htot_" * string(sum(H))
     
     return "/" * thick_str * L_str * h_str * beta_str * shear_str * "_" * strat_str * drag_str * hv_str * res_str * yr_str * ".jld"
 end
