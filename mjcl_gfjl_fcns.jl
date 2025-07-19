@@ -119,6 +119,48 @@ function jld_name(model_params, yr_cnt)
     return "/" * thick_str * L_str * h_str * beta_str * shear_str * U_str * strat_str * rho_str * drag_str * hv_str * res_str * yr_str * ".jld"
 end
 
+function jld_name_2L(model_params, yr_cnt)
+
+    @unpack_mod_params model_params
+
+    # topo string
+    if topo_type=="y_slope"
+        h_str = "_" * topo_type * "_h0_" * (@sprintf "%.3E" h0[1])
+    elseif topo_type=="rough"
+        h_str = "_" * topo_type * "_hrms_" * string(round(h0[2]))*"_kt" * string(round(kt)) 
+    elseif topo_type=="rough_slope"
+        h_str = "_" * topo_type * "_h0slope_" * (@sprintf "%.3E" h0[1]) * "_hrms_"* string(round(h0[2]))*"_kt" * string(round(kt)) 
+    elseif topo_type=="sin_sin"
+        h_str = "_" * topo_type * "_h0_"* string(Int(h0[1]))  
+    elseif topo_type=="flat"
+        h_str = "_" * topo_type
+    end
+
+    # drag strings
+    kap_str = @sprintf "%.3E" κ
+    mu_str = @sprintf "%.3E" μ
+
+    nu_str = @sprintf "%.3E" ν
+    hv_str = "_nu" * nu_str
+
+    drag_str = "_mu" * mu_str * "_kappa" * kap_str
+
+    # misc.
+    beta_str = "_beta" * (@sprintf "%.3E" β) * "_"
+
+    res_str =  "_res" * string(Int(Nx))
+
+    yr_str = "_yr" * string(yr_cnt)
+
+    # geometry
+    L_str = "_L_" * (@sprintf "%.3E" Lx)
+
+    thick_str = "layer" * string(Nz) * "_H_" * string(sum(H))
+    
+    return "/" * thick_str * L_str * h_str * beta_str * shear_str * "_" * strat_str * drag_str * hv_str * res_str * yr_str * ".jld"
+end
+
+
 
 function jld_name_pre_buoy(model_params,yr_cnt)
 
