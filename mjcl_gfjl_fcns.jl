@@ -18,10 +18,16 @@ import Base: view
     g::Float64 = 9.81
     rho0::Float64 = 1025.
     rho::Array{Float64} = zeros(Nz)
+    rhotop::Float64 = 1025.
+    rhobottom::Float64 = 1026.
+    rhoscaledepth::Float64 = 1000.
     strat_str::String = "uni_strat"
     b::Array{Float64} = (g/rho0) .* (rho0 .- rho)
     shear_str::String = "uni_shear"
     U::Array{Float64} = ones(Nz)
+    Utop::Float64 = 1.0
+    Ubottom::Float64 = 0.0
+    Uscaledepth::Float64 = 1000.
     μ::Float64 = 0.
     κ::Float64 = 0.
     nν::Int64 = 4
@@ -44,7 +50,7 @@ import Base: view
     data_dir_pre_buoy::String = data_dir
     yr_increment::Float64 = 1.0
     ss_yr_max::Int = 100
-    nsubs::Int64 = round(Int64, 5*(Ld / (U[1]/2))/dt)  # save psi field every 5 eddy periods
+    nsubs::Int64 = round(Int64, 5*(Ld / (Utop/2))/dt)  # save psi field every 5 eddy periods
 end
 
 @with_kw struct diag_bools
@@ -100,12 +106,17 @@ function jld_name(model_params, yr_cnt)
 
     yr_str = "_yr" * string(yr_cnt)
 
+    # prescribed background params
+    U_str = "_Utop" * (@sprintf "%.3E" Utop) * "_Ubottom" * (@sprintf "%.3E" Ubottom) * "_Uscaledepth" * (@sprintf "%.3E" Uscaledepth) * "_"
+
+    rho_str = "_rhotop" * (@sprintf "%.3E" rhotop) * "_rhobottom" * (@sprintf "%.3E" rhobottom) * "_rhoscaledepth" * (@sprintf "%.3E" rhoscaledepth) * "_"
+
     # geometry
     L_str = "_L_2pi" * (@sprintf "%.3E" Lx)
 
     thick_str = "layer" * string(Nz) * "_Htot_" * string(sum(H))
     
-    return "/" * thick_str * L_str * h_str * beta_str * shear_str * "_" * strat_str * drag_str * hv_str * res_str * yr_str * ".jld"
+    return "/" * thick_str * L_str * h_str * beta_str * shear_str * U_str * strat_str * rho_str * drag_str * hv_str * res_str * yr_str * ".jld"
 end
 
 
