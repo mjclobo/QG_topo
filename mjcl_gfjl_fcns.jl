@@ -107,14 +107,14 @@ function jld_name(model_params, yr_cnt)
     yr_str = "_yr" * string(yr_cnt)
 
     # prescribed background params
-    U_str = "_Utop" * (@sprintf "%.3E" Utop) * "_Ubottom" * (@sprintf "%.3E" Ubottom) * "_Uscaledepth" * (@sprintf "%.3E" Uscaledepth) * "_"
+    U_str = (@sprintf "%.3E" Utop) * (@sprintf "%.3E" Ubottom) * (@sprintf "%.3E" Uscaledepth) * "_"
 
-    rho_str = "_rhotop" * (@sprintf "%.3E" rhotop) * "_rhobottom" * (@sprintf "%.3E" rhobottom) * "_rhoscaledepth" * (@sprintf "%.3E" rhoscaledepth) * "_"
+    rho_str = (@sprintf "%.3E" rhotop) * (@sprintf "%.3E" rhobottom) * (@sprintf "%.3E" rhoscaledepth) * "_"
 
     # geometry
-    L_str = "_L_2pi" * (@sprintf "%.3E" Lx)
+    L_str = "_L_" * (@sprintf "%.3E" Lx)
 
-    thick_str = "layer" * string(Nz) * "_Htot_" * string(sum(H))
+    thick_str = "layer" * string(Nz) * "_H_" * string(sum(H))
     
     return "/" * thick_str * L_str * h_str * beta_str * shear_str * U_str * strat_str * rho_str * drag_str * hv_str * res_str * yr_str * ".jld"
 end
