@@ -314,7 +314,7 @@ function set_initial_conditions(prob, prob_filt, model_params)
 
             a = load(data_dir * r_file_name)
 
-            ψ = a["jld_data"]["psi_yrs_end"]
+            ψ = a["jld_data"]["psi_ot"][:,:,:,end]  # a["jld_data"]["psi_yrs_end"]
 
             MultiLayerQG.set_ψ!(prob.sol, prob.params, prob.vars, prob.grid, ψ)   # this also sets q!!!
 
@@ -441,6 +441,8 @@ function run_model(prob, model_params)
             # save output and reset params every year
             if ((t_yrly[end] - yr_cnt*365*86400) > 0)
 
+                global jld_name_addon = ""
+
                 if yr_cnt <= restart_yr + yr_increment
 
                     jld_data = Dict("Nz" => Nz, "f0" => f0,
@@ -450,6 +452,8 @@ function run_model(prob, model_params)
                         "Qy" => Array(params.Qy[1,1,:]), "eta" => eta,
                         "topographic_pv_gradient" => topographic_pv_gradient,
                         "stepper" => stepper)
+
+                    global jld_name_addon = "init"
 
                 else
 
