@@ -461,10 +461,10 @@ function run_model(prob, model_params)
 
                     if psi_out_bool==true && two_layer_kspace_modal_nrg_budget_bool==false && xspace_layered_nrg==true
                         jld_data = Dict("t" => t_yrly,  "layered_nrg_ot" => Array(nrg_ot),
-                            "psi_ot" => Array(psi_ot))
+                            "psi_ot" => Array(psi_ot), "psi_yrs_end" => Array(vars.ψ))
                     elseif psi_out_bool==true && two_layer_kspace_modal_nrg_budget_bool==false && xspace_layered_nrg==false
                         jld_data = Dict("t" => t_yrly, 
-                            "psi_ot" => Array(psi_ot))
+                            "psi_ot" => Array(psi_ot), "psi_yrs_end" => Array(vars.ψ))
                     elseif psi_out_bool==true && two_layer_kspace_modal_nrg_budget_bool==true && xspace_layered_nrg==false
                         jld_data = Dict("t" => t_yrly, "psi_ot" => Array(psi_ot),
                             "two_layer_kspace_modal_nrg_budget" => Array(two_layer_kspace_modal_nrgs ./ budget_counter),
