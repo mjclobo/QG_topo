@@ -326,7 +326,7 @@ function run_model(prob, model_params)
 
         if dyn_nu==true
             rmsζ = sqrt(mean((irfft(-grid.Krsq .* prob.vars.ψh[:,:,1], grid.ny)).^2))
-            global prob = @set prob.params.ν = rmsζ * dx^8
+            global prob = @set prob.params.ν = rmsζ * prob.grid.dx^8
         end
         
         stepforward!(prob)
