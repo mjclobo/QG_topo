@@ -51,6 +51,7 @@ import Base: view
     yr_increment::Float64 = 1.0
     ss_yr_max::Int = 100
     nsubs::Int64 = round(Int64, 5*(Ld / (Utop/2))/dt)  # save psi field every 5 eddy periods
+    Nslice::Int64 = round(Int, Nx/8)
 end
 
 @with_kw struct diag_bools
@@ -67,6 +68,7 @@ end
     EAPE_two_layer_kspace_modal_nrg_budget_bool::Bool = false
     psi_out_bool_yrs_end::Bool = false
     only_save_last::Bool = false
+    zonal_slice_diag::Bool = false
 end
 
 ####################################################################################
@@ -114,7 +116,7 @@ function jld_name(model_params, yr_cnt)
     # geometry
     L_str = "_L_" * (@sprintf "%.3E" Lx)
 
-    thick_str = "layer" * string(Nz) * "_H_" * string(sum(H))
+    thick_str = "layer" * string(Nz) * "_H_" * string(round(sum(H)))
     
     return "/" * thick_str * L_str * h_str * beta_str * shear_str * U_str * strat_str * rho_str * drag_str * hv_str * res_str * yr_str * ".jld"
 end
@@ -404,6 +406,14 @@ function run_model(prob, model_params)
                 end
             end
 
+            if zonal_slice_diag==true
+                if isnothing(psi_ot)
+                    global psi_ot_slice = deepcopy(vars.ψ[:,1:Nslice,end]);
+                else
+                    global psi_ot_slice = cat(psi_ot_slice, vars.ψ[:,1:Nslice,end], dims=4)
+                end
+            end
+
             push!(t_yrly,prob.clock.t)
             
             if two_layer_kspace_modal_nrg_budget_bool==true
@@ -510,6 +520,8 @@ function run_model(prob, model_params)
                             "coh_NLBCEKE_TD" => Array(real.((coh_out[:,:,5] .* coh_out[:,:,6]) ./ (coh_out[:,:,7] .* coh_out[:,:,8]))),
                             "coh_DBC_TD" => Array(real.((coh_out[:,:,9] .* coh_out[:,:,10]) ./ (coh_out[:,:,11] .* coh_out[:,:,12]))),
                             "coh_DBC_NLBC2BT" => Array(real.((coh_out[:,:,13] .* coh_out[:,:,14]) ./ (coh_out[:,:,15] .* coh_out[:,:,16]))))
+                    elseif zonal_slice_diag==true
+                        jld_data = Dict("t" => t_yrly, "psi_ot_slice" => Array(psi_ot_slice))
                     end
 
                 end
