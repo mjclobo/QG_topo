@@ -567,6 +567,7 @@ function preallocate_global_diag_arrays(prob, grid, dev, nsubs, restart_yr, EAPE
     global budget_counter = 0
     global nsaves = 0
     global psi_ot = nothing
+    global psi_ot_slice = nothing
 
     global ph_iso    = 0.
     global ph_slices = 0.
