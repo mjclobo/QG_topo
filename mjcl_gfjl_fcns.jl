@@ -2360,6 +2360,8 @@ function redef_mu_kappa_topoPV_h0(model_params, mu, kappa, topo_PV, h0_new)
     restart_yr = restart_yr,
     pre_buoy_restart_file = pre_buoy_restart_file,
     data_dir_pre_buoy = data_dir_pre_buoy,
+    pre_multilayer_restart_file = pre_multilayer_restart_file,
+    pre_multilayer_dir = pre_multilayer_dir,
     ss_yr_max = ss_yr_max,
     yr_increment = yr_increment,
     nsubs = nsubs);
@@ -2388,6 +2390,8 @@ function redef_mu_kappa_topoPV_h0_eta(model_params, mu, kappa, topo_PV, h0_new, 
     restart_yr = restart_yr,
     pre_buoy_restart_file = pre_buoy_restart_file,
     data_dir_pre_buoy = data_dir_pre_buoy,
+    pre_multilayer_restart_file = pre_multilayer_restart_file,
+    pre_multilayer_dir = pre_multilayer_dir,
     ss_yr_max = ss_yr_max,
     yr_increment = yr_increment,
     nsubs = nsubs);
@@ -2417,6 +2421,8 @@ function redef_mu_kappa_beta(model_params, mu, kappa, beta)
     restart_yr = restart_yr,
     pre_buoy_restart_file = pre_buoy_restart_file,
     data_dir_pre_buoy = data_dir_pre_buoy,
+    pre_multilayer_restart_file = pre_multilayer_restart_file,
+    pre_multilayer_dir = pre_multilayer_dir,
     ss_yr_max = ss_yr_max,
     yr_increment = yr_increment,
     nsubs = nsubs);
