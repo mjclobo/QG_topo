@@ -318,11 +318,11 @@ function set_initial_conditions(prob, prob_filt, model_params)
 
             a = load(pre_multilayer_dir * r_file_name)
 
-            if @isdefined(a["jld_data"]["psi_ot"])
-                ψ = a["jld_data"]["psi_ot"][:,:,:,end]
-            else
-                ψ = a["jld_data"]["psi_yrs_end"][:,:,:]
-            end
+            # if @isdefined(a["jld_data"]["psi_ot"])
+            #     ψ = a["jld_data"]["psi_ot"][:,:,:,end]
+            # else
+            ψ = a["jld_data"]["psi_yrs_end"][:,:,:]
+            # end
 
             MultiLayerQG.set_ψ!(prob.sol, prob.params, prob.vars, prob.grid, ψ)   # this also sets q!!!
 
