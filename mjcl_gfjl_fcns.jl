@@ -47,6 +47,8 @@ import Base: view
     restart_bool::Bool = false
     restart_yr::Float64 = 0.
     pre_buoy_restart_file::Bool = false
+    pre_multilayer_restart_file::Bool = false
+    pre_multilayer_dir::String = "./restart/"
     data_dir_pre_buoy::String = data_dir
     yr_increment::Float64 = 1.0
     ss_yr_max::Int = 100
@@ -303,6 +305,18 @@ function set_initial_conditions(prob, prob_filt, model_params)
             r_file_name = jld_name_pre_buoy(model_params, restart_yr)
 
             a = load(r_file_name)
+
+            ψ = a["jld_data"]["psi_ot"][:,:,:,1]
+
+            MultiLayerQG.set_ψ!(prob.sol, prob.params, prob.vars, prob.grid, ψ)   # this also sets q!!!
+
+            println("Restarting model from: " * r_file_name)
+
+        elseif pre_multilayer_restart_file==true
+
+            r_file_name = jld_name_2L(model_params, restart_yr)
+
+            a = load(pre_multilayer_dir * r_file_name)
 
             ψ = a["jld_data"]["psi_ot"][:,:,:,1]
 
@@ -620,6 +634,7 @@ function save_output(vars, jld_data, model_params, yr_cnt)
     end
 
     global psi_ot = nothing
+    global psi_ot_slice = nothing
 
 end
 
@@ -663,6 +678,8 @@ function save_output_PI(vars, jld_data, model_params, yr_cnt)
     end
 
     global psi_ot = nothing
+    global psi_ot_slice = nothing
+
 
 end
 
