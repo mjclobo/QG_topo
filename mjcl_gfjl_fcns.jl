@@ -425,7 +425,7 @@ function run_model(prob, model_params)
             end
 
             if zonal_slice_diag==true
-                if isnothing(psi_ot)
+                if isnothing(psi_ot_slice)
                     global psi_ot_slice = deepcopy(vars.ψ[:,1:Nslice,end]);
                 else
                     global psi_ot_slice = cat(psi_ot_slice, vars.ψ[:,1:Nslice,end], dims=4)
