@@ -33,6 +33,7 @@ import Base: view
     nν::Int64 = 4
     ν::Float64 = 0.
     dyn_nu::Bool = false
+    dyn_nu_coeff::Float64 = 1.
     q0_mag::Float64 = 1.e-7
     eta::Any = zeros(Nx,Ny) # eta::Array{Float64} = zeros(Nx,Ny)
     topographic_pv_gradient::Tuple{Float64, Float64} = (0., 0.)
@@ -399,7 +400,7 @@ function run_model(prob, model_params)
 
         if dyn_nu==true
             rmsζ = sqrt(mean((irfft(-grid.Krsq .* prob.vars.ψh[:,:,1], grid.ny)).^2))
-            global prob = @set prob.params.ν = rmsζ * prob.grid.dx^8
+            global prob = @set prob.params.ν = dyn_nu_coeff * rmsζ * prob.grid.dx^8
         end
         
         stepforward!(prob)
@@ -2355,7 +2356,7 @@ function redef_mu_kappa_topoPV_h0(model_params, mu, kappa, topo_PV, h0_new)
     rhotop = rhotop, rhobottom = rhobottom, rhoscaledepth = rhoscaledepth,
     shear_str = shear_str, U = U,
     Utop = Utop, Ubottom = Ubottom, Uscaledepth = Uscaledepth,
-    μ = mu , κ = kappa , nν = nν, ν = ν, dyn_nu=dyn_nu,
+    μ = mu , κ = kappa , nν = nν, ν = ν, dyn_nu=dyn_nu, dyn_nu_coeff=dyn_nu_coeff,
     eta = eta, topographic_pv_gradient = topo_PV, topo_type = topo_type, h0 = h0_new, kt=kt,
     f0 = f0, β = β,
     dt = dt,
@@ -2385,7 +2386,7 @@ function redef_mu_kappa_topoPV_h0_eta(model_params, mu, kappa, topo_PV, h0_new, 
     rhotop = rhotop, rhobottom = rhobottom, rhoscaledepth = rhoscaledepth,
     shear_str = shear_str, U = U,
     Utop = Utop, Ubottom = Ubottom, Uscaledepth = Uscaledepth,
-    μ = mu , κ = kappa , nν = nν, ν = ν, dyn_nu=dyn_nu,
+    μ = mu , κ = kappa , nν = nν, ν = ν, dyn_nu=dyn_nu, dyn_nu_coeff=dyn_nu_coeff,
     eta = eta_new, topographic_pv_gradient = topo_PV, topo_type = topo_type, h0 = h0_new, kt=kt,
     f0 = f0, β = β,
     dt = dt,
@@ -2416,7 +2417,7 @@ function redef_mu_kappa_beta(model_params, mu, kappa, beta)
     rhotop = rhotop, rhobottom = rhobottom, rhoscaledepth = rhoscaledepth,
     shear_str = shear_str, U = U,
     Utop = Utop, Ubottom = Ubottom, Uscaledepth = Uscaledepth,
-    μ = mu , κ = kappa , nν = nν, ν = ν, dyn_nu=dyn_nu,
+    μ = mu , κ = kappa , nν = nν, ν = ν, dyn_nu=dyn_nu, dyn_nu_coeff=dyn_nu_coeff,
     eta = eta, topographic_pv_gradient = topographic_pv_gradient, topo_type = topo_type, h0 = h0, kt=kt,
     f0 = f0, β = beta,
     dt = dt,
