@@ -513,7 +513,7 @@ function run_model(prob, model_params)
                     elseif psi_out_bool_yrs_end==true && two_layer_kspace_modal_nrg_budget_bool==false && xspace_layered_nrg==true
                         jld_data = Dict("t" => t_yrly,
                             "psi_yrs_end" => Array(vars.ψ), "layered_nrg_ot" => Array(nrg_ot))
-                    elseif psi_out_bool_yrs_end==true && two_layer_kspace_modal_nrg_budget_bool==true
+                    elseif psi_out_bool_yrs_end==true && two_layer_kspace_modal_nrg_budget_bool==true && EAPE_two_layer_kspace_modal_nrg_budget_bool==true
                         jld_data = Dict("t" => t_yrly,
                             "psi_yrs_end" => Array(vars.ψ), "two_layer_kspace_modal_nrg_budget" => Array(two_layer_kspace_modal_nrgs ./ budget_counter),
                             "two_layer_xspace_modal_nrg_budget" => Array(two_layer_xspace_modal_nrgs ./ budget_counter),
@@ -526,6 +526,14 @@ function run_model(prob, model_params)
                             "coh_NLBCEKE_TD" => Array(real.((coh_out[:,:,5] .* coh_out[:,:,6]) ./ (coh_out[:,:,7] .* coh_out[:,:,8]))),
                             "coh_DBC_TD" => Array(real.((coh_out[:,:,9] .* coh_out[:,:,10]) ./ (coh_out[:,:,11] .* coh_out[:,:,12]))),
                             "coh_DBC_NLBC2BT" => Array(real.((coh_out[:,:,13] .* coh_out[:,:,14]) ./ (coh_out[:,:,15] .* coh_out[:,:,16]))))
+                    elseif psi_out_bool_yrs_end==true && two_layer_kspace_modal_nrg_budget_bool==true
+                        jld_data = Dict("t" => t_yrly,
+                            "psi_yrs_end" => Array(vars.ψ), "two_layer_kspace_modal_nrg_budget" => Array(two_layer_kspace_modal_nrgs ./ budget_counter),
+                            "two_layer_xspace_modal_nrg_budget" => Array(two_layer_xspace_modal_nrgs ./ budget_counter),
+                            "two_layer_xspace_nrgs_ot" => Array(nrg_ot),
+                            "two_layer_vBT_scale" => Float64(two_layer_vBT_scale ./ budget_counter),
+                            "ph_iso" => Float64(ph_iso / budget_counter), "ph_slices" => Float64(ph_slices / budget_counter),
+                            "two_layer_modal_length_scales" => Array(two_layer_modal_length_scales ./ budget_counter))
                     elseif psi_out_bool==false && two_layer_kspace_modal_nrg_budget_bool==true
                         jld_data = Dict("t" => t_yrly,
                             "two_layer_kspace_modal_nrg_budget" => Array(two_layer_kspace_modal_nrgs ./ budget_counter),
