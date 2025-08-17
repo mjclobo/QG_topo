@@ -72,6 +72,7 @@ end
     psi_out_bool_yrs_end::Bool = false
     only_save_last::Bool = false
     zonal_slice_diag::Bool = false
+    omega_diags_bool::Bool = false
 end
 
 ####################################################################################
@@ -391,7 +392,7 @@ function run_model(prob, model_params)
     global j = 0
     prob.clock.t = restart_yr * 365.25 * 24 * 3600.
 
-    preallocate_global_diag_arrays(prob, grid, dev, nsubs, restart_yr, EAPE_two_layer_kspace_modal_nrg_budget_bool)
+    preallocate_global_diag_arrays(prob, grid, dev, nsubs, restart_yr, EAPE_two_layer_kspace_modal_nrg_budget_bool, omega_diags_bool)
 
     while yr_cnt < ss_yr_max
         global j
@@ -457,6 +458,10 @@ function run_model(prob, model_params)
             
             if xspace_layered_nrg==true
                 global @views nrg_ot[:,nsaves] = update_layered_nrg(prob, vars.ψ, model_params) 
+            end
+
+            if omega_diags_bool==true
+                global omega_diag_array = update_two_layer_omega_diags(prob, vars.ψ, model_params, omega_diag_array)
             end
         
             # reading out stats
@@ -549,6 +554,8 @@ function run_model(prob, model_params)
                             "coh_DBC_NLBC2BT" => Array(real.((coh_out[:,:,13] .* coh_out[:,:,14]) ./ (coh_out[:,:,15] .* coh_out[:,:,16]))))
                     elseif zonal_slice_diag==true
                         jld_data = Dict("t" => t_yrly, "psi_ot_slice" => Array(psi_ot_slice))
+                    elseif omega_diags_bool==true
+                        jld_data = Dict("omega_diags" => Array(omega_diag_array))
                     end
 
                 end
@@ -570,7 +577,7 @@ function run_model(prob, model_params)
 end
 
 
-function preallocate_global_diag_arrays(prob, grid, dev, nsubs, restart_yr, EAPE_two_layer_kspace_modal_nrg_budget_bool)
+function preallocate_global_diag_arrays(prob, grid, dev, nsubs, restart_yr, EAPE_two_layer_kspace_modal_nrg_budget_bool, omega_diags_bool)
     global t_yrly = Array([prob.clock.t])
     global yr_cnt = restart_yr
     global budget_counter = 0
@@ -593,6 +600,11 @@ function preallocate_global_diag_arrays(prob, grid, dev, nsubs, restart_yr, EAPE
         global TD_out = zeros(dev, T, (grid.nkr, grid.nl))
         global coh_out = zeros(dev, ComplexF64, (grid.nkr, grid.nl, 16))
     end
+
+    if omega_diags_bool==true
+        global omega_diag_array = zeros(dev, T, (grid.nx, 10))
+    end
+
     nterms_two_layer_modal_xspace = 10  # only one nonlinear term (instead of 5)
     global two_layer_kspace_modal_nrgs = zeros(dev, T, (grid.nkr, nterms_two_layer_modal_kspace))
     global two_layer_xspace_modal_nrgs = zeros(dev, T, (nterms_two_layer_modal_xspace, 1))
@@ -1348,7 +1360,7 @@ function update_two_layer_kspace_modal_nrgs(vars, params, grid, sol, ψ, model_p
 
     GC.gc()
    
-    # k-space energies are, BTEKE, BCEKE, EAPE; CBC; Tflat, Ttopo; , DBT, DBC; NLBT2BC, NLBTEKE; NLBC2BT, NLBCEKE, NLBCEAPE resid
+    # k-space energies are, BTEKE, BCEKE, EAPE; CBC; Tflat, Ttopo; , DBT, DBC; NLBTEKE, NLBT2BC; NLBC2BT, NLBCEKE, NLBCEAPE resid
 
   return sqrt(mean(∂xψBT.^2 .+ ∂yψBT.^2)), nrgs_in .+ hcat(NRGs, CBCh, LF, Drag, NLBTh, NLBCh, resid), nrgs_in_x .+ A(vcat(BTKE_x, BCKE_x, BCEAPE_x, LT_x, TT_x, BC_x, NL_x, DBT_x, DBC_x, resid_x)), lengths_in .+ A(vcat(L_BT, L_BC))
 end
@@ -2494,6 +2506,202 @@ function calc_Ld_modes(model_params)
 end
 
 
+####################################################################################
+## DIAGS: modal k-space budget
+####################################################################################
+
+function update_two_layer_omega_diags(vars, params, grid, sol, ψ, model_params, omega_diags_in)
+    # Here we decompose the omega equation term-by-term, to attribute the large-scale conversion
+    # of baroclinic KE to PE to physical processes.
+    # We focus on the zonal average because we know that these occur at the jet wavenumber
+
+    # OUTPUT:   - every component of omega in xspace (zonal average) correlated to eta
+    #           - zonally averaged background flow
+    #           - zonally average CBC and NPE while we're at it, to show zonal averages of PE budgets
+
+    @unpack_mod_params model_params
+
+    nlayers = Nz
+
+    dev = grid.device
+    T = eltype(grid)
+    A = device_array(dev)
+
+    rfftplanlayered = plan_flows_rfft(A{T, 3}(undef, grid.nx, grid.ny, nlayers), [1, 2]; flags=FFTW.MEASURE)
+    rfftplan = plan_flows_rfft(A{T, 3}(undef, grid.nx, grid.ny, 1), [1, 2]; flags=FFTW.MEASURE)
+
+    # parameters
+    gr = gp(rho[1:2],rho0,g) 
+
+    Ld = sqrt(gr * sum(H)) / (2 * f0)
+    # ∂yηb = topographic_pv_gradient[2] / (f0 / H[end])
+    
+    ψh = deepcopy(vars.ψh)
+
+    mul!(ψh, rfftplanlayered, deepcopy(ψ))
+
+    u = deepcopy(ψ)
+    v = deepcopy(ψ)
+
+    ldiv!(u, rfftplanlayered, -im * grid.l  .* ψh)
+    ldiv!(v, rfftplanlayered, im * grid.kr  .* ψh)
+
+    U₁, U₂, = view(params.U, :, :, 1), view(params.U, :, :, 2)
+    u1, v1 = view(u, :, :, 1), view(v, :, :, 1)
+    u2, v2 = view(u, :, :, 2), view(v, :, :, 2)
+
+    ψ1, ψ2 = view(ψ, :, :, 1), view(ψ, :, :, 2)
+    ψ1h, ψ2h = view(ψh, :, :, 1), view(ψh, :, :, 2)
+        
+    # # calculating terms used in budget
+    ψ₁h, ψ₂h = view(ψh, :, :, 1), view(ψh, :, :, 2)
+    
+    # nonlinear terms
+    ζh = -grid.Krsq .* ψh
+
+    ζ = deepcopy(v)
+    ldiv!(ζ, rfftplanlayered, -grid.Krsq .* ψh)
+
+    ζ1, ζ2 = view(ζ, :, :, 1), view(ζ, :, :, 2)
+
+    ∂xζ = deepcopy(ψ)
+    ldiv!(∂xζ, rfftplanlayered, im .* grid.kr .* ζh)
+
+    ∂yζ = deepcopy(ψ)
+    ldiv!(∂yζ, rfftplanlayered, im .* grid.l .* ζh)
+
+    ∂xζ1, ∂xζ2 = view(∂xζ, :, :, 1), view(∂xζ, :, :, 2)
+    ∂yζ1, ∂yζ2 = view(∂yζ, :, :, 1), view(∂yζ, :, :, 2)
+
+    ##
+    J_ψ1_f = @. v1 * β
+    J_ψ2_f = @. v2 * β
+
+    J_ψ1_fh = deepcopy(ψh[:,:,1])
+    mul2D!(J_ψ1_fh, rfftplan, J_ψ1_f)
+
+    J_ψ2_fh = deepcopy(ψh[:,:,1])
+    mul2D!(J_ψ2_fh, rfftplan, J_ψ2_f)
+
+    ## J(ψ1, ζ1) & J(ψ2, ζ2)
+    J_ψ1_ζ1 = @. u1 * ∂xζ1 + v1 * ∂yζ1 
+    J_ψ2_ζ2 = @. u2 * ∂xζ2 + v2 * ∂yζ2
+
+    J_ψ1_ζ1h = deepcopy(ψh[:,:,1])
+    mul2D!(J_ψ1_ζ1h, rfftplan, J_ψ1_ζ1)
+
+    J_ψ2_ζ2h = deepcopy(ψh[:,:,1])
+    mul2D!(J_ψ2_ζ2h, rfftplan, J_ψ2_ζ2)
+
+    ##
+    J_ψ2_ψ1 = @. v1 * u2 - u1 * v2
+
+    J_ψ2_ψ1h = deepcopy(ψh[:,:,1])
+    mul2D!(J_ψ2_ψ1h, rfftplan, J_ψ2_ψ1)
+
+    ∇2J_ψ2_ψ1h = - grid.Krsq .* J_ψ2_ψ1h
+
+    ##
+    v2h = im .* grid.kr .* ψ2h
+    J_ψ2_S32h = v2h .* f0 .* U₁ ./ gr
+
+    ∇2J_ψ2_S32h = - grid.Krsq .* J_ψ2_S32h
+
+    ##
+    U1_∂xζ1h = deepcopy(ψh[:,:,1])
+    mul2D!(U1_∂xζ1h, rfftplan, U₁ .* ∂xζ1 )
+
+    ##
+    w_b = @. μ * H[2] * ζ2 / f0
+
+    w_bh = deepcopy(ψh[:,:,1])
+    mul2D!(w_bh, rfftplan, w_b)
+
+    ## baroclinic conversion term
+    CBC = @. 4 * S32 * (params.f₀ / params.H[1]) * (ψ1 - ψ2) * (v1-v2)
+
+    global CBC_zonal_avg = mean(CBC, dims=1)
+
+    global U_zonal_avg = mean(0.5 * (u1 .+ u2), dims=1)
+
+    # ############################################################################################
+    # calculating vertical velocity components
+    # ############################################################################################
+
+    L⁻¹ = (-grid.Krsq .- 2 * f0^2 / (gr * H[2])).^-1
+    CUDA.@allowscalar L⁻¹[1,1] = 0.
+    L⁻¹ = A(L⁻¹)
+
+    rhs_h = @. - (f0/gr) * (∇2J_ψ2_ψ1h + J_ψ2_fh + J_ψ2_ζ2h - J_ψ1_fh - J_ψ1_ζ1h - U1_∂xζ1h + (f0 / H[2]) * w_bh) + ∇2J_ψ2_S32h
+
+    rhs_p2p1_h = @. - (f0/gr) * ∇2J_ψ2_ψ1h
+    rhs_p2f_h  = @. - (f0/gr) * J_ψ2_fh
+    rhs_p2z2_h = @. - (f0/gr) * J_ψ2_ζ2h
+    rhs_p1f_h  = @.   (f0/gr) * J_ψ1_fh 
+    rhs_p1z1_h = @.   (f0/gr) * J_ψ1_ζ1h
+    rhs_U1z1_h = @.   (f0/gr) * U1_∂xζ1h 
+    rhs_wb_h   = @. - (f0/gr) * (f0 / H[2]) * w_bh
+    rhs_S32_h  = ∇2J_ψ2_S32h
+
+    omega_p2p1_h = L⁻¹ .* rhs_p2p1_h
+    omega_p2p1 = deepcopy(vars.u[:,:,1])
+    ldiv2D!(omega_p2p1, rfftplan, omega_p2p1_h)
+
+    omega_p2f_h = L⁻¹ .* rhs_p2f_h
+    omega_p2f = deepcopy(vars.u[:,:,1])
+    ldiv2D!(omega_p2f, rfftplan, omega_p2f_h)
+
+    omega_p2z2_h = L⁻¹ .* rhs_p2z2_h
+    omega_p2z2 = deepcopy(vars.u[:,:,1])
+    ldiv2D!(omega_p2z2, rfftplan, omega_p2z2_h)
+
+    omega_p1f_h = L⁻¹ .* rhs_p1f_h
+    omega_p1f = deepcopy(vars.u[:,:,1])
+    ldiv2D!(omega_p1f, rfftplan, omega_p1f_h)
+
+    omega_p1z1_h = L⁻¹ .* rhs_p1z1_h
+    omega_p1z1 = deepcopy(vars.u[:,:,1])
+    ldiv2D!(omega_p1z1, rfftplan, omega_p1z1_h)
+
+    omega_U1z1_h = L⁻¹ .* rhs_U1z1_h
+    omega_U1z1 = deepcopy(vars.u[:,:,1])
+    ldiv2D!(omega_U1z1, rfftplan, omega_U1z1_h)
+
+    omega_wb_h = L⁻¹ .* rhs_wb_h
+    omega_wb = deepcopy(vars.u[:,:,1])
+    ldiv2D!(omega_wb, rfftplan, omega_wb_h)
+
+    omega_S32_h = L⁻¹ .* rhs_S32_h
+    omega_S32 = deepcopy(vars.u[:,:,1])
+    ldiv2D!(omega_S32, rfftplan, omega_S32_h)
+
+    # ############################################################################################
+    # zonally averaged correlations
+    # ############################################################################################    
+    ##
+
+    global TD_p2p1 = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_p2p1, dims=1)
+
+    TD_p2f  = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_p2f, dims=1)
+
+    TD_p2z2 = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_p2z2, dims=1)
+
+    TD_p1f  = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_p1f, dims=1)
+
+    TD_p1z1 = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_p1z1, dims=1)
+
+    TD_U1z1 = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_U1z1, dims=1)
+
+    TD_wb   = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_wb, dims=1)
+
+    TD_S32  = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_S32, dims=1)
+
+    ##
+    
+    return omega_diags_in .+ [TD_p2p1; TD_p2f; TD_p2z2; TD_p1f; TD_p1z1; TD_U1z1; TD_wb; TD_S32; U_zonal_avg; CBC_zonal_avg]'
+end
+
+update_two_layer_omega_diags(prob, ψ, model_params, omega_diags_in) = update_two_layer_omega_diags(prob.vars, prob.params, prob.grid, prob.sol, ψ, model_params, omega_diags_in)
 
 #######################################################################################
 #######################################################################################
