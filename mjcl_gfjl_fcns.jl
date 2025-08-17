@@ -462,6 +462,7 @@ function run_model(prob, model_params)
 
             if omega_diags_bool==true
                 global omega_diag_array = update_two_layer_omega_diags(prob, vars.ψ, model_params, omega_diag_array)
+                global budget_counter +=1
             end
         
             # reading out stats
@@ -555,7 +556,7 @@ function run_model(prob, model_params)
                     elseif zonal_slice_diag==true
                         jld_data = Dict("t" => t_yrly, "psi_ot_slice" => Array(psi_ot_slice))
                     elseif omega_diags_bool==true
-                        jld_data = Dict("omega_diags" => Array(omega_diag_array))
+                        jld_data = Dict("omega_diags" => Array(omega_diag_array ./ budget_counter))
                     end
 
                 end
@@ -602,7 +603,7 @@ function preallocate_global_diag_arrays(prob, grid, dev, nsubs, restart_yr, EAPE
     end
 
     if omega_diags_bool==true
-        global omega_diag_array = zeros(dev, T, (grid.nx, 10))
+        global omega_diag_array = zeros(dev, T, (grid.nx, 11))
     end
 
     nterms_two_layer_modal_xspace = 10  # only one nonlinear term (instead of 5)
@@ -2618,7 +2619,7 @@ function update_two_layer_omega_diags(vars, params, grid, sol, ψ, model_params,
     mul2D!(w_bh, rfftplan, w_b)
 
     ## baroclinic conversion term
-    CBC = @. 4 * S32 * (params.f₀ / params.H[1]) * (ψ1 - ψ2) * (v1-v2)
+    CBC = @. 4 * S32 * (params.f₀ / params.H[1]) * (ψ1 - ψ2) * (v1+v2)
 
     global CBC_zonal_avg = mean(CBC, dims=1)
 
@@ -2632,7 +2633,7 @@ function update_two_layer_omega_diags(vars, params, grid, sol, ψ, model_params,
     CUDA.@allowscalar L⁻¹[1,1] = 0.
     L⁻¹ = A(L⁻¹)
 
-    rhs_h = @. - (f0/gr) * (∇2J_ψ2_ψ1h + J_ψ2_fh + J_ψ2_ζ2h - J_ψ1_fh - J_ψ1_ζ1h - U1_∂xζ1h + (f0 / H[2]) * w_bh) + ∇2J_ψ2_S32h
+    rhs_full_h = @. - (f0/gr) * (∇2J_ψ2_ψ1h + J_ψ2_fh + J_ψ2_ζ2h - J_ψ1_fh - J_ψ1_ζ1h - U1_∂xζ1h + (f0 / H[2]) * w_bh) + ∇2J_ψ2_S32h
 
     rhs_p2p1_h = @. - (f0/gr) * ∇2J_ψ2_ψ1h
     rhs_p2f_h  = @. - (f0/gr) * J_ψ2_fh
@@ -2642,6 +2643,10 @@ function update_two_layer_omega_diags(vars, params, grid, sol, ψ, model_params,
     rhs_U1z1_h = @.   (f0/gr) * U1_∂xζ1h 
     rhs_wb_h   = @. - (f0/gr) * (f0 / H[2]) * w_bh
     rhs_S32_h  = ∇2J_ψ2_S32h
+
+    omega_full_h = L⁻¹ .* rhs_full_h
+    omega_full = deepcopy(vars.u[:,:,1])
+    ldiv2D!(omega_full, rfftplan, omega_full_h)
 
     omega_p2p1_h = L⁻¹ .* rhs_p2p1_h
     omega_p2p1 = deepcopy(vars.u[:,:,1])
@@ -2680,7 +2685,9 @@ function update_two_layer_omega_diags(vars, params, grid, sol, ψ, model_params,
     # ############################################################################################    
     ##
 
-    global TD_p2p1 = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_p2p1, dims=1)
+    TD_full = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_full, dims=1)
+
+    TD_p2p1 = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_p2p1, dims=1)
 
     TD_p2f  = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_p2f, dims=1)
 
@@ -2698,7 +2705,7 @@ function update_two_layer_omega_diags(vars, params, grid, sol, ψ, model_params,
 
     ##
     
-    return omega_diags_in .+ [TD_p2p1; TD_p2f; TD_p2z2; TD_p1f; TD_p1z1; TD_U1z1; TD_wb; TD_S32; U_zonal_avg; CBC_zonal_avg]'
+    return omega_diags_in .+ [TD_full; TD_p2p1; TD_p2f; TD_p2z2; TD_p1f; TD_p1z1; TD_U1z1; TD_wb; TD_S32; U_zonal_avg; CBC_zonal_avg]'
 end
 
 update_two_layer_omega_diags(prob, ψ, model_params, omega_diags_in) = update_two_layer_omega_diags(prob.vars, prob.params, prob.grid, prob.sol, ψ, model_params, omega_diags_in)
