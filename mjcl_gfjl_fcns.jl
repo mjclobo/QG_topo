@@ -2621,9 +2621,9 @@ function update_two_layer_omega_diags(vars, params, grid, sol, ψ, model_params,
     ## baroclinic conversion term
     CBC = @. 4 * S32 * (params.f₀ / params.H[1]) * (ψ1 - ψ2) * (v1+v2)
 
-    global CBC_zonal_avg = mean(CBC, dims=1)
+    CBC_zonal_avg = mean(CBC, dims=1)
 
-    global U_zonal_avg = mean(0.5 * (u1 .+ u2), dims=1)
+    U_zonal_avg = mean(0.5 * (u1 .+ u2), dims=1)
 
     # ############################################################################################
     # calculating vertical velocity components
@@ -2682,26 +2682,73 @@ function update_two_layer_omega_diags(vars, params, grid, sol, ψ, model_params,
 
     # ############################################################################################
     # zonally averaged correlations
-    # ############################################################################################    
+    # ############################################################################################   
+    # Taken from M. Pudig GeophysicalFlows_expts repo; thanks, Matt!
+    kr = prob.grid.kr
+	l = prob.grid.l
+	Kr = @. sqrt(kr^2 + l^2)
+
+	krmax = maximum(kr)
+	lmax = maximum(abs.(l))
+	Kmax = sqrt(krmax^2 + lmax^2)
+	Kmin = 0.
+
+	dkr = 2 * pi / Lx
+	dl = dkr
+	dKr = sqrt(dkr^2 + dl^2)
+ 
+	K = Kmin:dKr:Kmax-dKr
+	K_id = lastindex(K)
+
+    j = argmin(abs.(Kr .* Ld .- 0.6))
+    # Define high-pass filter matrix
+    hpf = ifelse.(Kr .< K[j], Kr ./ Kr, 0 .* Kr)
+
+    τh = 0.5 .* (ψ1h .- ψ2h)
+
+    # Filter the Fourier transformed fields
+    τh_hpf = hpf .* τh
+    
+    # Inverse transform the filtered fields
+    τ_hpf = A(zeros(nx, nx, nlayers))
+    ldiv2D!(τ_hpf, rfftplan, τh_hpf)
+
+    TD_full = mean((2*f0/H[2]) * τ_hpf .* omega_full, dims=1)
+
+    TD_p2p1 = mean((2*f0/H[2]) * τ_hpf .* omega_p2p1, dims=1)
+
+    TD_p2f  = mean((2*f0/H[2]) * τ_hpf .* omega_p2f, dims=1)
+
+    TD_p2z2 = mean((2*f0/H[2]) * τ_hpf .* omega_p2z2, dims=1)
+
+    TD_p1f  = mean((2*f0/H[2]) * τ_hpf .* omega_p1f, dims=1)
+
+    TD_p1z1 = mean((2*f0/H[2]) * τ_hpf .* omega_p1z1, dims=1)
+
+    TD_U1z1 = mean((2*f0/H[2]) * τ_hpf .* omega_U1z1, dims=1)
+
+    TD_wb   = mean((2*f0/H[2]) * τ_hpf .* omega_wb, dims=1)
+
+    TD_S32  = mean((2*f0/H[2]) * τ_hpf .* omega_S32, dims=1)
     ##
 
-    TD_full = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_full, dims=1)
+    # TD_full = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_full, dims=1)
 
-    TD_p2p1 = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_p2p1, dims=1)
+    # TD_p2p1 = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_p2p1, dims=1)
 
-    TD_p2f  = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_p2f, dims=1)
+    # TD_p2f  = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_p2f, dims=1)
 
-    TD_p2z2 = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_p2z2, dims=1)
+    # TD_p2z2 = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_p2z2, dims=1)
 
-    TD_p1f  = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_p1f, dims=1)
+    # TD_p1f  = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_p1f, dims=1)
 
-    TD_p1z1 = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_p1z1, dims=1)
+    # TD_p1z1 = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_p1z1, dims=1)
 
-    TD_U1z1 = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_U1z1, dims=1)
+    # TD_U1z1 = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_U1z1, dims=1)
 
-    TD_wb   = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_wb, dims=1)
+    # TD_wb   = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_wb, dims=1)
 
-    TD_S32  = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_S32, dims=1)
+    # TD_S32  = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_S32, dims=1)
 
     ##
     
