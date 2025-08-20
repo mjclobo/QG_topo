@@ -2702,7 +2702,7 @@ function update_two_layer_omega_diags(vars, params, grid, sol, ψ, model_params,
     j = argmin(abs.(K .* Ld .- 0.6))
     # Define high-pass filter matrix
     lpf = ifelse.(Kr .< K[j], Kr ./ Kr, 0 .* Kr)
-    @allowscalar lpf[1,1] = 1.0
+    CUDA.@allowscalar lpf[1,1] = 1.0
 
     τh = 0.5 .* (ψ1h .- ψ2h)
 
