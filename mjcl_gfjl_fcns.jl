@@ -2697,39 +2697,40 @@ function update_two_layer_omega_diags(vars, params, grid, sol, ψ, model_params,
 	dl = dkr
 	dKr = sqrt(dkr^2 + dl^2)
  
-	K = Kmin:dKr:Kmax-dKr
-	K_id = lastindex(K)
+	K = grid.kr
 
-    j = argmin(abs.(Kr .* Ld .- 0.6))
+    j = argmin(abs.(K .* Ld .- 0.6))
     # Define high-pass filter matrix
-    hpf = ifelse.(Kr .< K[j], Kr ./ Kr, 0 .* Kr)
+    lpf = ifelse.(Kr .< K[j], Kr ./ Kr, 0 .* Kr)
+    lpf[1,1] = 1.0
 
     τh = 0.5 .* (ψ1h .- ψ2h)
 
     # Filter the Fourier transformed fields
-    τh_hpf = hpf .* τh
+    τh_lpf = lpf .* τh
     
     # Inverse transform the filtered fields
-    τ_hpf = A(zeros(Nx, Nx))
-    ldiv2D!(τ_hpf, rfftplan, τh_hpf)
+    τ_lpf = A(zeros(Nx, Nx))
+    ldiv2D!(τ_lpf, rfftplan, τh_lpf)
 
-    TD_full = mean((2*f0/H[2]) * τ_hpf .* omega_full, dims=1)
+    TD_full = -mean((2*f0/H[2]) * τ_lpf .* omega_full, dims=1)
 
-    TD_p2p1 = mean((2*f0/H[2]) * τ_hpf .* omega_p2p1, dims=1)
+    TD_p2p1 = -mean((2*f0/H[2]) * τ_lpf .* omega_p2p1, dims=1)
 
-    TD_p2f  = mean((2*f0/H[2]) * τ_hpf .* omega_p2f, dims=1)
+    TD_p2f  = -mean((2*f0/H[2]) * τ_lpf .* omega_p2f, dims=1)
 
-    TD_p2z2 = mean((2*f0/H[2]) * τ_hpf .* omega_p2z2, dims=1)
+    TD_p2z2 = -mean((2*f0/H[2]) * τ_lpf .* omega_p2z2, dims=1)
 
-    TD_p1f  = mean((2*f0/H[2]) * τ_hpf .* omega_p1f, dims=1)
+    TD_p1f  = -mean((2*f0/H[2]) * τ_lpf .* omega_p1f, dims=1)
 
-    TD_p1z1 = mean((2*f0/H[2]) * τ_hpf .* omega_p1z1, dims=1)
+    TD_p1z1 = -mean((2*f0/H[2]) * τ_lpf .* omega_p1z1, dims=1)
 
-    TD_U1z1 = mean((2*f0/H[2]) * τ_hpf .* omega_U1z1, dims=1)
+    TD_U1z1 = -mean((2*f0/H[2]) * τ_lpf .* omega_U1z1, dims=1)
 
-    TD_wb   = mean((2*f0/H[2]) * τ_hpf .* omega_wb, dims=1)
+    TD_wb   = -mean((2*f0/H[2]) * τ_lpf .* omega_wb, dims=1)
 
-    TD_S32  = mean((2*f0/H[2]) * τ_hpf .* omega_S32, dims=1)
+    TD_S32  = -mean((2*f0/H[2]) * τ_lpf .* omega_S32, dims=1)
+
     ##
 
     # TD_full = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_full, dims=1)
