@@ -2710,7 +2710,7 @@ function update_two_layer_omega_diags(vars, params, grid, sol, ψ, model_params,
     τh_hpf = hpf .* τh
     
     # Inverse transform the filtered fields
-    τ_hpf = A(zeros(nx, nx, nlayers))
+    τ_hpf = A(zeros(Nx, Nx))
     ldiv2D!(τ_hpf, rfftplan, τh_hpf)
 
     TD_full = mean((2*f0/H[2]) * τ_hpf .* omega_full, dims=1)
