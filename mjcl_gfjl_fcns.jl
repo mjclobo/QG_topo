@@ -2746,42 +2746,42 @@ function update_two_layer_omega_diags(vars, params, grid, sol, ψ, model_params,
     ldiv2D!(TW_full_lpf, rfftplan, lpf .* TW_full_lpfh)
 
     TW_p2p1_lpfh = deepcopy(vars.ψh[:,:,1])
-    mul2D!(TW_p2p1_lpfh, rfftplan, deepcopy(omega_full .* 0.5 .* (ψ1 .- ψ2) ))
+    mul2D!(TW_p2p1_lpfh, rfftplan, deepcopy(omega_p2p1 .* 0.5 .* (ψ1 .- ψ2) ))
     TW_p2p1_lpf = deepcopy(vars.u[:,:,1])
     ldiv2D!(TW_p2p1_lpf, rfftplan, lpf .* TW_p2p1_lpfh)
 
     TW_p2f_lpfh = deepcopy(vars.ψh[:,:,1])
-    mul2D!(TW_p2f_lpfh, rfftplan, deepcopy(omega_full .* 0.5 .* (ψ1 .- ψ2) ))
+    mul2D!(TW_p2f_lpfh, rfftplan, deepcopy(omega_p2f .* 0.5 .* (ψ1 .- ψ2) ))
     TW_p2f_lpf = deepcopy(vars.u[:,:,1])
     ldiv2D!(TW_p2f_lpf, rfftplan, lpf .* TW_p2f_lpfh)
 
     TW_p2z2_lpfh = deepcopy(vars.ψh[:,:,1])
-    mul2D!(TW_p2z2_lpfh, rfftplan, deepcopy(omega_full .* 0.5 .* (ψ1 .- ψ2) ))
+    mul2D!(TW_p2z2_lpfh, rfftplan, deepcopy(omega_p2z2 .* 0.5 .* (ψ1 .- ψ2) ))
     TW_p2z2_lpf = deepcopy(vars.u[:,:,1])
     ldiv2D!(TW_p2z2_lpf, rfftplan, lpf .* TW_p2z2_lpfh)
 
     TW_p1f_lpfh = deepcopy(vars.ψh[:,:,1])
-    mul2D!(TW_p1f_lpfh, rfftplan, deepcopy(omega_full .* 0.5 .* (ψ1 .- ψ2) ))
+    mul2D!(TW_p1f_lpfh, rfftplan, deepcopy(omega_p1f .* 0.5 .* (ψ1 .- ψ2) ))
     TW_p1f_lpf = deepcopy(vars.u[:,:,1])
     ldiv2D!(TW_p1f_lpf, rfftplan, lpf .* TW_p1f_lpfh)
 
     TW_p1z1_lpfh = deepcopy(vars.ψh[:,:,1])
-    mul2D!(TW_p1z1_lpfh, rfftplan, deepcopy(omega_full .* 0.5 .* (ψ1 .- ψ2) ))
+    mul2D!(TW_p1z1_lpfh, rfftplan, deepcopy(omega_p1z1 .* 0.5 .* (ψ1 .- ψ2) ))
     TW_p1z1_lpf = deepcopy(vars.u[:,:,1])
     ldiv2D!(TW_p1z1_lpf, rfftplan, lpf .* TW_p1z1_lpfh)
 
     TW_U1z1_lpfh = deepcopy(vars.ψh[:,:,1])
-    mul2D!(TW_U1z1_lpfh, rfftplan, deepcopy(omega_full .* 0.5 .* (ψ1 .- ψ2) ))
+    mul2D!(TW_U1z1_lpfh, rfftplan, deepcopy(omega_U1z1 .* 0.5 .* (ψ1 .- ψ2) ))
     TW_U1z1_lpf = deepcopy(vars.u[:,:,1])
     ldiv2D!(TW_U1z1_lpf, rfftplan, lpf .* TW_U1z1_lpfh)
 
     TW_wb_lpfh = deepcopy(vars.ψh[:,:,1])
-    mul2D!(TW_wb_lpfh, rfftplan, deepcopy(omega_full .* 0.5 .* (ψ1 .- ψ2) ))
+    mul2D!(TW_wb_lpfh, rfftplan, deepcopy(omega_wb .* 0.5 .* (ψ1 .- ψ2) ))
     TW_wb_lpf = deepcopy(vars.u[:,:,1])
     ldiv2D!(TW_wb_lpf, rfftplan, lpf .* TW_wb_lpfh)
 
     TW_S32_lpfh = deepcopy(vars.ψh[:,:,1])
-    mul2D!(TW_S32_lpfh, rfftplan, deepcopy(omega_full .* 0.5 .* (ψ1 .- ψ2) ))
+    mul2D!(TW_S32_lpfh, rfftplan, deepcopy(omega_S32 .* 0.5 .* (ψ1 .- ψ2) ))
     TW_S32_lpf = deepcopy(vars.u[:,:,1])
     ldiv2D!(TW_S32_lpf, rfftplan, lpf .* TW_S32_lpfh)
 
