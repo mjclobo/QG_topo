@@ -2705,7 +2705,7 @@ function update_two_layer_omega_diags(vars, params, grid, sol, ψ, model_params,
     # CUDA.@allowscalar lpf[1,1] = 1.0
 
     # kx=0 pass filter
-    lpf = ones(size(ψ1h))
+    lpf = A(ones(size(ψ1h)))
     CUDA.@allowscalar lpf[2:end-1, :] .= 0.
 
     τh = 0.5 .* (ψ1h .- ψ2h)
