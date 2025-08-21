@@ -461,7 +461,7 @@ function run_model(prob, model_params)
             end
 
             if omega_diags_bool==true
-                global omega_diag_array = update_two_layer_omega_diags(prob, vars.ψ, model_params, omega_diag_array)
+                global TW_full_h, TW_p2p1_h, TW_p2f_h, TW_p2z2_h, TW_p1f_h, TW_p1z1_h, TW_U1z1_h, TW_wb_h, TW_S32_h = update_two_layer_omega_diags(prob, vars.ψ, model_params, TW_full_h, TW_p2p1_h, TW_p2f_h, TW_p2z2_h, TW_p1f_h, TW_p1z1_h, TW_U1z1_h, TW_wb_h, TW_S32_h)
                 global budget_counter +=1
             end
         
@@ -556,7 +556,16 @@ function run_model(prob, model_params)
                     elseif zonal_slice_diag==true
                         jld_data = Dict("t" => t_yrly, "psi_ot_slice" => Array(psi_ot_slice))
                     elseif omega_diags_bool==true
-                        jld_data = Dict("omega_diags" => Array(omega_diag_array ./ budget_counter))
+                        # jld_data = Dict("omega_diags" => Array(omega_diag_array ./ budget_counter))
+                        jld_data = Dict("TW_full_h" => Array(TW_full_h ./ budget_counter),
+                                        "TW_p2p1_h" => Array(TW_p2p1_h ./ budget_counter),
+                                        "TW_p2f_h" => Array(TW_p2f_h ./ budget_counter),
+                                        "TW_p2z2_h" => Array(TW_p2z2_h ./ budget_counter),
+                                        "TW_p1f_h" => Array(TW_p1f_h ./ budget_counter),
+                                        "TW_p1z1_h" => Array(TW_p1z1_h ./ budget_counter),
+                                        "TW_U1z1_h" => Array(TW_U1z1_h ./ budget_counter),
+                                        "TW_wb_h" => Array(TW_wb_h ./ budget_counter),
+                                        "TW_S32_h" => Array(TW_S32_h ./ budget_counter))
                     end
 
                 end
@@ -603,7 +612,15 @@ function preallocate_global_diag_arrays(prob, grid, dev, nsubs, restart_yr, EAPE
     end
 
     if omega_diags_bool==true
-        global omega_diag_array = zeros(dev, T, (grid.nx, 11))
+        global TW_full_h = zeros(dev, T, (grid.nkr, grid.nl))
+        global TW_p2p1_h = zeros(dev, T, (grid.nkr, grid.nl))
+        global TW_p2f_h = zeros(dev, T, (grid.nkr, grid.nl))
+        global TW_p2z2_h = zeros(dev, T, (grid.nkr, grid.nl))
+        global TW_p1f_h = zeros(dev, T, (grid.nkr, grid.nl))
+        global TW_p1z1_h = zeros(dev, T, (grid.nkr, grid.nl))
+        global TW_U1z1_h = zeros(dev, T, (grid.nkr, grid.nl)) 
+        global TW_wb_h = zeros(dev, T, (grid.nkr, grid.nl))
+        global TW_S32_h = zeros(dev, T, (grid.nkr, grid.nl))
     end
 
     nterms_two_layer_modal_xspace = 10  # only one nonlinear term (instead of 5)
@@ -2511,7 +2528,7 @@ end
 ## DIAGS: modal k-space budget
 ####################################################################################
 
-function update_two_layer_omega_diags(vars, params, grid, sol, ψ, model_params, omega_diags_in)
+function update_two_layer_omega_diags(vars, params, grid, sol, ψ, model_params, TW_full_h_in, TW_p2p1_h_in, TW_p2f_h_in, TW_p2z2_h_in, TW_p1f_h_in, TW_p1z1_h_in, TW_U1z1_h_in, TW_wb_h_in, TW_S32_h_in)
     # Here we decompose the omega equation term-by-term, to attribute the large-scale conversion
     # of baroclinic KE to PE to physical processes.
     # We focus on the zonal average because we know that these occur at the jet wavenumber
@@ -2553,6 +2570,8 @@ function update_two_layer_omega_diags(vars, params, grid, sol, ψ, model_params,
 
     ψ1, ψ2 = view(ψ, :, :, 1), view(ψ, :, :, 2)
     ψ1h, ψ2h = view(ψh, :, :, 1), view(ψh, :, :, 2)
+
+    ψBCh = ψ1h .- ψ2h
         
     # # calculating terms used in budget
     ψ₁h, ψ₂h = view(ψh, :, :, 1), view(ψh, :, :, 2)
@@ -2645,164 +2664,164 @@ function update_two_layer_omega_diags(vars, params, grid, sol, ψ, model_params,
     rhs_S32_h  = ∇2J_ψ2_S32h
 
     omega_full_h = L⁻¹ .* rhs_full_h
-    omega_full = deepcopy(vars.u[:,:,1])
-    ldiv2D!(omega_full, rfftplan, omega_full_h)
+    # omega_full = deepcopy(vars.u[:,:,1])
+    # ldiv2D!(omega_full, rfftplan, omega_full_h)
 
     omega_p2p1_h = L⁻¹ .* rhs_p2p1_h
-    omega_p2p1 = deepcopy(vars.u[:,:,1])
-    ldiv2D!(omega_p2p1, rfftplan, omega_p2p1_h)
+    # omega_p2p1 = deepcopy(vars.u[:,:,1])
+    # ldiv2D!(omega_p2p1, rfftplan, omega_p2p1_h)
 
     omega_p2f_h = L⁻¹ .* rhs_p2f_h
-    omega_p2f = deepcopy(vars.u[:,:,1])
-    ldiv2D!(omega_p2f, rfftplan, omega_p2f_h)
+    # omega_p2f = deepcopy(vars.u[:,:,1])
+    # ldiv2D!(omega_p2f, rfftplan, omega_p2f_h)
 
     omega_p2z2_h = L⁻¹ .* rhs_p2z2_h
-    omega_p2z2 = deepcopy(vars.u[:,:,1])
-    ldiv2D!(omega_p2z2, rfftplan, omega_p2z2_h)
+    # omega_p2z2 = deepcopy(vars.u[:,:,1])
+    # ldiv2D!(omega_p2z2, rfftplan, omega_p2z2_h)
 
     omega_p1f_h = L⁻¹ .* rhs_p1f_h
-    omega_p1f = deepcopy(vars.u[:,:,1])
-    ldiv2D!(omega_p1f, rfftplan, omega_p1f_h)
+    # omega_p1f = deepcopy(vars.u[:,:,1])
+    # ldiv2D!(omega_p1f, rfftplan, omega_p1f_h)
 
     omega_p1z1_h = L⁻¹ .* rhs_p1z1_h
-    omega_p1z1 = deepcopy(vars.u[:,:,1])
-    ldiv2D!(omega_p1z1, rfftplan, omega_p1z1_h)
+    # omega_p1z1 = deepcopy(vars.u[:,:,1])
+    # ldiv2D!(omega_p1z1, rfftplan, omega_p1z1_h)
 
     omega_U1z1_h = L⁻¹ .* rhs_U1z1_h
-    omega_U1z1 = deepcopy(vars.u[:,:,1])
-    ldiv2D!(omega_U1z1, rfftplan, omega_U1z1_h)
+    # omega_U1z1 = deepcopy(vars.u[:,:,1])
+    # ldiv2D!(omega_U1z1, rfftplan, omega_U1z1_h)
 
     omega_wb_h = L⁻¹ .* rhs_wb_h
-    omega_wb = deepcopy(vars.u[:,:,1])
-    ldiv2D!(omega_wb, rfftplan, omega_wb_h)
+    # omega_wb = deepcopy(vars.u[:,:,1])
+    # ldiv2D!(omega_wb, rfftplan, omega_wb_h)
 
     omega_S32_h = L⁻¹ .* rhs_S32_h
-    omega_S32 = deepcopy(vars.u[:,:,1])
-    ldiv2D!(omega_S32, rfftplan, omega_S32_h)
+    # omega_S32 = deepcopy(vars.u[:,:,1])
+    # ldiv2D!(omega_S32, rfftplan, omega_S32_h)
 
     # ############################################################################################
     # zonally averaged correlations
     # ############################################################################################   
-    # Taken from M. Pudig GeophysicalFlows_expts repo; thanks, Matt!
-    kr = prob.grid.kr
-	l = prob.grid.l
-	Kr = @. sqrt(kr^2 + l^2)
+    # # Taken from M. Pudig GeophysicalFlows_expts repo; thanks, Matt!
+    # kr = prob.grid.kr
+	# l = prob.grid.l
+	# Kr = @. sqrt(kr^2 + l^2)
 
-	krmax = maximum(kr)
-	lmax = maximum(abs.(l))
-	Kmax = sqrt(krmax^2 + lmax^2)
-	Kmin = 0.
+	# krmax = maximum(kr)
+	# lmax = maximum(abs.(l))
+	# Kmax = sqrt(krmax^2 + lmax^2)
+	# Kmin = 0.
 
-	dkr = 2 * pi / Lx
-	dl = dkr
-	dKr = sqrt(dkr^2 + dl^2)
+	# dkr = 2 * pi / Lx
+	# dl = dkr
+	# dKr = sqrt(dkr^2 + dl^2)
  
-	K = Kmin:dkr:krmax # grid.kr
+	# K = Kmin:dkr:krmax # grid.kr
 
-    j = argmin(abs.(K .* Ld .- 0.6))
-    # Define high-pass filter matrix
-    # lpf = ifelse.(Kr .< K[j], Kr ./ Kr, 0 .* Kr)
-    # CUDA.@allowscalar lpf[1,1] = 1.0
+    # j = argmin(abs.(K .* Ld .- 0.6))
+    # # Define high-pass filter matrix
+    # # lpf = ifelse.(Kr .< K[j], Kr ./ Kr, 0 .* Kr)
+    # # CUDA.@allowscalar lpf[1,1] = 1.0
 
-    # kx=0 pass filter
-    lpf = A(ones(size(ψ1h)))
-    CUDA.@allowscalar lpf[2:end-1, :] .= 0.
+    # # kx=0 pass filter
+    # lpf = A(ones(size(ψ1h)))
+    # CUDA.@allowscalar lpf[2:end-1, :] .= 0.
 
-    τh = 0.5 .* (ψ1h .- ψ2h)
+    # τh = 0.5 .* (ψ1h .- ψ2h)
 
-    # Filter the Fourier transformed fields
-    τh_lpf = lpf .* τh
+    # # Filter the Fourier transformed fields
+    # τh_lpf = lpf .* τh
     
-    # Inverse transform the filtered fields
-    τ_lpf = A(zeros(Nx, Nx))
-    ldiv2D!(τ_lpf, rfftplan, τh_lpf)
+    # # Inverse transform the filtered fields
+    # τ_lpf = A(zeros(Nx, Nx))
+    # ldiv2D!(τ_lpf, rfftplan, τh_lpf)
 
 
-    TD_full = -mean((2*f0/H[2]) * τ_lpf .* omega_full, dims=1)
+    # TD_full = -mean((2*f0/H[2]) * τ_lpf .* omega_full, dims=1)
 
-    TD_p2p1 = -mean((2*f0/H[2]) * τ_lpf .* omega_p2p1, dims=1)
+    # TD_p2p1 = -mean((2*f0/H[2]) * τ_lpf .* omega_p2p1, dims=1)
 
-    TD_p2f  = -mean((2*f0/H[2]) * τ_lpf .* omega_p2f, dims=1)
+    # TD_p2f  = -mean((2*f0/H[2]) * τ_lpf .* omega_p2f, dims=1)
 
-    TD_p2z2 = -mean((2*f0/H[2]) * τ_lpf .* omega_p2z2, dims=1)
+    # TD_p2z2 = -mean((2*f0/H[2]) * τ_lpf .* omega_p2z2, dims=1)
 
-    TD_p1f  = -mean((2*f0/H[2]) * τ_lpf .* omega_p1f, dims=1)
+    # TD_p1f  = -mean((2*f0/H[2]) * τ_lpf .* omega_p1f, dims=1)
 
-    TD_p1z1 = -mean((2*f0/H[2]) * τ_lpf .* omega_p1z1, dims=1)
+    # TD_p1z1 = -mean((2*f0/H[2]) * τ_lpf .* omega_p1z1, dims=1)
 
-    TD_U1z1 = -mean((2*f0/H[2]) * τ_lpf .* omega_U1z1, dims=1)
+    # TD_U1z1 = -mean((2*f0/H[2]) * τ_lpf .* omega_U1z1, dims=1)
 
-    TD_wb   = -mean((2*f0/H[2]) * τ_lpf .* omega_wb, dims=1)
+    # TD_wb   = -mean((2*f0/H[2]) * τ_lpf .* omega_wb, dims=1)
 
-    TD_S32  = -mean((2*f0/H[2]) * τ_lpf .* omega_S32, dims=1)
+    # TD_S32  = -mean((2*f0/H[2]) * τ_lpf .* omega_S32, dims=1)
 
     ##
 
 
-    # alternate method; filter calculated TD
-    TW_full_lpfh = deepcopy(vars.ψh[:,:,1])
-    mul2D!(TW_full_lpfh, rfftplan, deepcopy(omega_full .* 0.5 .* (ψ1 .- ψ2) ))
-    TW_full_lpf = deepcopy(vars.u[:,:,1])
-    ldiv2D!(TW_full_lpf, rfftplan, lpf .* TW_full_lpfh)
+    # # alternate method; filter calculated TD
+    # TW_full_lpfh = deepcopy(vars.ψh[:,:,1])
+    # mul2D!(TW_full_lpfh, rfftplan, deepcopy(omega_full .* 0.5 .* (ψ1 .- ψ2) ))
+    # # TW_full_lpf = deepcopy(vars.u[:,:,1])
+    # # ldiv2D!(TW_full_lpf, rfftplan, lpf .* TW_full_lpfh)
 
-    TW_p2p1_lpfh = deepcopy(vars.ψh[:,:,1])
-    mul2D!(TW_p2p1_lpfh, rfftplan, deepcopy(omega_p2p1 .* 0.5 .* (ψ1 .- ψ2) ))
-    TW_p2p1_lpf = deepcopy(vars.u[:,:,1])
-    ldiv2D!(TW_p2p1_lpf, rfftplan, lpf .* TW_p2p1_lpfh)
+    # TW_p2p1_lpfh = deepcopy(vars.ψh[:,:,1])
+    # mul2D!(TW_p2p1_lpfh, rfftplan, deepcopy(omega_p2p1 .* 0.5 .* (ψ1 .- ψ2) ))
+    # # TW_p2p1_lpf = deepcopy(vars.u[:,:,1])
+    # # ldiv2D!(TW_p2p1_lpf, rfftplan, lpf .* TW_p2p1_lpfh)
 
-    TW_p2f_lpfh = deepcopy(vars.ψh[:,:,1])
-    mul2D!(TW_p2f_lpfh, rfftplan, deepcopy(omega_p2f .* 0.5 .* (ψ1 .- ψ2) ))
-    TW_p2f_lpf = deepcopy(vars.u[:,:,1])
-    ldiv2D!(TW_p2f_lpf, rfftplan, lpf .* TW_p2f_lpfh)
+    # TW_p2f_lpfh = deepcopy(vars.ψh[:,:,1])
+    # mul2D!(TW_p2f_lpfh, rfftplan, deepcopy(omega_p2f .* 0.5 .* (ψ1 .- ψ2) ))
+    # # TW_p2f_lpf = deepcopy(vars.u[:,:,1])
+    # # ldiv2D!(TW_p2f_lpf, rfftplan, lpf .* TW_p2f_lpfh)
 
-    TW_p2z2_lpfh = deepcopy(vars.ψh[:,:,1])
-    mul2D!(TW_p2z2_lpfh, rfftplan, deepcopy(omega_p2z2 .* 0.5 .* (ψ1 .- ψ2) ))
-    TW_p2z2_lpf = deepcopy(vars.u[:,:,1])
-    ldiv2D!(TW_p2z2_lpf, rfftplan, lpf .* TW_p2z2_lpfh)
+    # TW_p2z2_lpfh = deepcopy(vars.ψh[:,:,1])
+    # mul2D!(TW_p2z2_lpfh, rfftplan, deepcopy(omega_p2z2 .* 0.5 .* (ψ1 .- ψ2) ))
+    # # TW_p2z2_lpf = deepcopy(vars.u[:,:,1])
+    # # ldiv2D!(TW_p2z2_lpf, rfftplan, lpf .* TW_p2z2_lpfh)
 
-    TW_p1f_lpfh = deepcopy(vars.ψh[:,:,1])
-    mul2D!(TW_p1f_lpfh, rfftplan, deepcopy(omega_p1f .* 0.5 .* (ψ1 .- ψ2) ))
-    TW_p1f_lpf = deepcopy(vars.u[:,:,1])
-    ldiv2D!(TW_p1f_lpf, rfftplan, lpf .* TW_p1f_lpfh)
+    # TW_p1f_lpfh = deepcopy(vars.ψh[:,:,1])
+    # mul2D!(TW_p1f_lpfh, rfftplan, deepcopy(omega_p1f .* 0.5 .* (ψ1 .- ψ2) ))
+    # # TW_p1f_lpf = deepcopy(vars.u[:,:,1])
+    # # ldiv2D!(TW_p1f_lpf, rfftplan, lpf .* TW_p1f_lpfh)
 
-    TW_p1z1_lpfh = deepcopy(vars.ψh[:,:,1])
-    mul2D!(TW_p1z1_lpfh, rfftplan, deepcopy(omega_p1z1 .* 0.5 .* (ψ1 .- ψ2) ))
-    TW_p1z1_lpf = deepcopy(vars.u[:,:,1])
-    ldiv2D!(TW_p1z1_lpf, rfftplan, lpf .* TW_p1z1_lpfh)
+    # TW_p1z1_lpfh = deepcopy(vars.ψh[:,:,1])
+    # mul2D!(TW_p1z1_lpfh, rfftplan, deepcopy(omega_p1z1 .* 0.5 .* (ψ1 .- ψ2) ))
+    # # TW_p1z1_lpf = deepcopy(vars.u[:,:,1])
+    # # ldiv2D!(TW_p1z1_lpf, rfftplan, lpf .* TW_p1z1_lpfh)
 
-    TW_U1z1_lpfh = deepcopy(vars.ψh[:,:,1])
-    mul2D!(TW_U1z1_lpfh, rfftplan, deepcopy(omega_U1z1 .* 0.5 .* (ψ1 .- ψ2) ))
-    TW_U1z1_lpf = deepcopy(vars.u[:,:,1])
-    ldiv2D!(TW_U1z1_lpf, rfftplan, lpf .* TW_U1z1_lpfh)
+    # TW_U1z1_lpfh = deepcopy(vars.ψh[:,:,1])
+    # mul2D!(TW_U1z1_lpfh, rfftplan, deepcopy(omega_U1z1 .* 0.5 .* (ψ1 .- ψ2) ))
+    # # TW_U1z1_lpf = deepcopy(vars.u[:,:,1])
+    # # ldiv2D!(TW_U1z1_lpf, rfftplan, lpf .* TW_U1z1_lpfh)
 
-    TW_wb_lpfh = deepcopy(vars.ψh[:,:,1])
-    mul2D!(TW_wb_lpfh, rfftplan, deepcopy(omega_wb .* 0.5 .* (ψ1 .- ψ2) ))
-    TW_wb_lpf = deepcopy(vars.u[:,:,1])
-    ldiv2D!(TW_wb_lpf, rfftplan, lpf .* TW_wb_lpfh)
+    # TW_wb_lpfh = deepcopy(vars.ψh[:,:,1])
+    # mul2D!(TW_wb_lpfh, rfftplan, deepcopy(omega_wb .* 0.5 .* (ψ1 .- ψ2) ))
+    # # TW_wb_lpf = deepcopy(vars.u[:,:,1])
+    # # ldiv2D!(TW_wb_lpf, rfftplan, lpf .* TW_wb_lpfh)
 
-    TW_S32_lpfh = deepcopy(vars.ψh[:,:,1])
-    mul2D!(TW_S32_lpfh, rfftplan, deepcopy(omega_S32 .* 0.5 .* (ψ1 .- ψ2) ))
-    TW_S32_lpf = deepcopy(vars.u[:,:,1])
-    ldiv2D!(TW_S32_lpf, rfftplan, lpf .* TW_S32_lpfh)
+    # TW_S32_lpfh = deepcopy(vars.ψh[:,:,1])
+    # mul2D!(TW_S32_lpfh, rfftplan, deepcopy(omega_S32 .* 0.5 .* (ψ1 .- ψ2) ))
+    # # TW_S32_lpf = deepcopy(vars.u[:,:,1])
+    # # ldiv2D!(TW_S32_lpf, rfftplan, lpf .* TW_S32_lpfh)
 
 
-    TD_full = -mean(TW_full_lpf, dims=1)
+    # TD_full = -mean(TW_full_lpf, dims=1)
 
-    TD_p2p1 = -mean(TW_p2p1_lpf, dims=1)
+    # TD_p2p1 = -mean(TW_p2p1_lpf, dims=1)
 
-    TD_p2f  = -mean(TW_p2f_lpf, dims=1)
+    # TD_p2f  = -mean(TW_p2f_lpf, dims=1)
 
-    TD_p2z2 = -mean(TW_p2z2_lpf, dims=1)
+    # TD_p2z2 = -mean(TW_p2z2_lpf, dims=1)
 
-    TD_p1f  = -mean(TW_p1f_lpf, dims=1)
+    # TD_p1f  = -mean(TW_p1f_lpf, dims=1)
 
-    TD_p1z1 = -mean(TW_p1z1_lpf, dims=1)
+    # TD_p1z1 = -mean(TW_p1z1_lpf, dims=1)
 
-    TD_U1z1 = -mean(TW_U1z1_lpf, dims=1)
+    # TD_U1z1 = -mean(TW_U1z1_lpf, dims=1)
 
-    TD_wb   = -mean(TW_wb_lpf, dims=1)
+    # TD_wb   = -mean(TW_wb_lpf, dims=1)
 
-    TD_S32  = -mean(TW_S32_lpf, dims=1)
+    # TD_S32  = -mean(TW_S32_lpf, dims=1)
 
 
 
@@ -2826,17 +2845,47 @@ function update_two_layer_omega_diags(vars, params, grid, sol, ψ, model_params,
     # TD_S32  = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_S32, dims=1)
 
     ##
+
+    TW_full_h = @. - (f0 / H[2]) * omega_full_h * conj(ψBCh)
+    TW_full_h .+= conj.(TW_full_h)
+
+    TW_p2p1_h = @. - (f0 / H[2]) * omega_p2p1_h * conj(ψBCh)
+    TW_p2p1_h .+= conj.(TW_p2p1_h)
+
+    TW_p2f_h = @. - (f0 / H[2]) * omega_p2f_h * conj(ψBCh)
+    TW_p2f_h .+= conj.(TW_p2f_h)
+
+    TW_p2z2_h = @. - (f0 / H[2]) * omega_p2z2_h * conj(ψBCh)
+    TW_p2z2_h .+= conj.(TW_p2z2_h)
+
+    TW_p1f_h = @. - (f0 / H[2]) * omega_p1f_h * conj(ψBCh)
+    TW_p1f_h .+= conj.(TW_p1f_h)
+
+    TW_p1z1_h = @. - (f0 / H[2]) * omega_p1z1_h * conj(ψBCh)
+    TW_p1z1_h .+= conj.(TW_p1z1_h)
+
+    TW_U1z1_h = @. - (f0 / H[2]) * omega_U1z1_h * conj(ψBCh)
+    TW_U1z1_h .+= conj.(TW_U1z1_h)
+
+    TW_wb_h = @. - (f0 / H[2]) * omega_wb_h * conj(ψBCh)
+    TW_wb_h .+= conj.(TW_wb_h)
+
+    TW_S32_h = @. - (f0 / H[2]) * omega_S32_h * conj(ψBCh)
+    TW_S32_h .+= conj.(TW_S32_h)
+
+
     
-    return omega_diags_in .+ [TD_full; TD_p2p1; TD_p2f; TD_p2z2; TD_p1f; TD_p1z1; TD_U1z1; TD_wb; TD_S32; U_zonal_avg; CBC_zonal_avg]'
+    # return omega_diags_in .+ [TD_full; TD_p2p1; TD_p2f; TD_p2z2; TD_p1f; TD_p1z1; TD_U1z1; TD_wb; TD_S32; U_zonal_avg; CBC_zonal_avg]'
+
+    return TW_full_h_in .+ TW_full_h, TW_p2p1_h_in .+ TW_p2p1_h, TW_p2f_h_in .+ TW_p2f_h, TW_p2z2_h_in .+ TW_p2z2_h, TW_p1f_h_in .+ TW_p1f_h, TW_p1z1_h_in .+ TW_p1z1_h, TW_U1z1_h_in .+ TW_U1z1_h, TW_wb_h_in .+ TW_wb_h, TW_S32_h_in .+ TW_S32_h
+
 end
 
-update_two_layer_omega_diags(prob, ψ, model_params, omega_diags_in) = update_two_layer_omega_diags(prob.vars, prob.params, prob.grid, prob.sol, ψ, model_params, omega_diags_in)
+update_two_layer_omega_diags(prob, ψ, model_params, TW_full_h_in, TW_p2p1_h_in, TW_p2f_h_in, TW_p2z2_h_in, TW_p1f_h_in, TW_p1z1_h_in, TW_U1z1_h_in, TW_wb_h_in, TW_S32_h_in) = update_two_layer_omega_diags(prob.vars, prob.params, prob.grid, prob.sol, ψ, model_params, TW_full_h_in, TW_p2p1_h_in, TW_p2f_h_in, TW_p2z2_h_in, TW_p1f_h_in, TW_p1z1_h_in, TW_U1z1_h_in, TW_wb_h_in, TW_S32_h_in)
 
 #######################################################################################
 #######################################################################################
 # jet detection
-
-
 
 
 
