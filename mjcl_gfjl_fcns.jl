@@ -2717,6 +2717,7 @@ function update_two_layer_omega_diags(vars, params, grid, sol, ψ, model_params,
     τ_lpf = A(zeros(Nx, Nx))
     ldiv2D!(τ_lpf, rfftplan, τh_lpf)
 
+
     TD_full = -mean((2*f0/H[2]) * τ_lpf .* omega_full, dims=1)
 
     TD_p2p1 = -mean((2*f0/H[2]) * τ_lpf .* omega_p2p1, dims=1)
@@ -2736,6 +2737,75 @@ function update_two_layer_omega_diags(vars, params, grid, sol, ψ, model_params,
     TD_S32  = -mean((2*f0/H[2]) * τ_lpf .* omega_S32, dims=1)
 
     ##
+
+
+    # alternate method; filter calculated TD
+    TW_full_lpfh = deepcopy(vars.ψh[:,:,1])
+    mul2D!(TW_full_lpfh, rfftplan, deepcopy(omega_full .* 0.5 .* (ψ1 .- ψ2) ))
+    TW_full_lpf = deepcopy(vars.u[:,:,1])
+    ldiv2D!(TW_full_lpf, rfftplan, lpf .* TW_full_lpfh)
+
+    TW_p2p1_lpfh = deepcopy(vars.ψh[:,:,1])
+    mul2D!(TW_p2p1_lpfh, rfftplan, deepcopy(omega_full .* 0.5 .* (ψ1 .- ψ2) ))
+    TW_p2p1_lpf = deepcopy(vars.u[:,:,1])
+    ldiv2D!(TW_p2p1_lpf, rfftplan, lpf .* TW_p2p1_lpfh)
+
+    TW_p2f_lpfh = deepcopy(vars.ψh[:,:,1])
+    mul2D!(TW_p2f_lpfh, rfftplan, deepcopy(omega_full .* 0.5 .* (ψ1 .- ψ2) ))
+    TW_p2f_lpf = deepcopy(vars.u[:,:,1])
+    ldiv2D!(TW_p2f_lpf, rfftplan, lpf .* TW_p2f_lpfh)
+
+    TW_p2z2_lpfh = deepcopy(vars.ψh[:,:,1])
+    mul2D!(TW_p2z2_lpfh, rfftplan, deepcopy(omega_full .* 0.5 .* (ψ1 .- ψ2) ))
+    TW_p2z2_lpf = deepcopy(vars.u[:,:,1])
+    ldiv2D!(TW_p2z2_lpf, rfftplan, lpf .* TW_p2z2_lpfh)
+
+    TW_p1f_lpfh = deepcopy(vars.ψh[:,:,1])
+    mul2D!(TW_p1f_lpfh, rfftplan, deepcopy(omega_full .* 0.5 .* (ψ1 .- ψ2) ))
+    TW_p1f_lpf = deepcopy(vars.u[:,:,1])
+    ldiv2D!(TW_p1f_lpf, rfftplan, lpf .* TW_p1f_lpfh)
+
+    TW_p1z1_lpfh = deepcopy(vars.ψh[:,:,1])
+    mul2D!(TW_p1z1_lpfh, rfftplan, deepcopy(omega_full .* 0.5 .* (ψ1 .- ψ2) ))
+    TW_p1z1_lpf = deepcopy(vars.u[:,:,1])
+    ldiv2D!(TW_p1z1_lpf, rfftplan, lpf .* TW_p1z1_lpfh)
+
+    TW_U1z1_lpfh = deepcopy(vars.ψh[:,:,1])
+    mul2D!(TW_U1z1_lpfh, rfftplan, deepcopy(omega_full .* 0.5 .* (ψ1 .- ψ2) ))
+    TW_U1z1_lpf = deepcopy(vars.u[:,:,1])
+    ldiv2D!(TW_U1z1_lpf, rfftplan, lpf .* TW_U1z1_lpfh)
+
+    TW_wb_lpfh = deepcopy(vars.ψh[:,:,1])
+    mul2D!(TW_wb_lpfh, rfftplan, deepcopy(omega_full .* 0.5 .* (ψ1 .- ψ2) ))
+    TW_wb_lpf = deepcopy(vars.u[:,:,1])
+    ldiv2D!(TW_wb_lpf, rfftplan, lpf .* TW_wb_lpfh)
+
+    TW_S32_lpfh = deepcopy(vars.ψh[:,:,1])
+    mul2D!(TW_S32_lpfh, rfftplan, deepcopy(omega_full .* 0.5 .* (ψ1 .- ψ2) ))
+    TW_S32_lpf = deepcopy(vars.u[:,:,1])
+    ldiv2D!(TW_S32_lpf, rfftplan, lpf .* TW_S32_lpfh)
+
+
+    TD_full = -mean(TW_full_lpf, dims=1)
+
+    TD_p2p1 = -mean(TW_p2p1_lpf, dims=1)
+
+    TD_p2f  = -mean(TW_p2f_lpf, dims=1)
+
+    TD_p2z2 = -mean(TW_p2z2_lpf, dims=1)
+
+    TD_p1f  = -mean(TW_p1f_lpf, dims=1)
+
+    TD_p1z1 = -mean(TW_p1z1_lpf, dims=1)
+
+    TD_U1z1 = -mean(TW_U1z1_lpf, dims=1)
+
+    TD_wb   = -mean(TW_wb_lpf, dims=1)
+
+    TD_S32  = -mean(TW_S32_lpf, dims=1)
+
+
+
 
     # TD_full = mean((2*f0/H[2]) * (ψ[:,:,2] - ψ[:,:,1]) .* omega_full, dims=1)
 
