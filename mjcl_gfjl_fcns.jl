@@ -400,7 +400,7 @@ function run_model(prob, model_params)
         # global prob
 
         if dyn_nu==true
-            rmsζ = sqrt(mean((irfft(-grid.Krsq .* prob.vars.ψh[:,:,1], grid.ny)).^2))
+            rmsζ = sqrt(maximum((irfft(-grid.Krsq .* prob.vars.ψh[:,:,1], grid.ny)).^2))
             global prob = @set prob.params.ν = dyn_nu_coeff * rmsζ * prob.grid.dx^8
         end
         
@@ -2310,7 +2310,7 @@ function calc_growth(t, E_in)
     
     sigma_KE  = growth_rate(t,KE_new)
   
-    return sigma_KE #, g_end
+    return sigma_KE #, g_endv
   end
   
   function growth_rate(t,E)
