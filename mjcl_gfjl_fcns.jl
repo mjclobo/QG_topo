@@ -2383,7 +2383,7 @@ end
 ## Auxiliary functions
 ####################################################################################
 
-function redef_mu_kappa_topoPV_h0(model_params, mu, kappa, topo_PV, h0_new)
+function redef_mu_kappa_topoPV_h0_nu(model_params, mu, kappa, topo_PV, h0_new, nu_new)
     @unpack_mod_params model_params
 
     mp_out = mod_params(
@@ -2394,7 +2394,7 @@ function redef_mu_kappa_topoPV_h0(model_params, mu, kappa, topo_PV, h0_new)
     rhotop = rhotop, rhobottom = rhobottom, rhoscaledepth = rhoscaledepth,
     shear_str = shear_str, U = U,
     Utop = Utop, Ubottom = Ubottom, Uscaledepth = Uscaledepth,
-    μ = mu , κ = kappa , nν = nν, ν = ν, dyn_nu=dyn_nu, dyn_nu_coeff=dyn_nu_coeff,
+    μ = mu , κ = kappa , nν = nν, ν = nu_new, dyn_nu=dyn_nu, dyn_nu_coeff=dyn_nu_coeff,
     eta = eta, topographic_pv_gradient = topo_PV, topo_type = topo_type, h0 = h0_new, kt=kt,
     f0 = f0, β = β,
     dt = dt,
