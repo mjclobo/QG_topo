@@ -50,6 +50,7 @@ import Base: view
     pre_buoy_restart_file::Bool = false
     pre_multilayer_restart_file::Bool = false
     pre_multilayer_dir::String = "./restart/"
+    data_dir_init::String = data_dir
     data_dir_pre_buoy::String = data_dir
     yr_increment::Float64 = 1.0
     ss_yr_max::Int = 100
@@ -334,13 +335,13 @@ function set_initial_conditions(prob, prob_filt, model_params)
 
             r_file_name = jld_name(model_params, restart_yr)
 
-            a = load(data_dir * r_file_name)
+            a = load(data_dir_init * r_file_name)
 
             ψ = a["jld_data"]["psi_ot"][:,:,:,end]  # a["jld_data"]["psi_yrs_end"]
 
             MultiLayerQG.set_ψ!(prob.sol, prob.params, prob.vars, prob.grid, ψ)   # this also sets q!!!
 
-            println("Restarting model from: " * data_dir * r_file_name)
+            println("Restarting model from: " * data_dir_init * r_file_name)
 
         end
 
@@ -540,19 +541,19 @@ function run_model(prob, model_params)
                             "two_layer_vBT_scale" => Float64(two_layer_vBT_scale ./ budget_counter),
                             "ph_iso" => Float64(ph_iso / budget_counter), "ph_slices" => Float64(ph_slices / budget_counter),
                             "two_layer_modal_length_scales" => Array(two_layer_modal_length_scales ./ budget_counter))
-                    elseif psi_out_bool==false && two_layer_kspace_modal_nrg_budget_bool==true
-                        jld_data = Dict("t" => t_yrly,
-                            "two_layer_kspace_modal_nrg_budget" => Array(two_layer_kspace_modal_nrgs ./ budget_counter),
-                            "two_layer_xspace_modal_nrg_budget" => Array(two_layer_xspace_modal_nrgs ./ budget_counter),
-                            "two_layer_xspace_nrgs_ot" => Array(nrg_ot),
-                            "two_layer_vBT_scale" => Float64(two_layer_vBT_scale ./ budget_counter),
-                            "ph_iso" => Float64(ph_iso / budget_counter), "ph_slices" => Float64(ph_slices / budget_counter),
-                            "two_layer_modal_length_scales" => Array(two_layer_modal_length_scales ./ budget_counter),
-                            "NL_BC_EAPE" => Array(NL_BC_EAPE_out ./ budget_counter), "CBC" => Array(CBC_out ./ budget_counter), "T_D" => Array(TD_out ./ budget_counter),
-                            "coh_NLBCEKE_NLBC2BT" => Array(real.((coh_out[:,:,1] .* coh_out[:,:,2]) ./ (coh_out[:,:,3] .* coh_out[:,:,4]))),
-                            "coh_NLBCEKE_TD" => Array(real.((coh_out[:,:,5] .* coh_out[:,:,6]) ./ (coh_out[:,:,7] .* coh_out[:,:,8]))),
-                            "coh_DBC_TD" => Array(real.((coh_out[:,:,9] .* coh_out[:,:,10]) ./ (coh_out[:,:,11] .* coh_out[:,:,12]))),
-                            "coh_DBC_NLBC2BT" => Array(real.((coh_out[:,:,13] .* coh_out[:,:,14]) ./ (coh_out[:,:,15] .* coh_out[:,:,16]))))
+                    # elseif psi_out_bool==false && two_layer_kspace_modal_nrg_budget_bool==true
+                    #     jld_data = Dict("t" => t_yrly,
+                    #         "two_layer_kspace_modal_nrg_budget" => Array(two_layer_kspace_modal_nrgs ./ budget_counter),
+                    #         "two_layer_xspace_modal_nrg_budget" => Array(two_layer_xspace_modal_nrgs ./ budget_counter),
+                    #         "two_layer_xspace_nrgs_ot" => Array(nrg_ot),
+                    #         "two_layer_vBT_scale" => Float64(two_layer_vBT_scale ./ budget_counter),
+                    #         "ph_iso" => Float64(ph_iso / budget_counter), "ph_slices" => Float64(ph_slices / budget_counter),
+                    #         "two_layer_modal_length_scales" => Array(two_layer_modal_length_scales ./ budget_counter),
+                    #         "NL_BC_EAPE" => Array(NL_BC_EAPE_out ./ budget_counter), "CBC" => Array(CBC_out ./ budget_counter), "T_D" => Array(TD_out ./ budget_counter),
+                    #         "coh_NLBCEKE_NLBC2BT" => Array(real.((coh_out[:,:,1] .* coh_out[:,:,2]) ./ (coh_out[:,:,3] .* coh_out[:,:,4]))),
+                    #         "coh_NLBCEKE_TD" => Array(real.((coh_out[:,:,5] .* coh_out[:,:,6]) ./ (coh_out[:,:,7] .* coh_out[:,:,8]))),
+                    #         "coh_DBC_TD" => Array(real.((coh_out[:,:,9] .* coh_out[:,:,10]) ./ (coh_out[:,:,11] .* coh_out[:,:,12]))),
+                    #         "coh_DBC_NLBC2BT" => Array(real.((coh_out[:,:,13] .* coh_out[:,:,14]) ./ (coh_out[:,:,15] .* coh_out[:,:,16]))))
                     elseif zonal_slice_diag==true
                         jld_data = Dict("t" => t_yrly, "psi_ot_slice" => Array(psi_ot_slice))
                     elseif omega_diags_bool==true
@@ -2404,6 +2405,7 @@ function redef_mu_kappa_topoPV_h0_nu(model_params, mu, kappa, topo_PV, h0_new, n
     restart_yr = restart_yr,
     pre_buoy_restart_file = pre_buoy_restart_file,
     data_dir_pre_buoy = data_dir_pre_buoy,
+    data_dir_init=data_dir_init,
     pre_multilayer_restart_file = pre_multilayer_restart_file,
     pre_multilayer_dir = pre_multilayer_dir,
     ss_yr_max = ss_yr_max,
@@ -2434,6 +2436,7 @@ function redef_mu_kappa_topoPV_h0_eta(model_params, mu, kappa, topo_PV, h0_new, 
     restart_yr = restart_yr,
     pre_buoy_restart_file = pre_buoy_restart_file,
     data_dir_pre_buoy = data_dir_pre_buoy,
+    data_dir_init=data_dir_init,
     pre_multilayer_restart_file = pre_multilayer_restart_file,
     pre_multilayer_dir = pre_multilayer_dir,
     ss_yr_max = ss_yr_max,
@@ -2465,6 +2468,7 @@ function redef_mu_kappa_beta(model_params, mu, kappa, beta)
     restart_yr = restart_yr,
     pre_buoy_restart_file = pre_buoy_restart_file,
     data_dir_pre_buoy = data_dir_pre_buoy,
+    data_dir_init=data_dir_init,
     pre_multilayer_restart_file = pre_multilayer_restart_file,
     pre_multilayer_dir = pre_multilayer_dir,
     ss_yr_max = ss_yr_max,
