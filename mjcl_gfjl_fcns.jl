@@ -337,7 +337,7 @@ function set_initial_conditions(prob, prob_filt, model_params)
 
             a = load(data_dir_init * r_file_name)
 
-            ψ = a["jld_data"]["psi_ot"][:,:,:,end]  # a["jld_data"]["psi_yrs_end"]
+            ψ = a["jld_data"]["psi_yrs_end"][:,:,:,end]  # a["jld_data"]["psi_yrs_end"]
 
             MultiLayerQG.set_ψ!(prob.sol, prob.params, prob.vars, prob.grid, ψ)   # this also sets q!!!
 
