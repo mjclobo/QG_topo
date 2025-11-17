@@ -74,6 +74,7 @@ end
     only_save_last::Bool = false
     zonal_slice_diag::Bool = false
     omega_diags_bool::Bool = false
+    diags_on::Bool = false
 end
 
 ####################################################################################
@@ -393,17 +394,19 @@ function run_model(prob, model_params)
     global j = 0
     prob.clock.t = restart_yr * 365.25 * 24 * 3600.
 
-    preallocate_global_diag_arrays(prob, grid, dev, nsubs, restart_yr, EAPE_two_layer_kspace_modal_nrg_budget_bool, omega_diags_bool)
+    if diags_on==true
+        preallocate_global_diag_arrays(prob, grid, dev, nsubs, restart_yr, EAPE_two_layer_kspace_modal_nrg_budget_bool, omega_diags_bool)
+    end
 
     while yr_cnt < ss_yr_max
         global j
         
         # global prob
 
-        if dyn_nu==true
-            rmsζ = sqrt(maximum((irfft(-grid.Krsq .* prob.vars.ψh[:,:,1], grid.ny)).^2))
-            global prob = @set prob.params.ν = dyn_nu_coeff * rmsζ * prob.grid.dx^8
-        end
+        # if dyn_nu==true
+        #     rmsζ = sqrt(maximum((irfft(-grid.Krsq .* prob.vars.ψh[:,:,1], grid.ny)).^2))
+        #     global prob = @set prob.params.ν = dyn_nu_coeff * rmsζ * prob.grid.dx^8
+        # end
         
         stepforward!(prob)
         MultiLayerQG.updatevars!(prob)
