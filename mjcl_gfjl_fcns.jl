@@ -394,6 +394,12 @@ function run_model(prob, model_params)
     global j = 0
     prob.clock.t = restart_yr * 365.25 * 24 * 3600.
 
+    global t_yrly = Array([prob.clock.t])
+    global yr_cnt = restart_yr
+    global budget_counter = 0
+    global nsaves = 0
+    global psi_ot = nothing
+    
     if diags_on==true
         preallocate_global_diag_arrays(prob, grid, dev, nsubs, restart_yr, EAPE_two_layer_kspace_modal_nrg_budget_bool, omega_diags_bool)
     end
@@ -592,11 +598,6 @@ end
 
 
 function preallocate_global_diag_arrays(prob, grid, dev, nsubs, restart_yr, EAPE_two_layer_kspace_modal_nrg_budget_bool, omega_diags_bool)
-    global t_yrly = Array([prob.clock.t])
-    global yr_cnt = restart_yr
-    global budget_counter = 0
-    global nsaves = 0
-    global psi_ot = nothing
     global psi_ot_slice = nothing
 
     global ph_iso    = 0.
