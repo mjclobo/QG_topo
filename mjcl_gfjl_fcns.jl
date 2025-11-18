@@ -2372,7 +2372,7 @@ function vert_disc(strat_type, rho_top, rho_bottom, H, scale_depth)
 end
 
 
-function vert_profile_loc(strat_type, rho_top_in, rho_bottom_in, H, scale_depth, z)
+function vert_profile_loc(strat_type, rho_top, rho_bottom, H, scale_depth, z)
     if strat_type[1:2] == "SI"
         return rho_top + (rho_bottom - rho_top) * (1 - exp(z / scale_depth))
     elseif strat_type[1:3] == "uni"
