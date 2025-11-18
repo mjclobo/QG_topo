@@ -399,7 +399,7 @@ function run_model(prob, model_params)
     global budget_counter = 0
     global nsaves = 0
     global psi_ot = nothing
-    
+
     if diags_on==true
         preallocate_global_diag_arrays(prob, grid, dev, nsubs, restart_yr, EAPE_two_layer_kspace_modal_nrg_budget_bool, omega_diags_bool)
     end
@@ -2352,7 +2352,7 @@ end
 
 
 function vert_disc(strat_type, rho_top, rho_bottom, H, scale_depth)
-    
+        
     Nz = length(H)
 
     rho_out = zeros(Nz)
@@ -2364,20 +2364,23 @@ function vert_disc(strat_type, rho_top, rho_bottom, H, scale_depth)
     end
 
     for (i,z) in enumerate(z_prof)
-        rho_out[i] = vert_profile(strat_type, rho_top, rho_bottom, H, scale_depth, z)
+        # rho_out[i] = vert_profile(strat_type, rho_top, rho_bottom, H, scale_depth, z)
+        rho_out[i] = vert_profile_loc(strat_type, rho_top, rho_bottom, H, scale_depth, sum(H[1:i]))
     end
 
     return rho_out
 end
 
 
-function vert_profile(strat_type, rho_top, rho_bottom, H, scale_depth, z)
+function vert_profile_loc(strat_type, rho_top_in, rho_bottom_in, H, scale_depth, z)
     if strat_type[1:2] == "SI"
         return rho_top + (rho_bottom - rho_top) * (1 - exp(z / scale_depth))
     elseif strat_type[1:3] == "uni"
-        # return rho_top - (rho_bottom - rho_top) * (z/sum(H))
-        return rho_top - (rho_bottom - rho_top) * (z/sum(H))
-
+        return rho_top + (rho_bottom - rho_top) * ((z-H[1])/(sum(H)-H[1]))
+        # # return rho_top - (rho_bottom - rho_top) * ((z+H[1]/2)/(sum(H) - (H[end]/2 + H[1]/2)))
+        # rho_top = rho_top_in - (rho_bottom_in - rho_top_in) * H[1]/2/(sum(H)-H[1]/2 - H[end]/2)
+        # rho_bottom = rho_bottom_in + (rho_bottom_in - rho_top_in) * H[end]/2/(sum(H)-H[1]/2 - H[end]/2)
+        # return rho_top - (rho_bottom - rho_top) * z/sum(H)
     end
 end
 
