@@ -68,6 +68,7 @@ end
     kspace_layered_nrg_budget::Bool = false
     xspace_modal_nrg_budget::Bool = false
     kspace_modal_nrg_budget::Bool = false
+    kspace_modal_nrg_spectrum_bool::Bool = false
     two_layer_kspace_modal_nrg_budget_bool::Bool = false
     EAPE_two_layer_kspace_modal_nrg_budget_bool::Bool = false
     psi_out_bool_yrs_end::Bool = false
@@ -470,6 +471,13 @@ function run_model(prob, model_params)
                 global @views nrg_ot[:,nsaves] = update_layered_nrg(prob, vars.ψ, model_params) 
             end
 
+            if kspace_modal_nrg_spectrum_bool==true
+                # global @views kspace_modal_nrg_spectrum = 
+                update_kspace_modal_nrg_spectrum!(kspace_modal_nrg_spectrum, prob, vars.ψ, model_params) 
+
+                global budget_counter+=1
+            end
+
             if omega_diags_bool==true
                 global TW_full_h, TW_p2p1_h, TW_p2f_h, TW_p2z2_h, TW_p1f_h, TW_p1z1_h, TW_U1z1_h, TW_wb_h, TW_S32_h = update_two_layer_omega_diags(prob, vars.ψ, model_params, TW_full_h, TW_p2p1_h, TW_p2f_h, TW_p2z2_h, TW_p1f_h, TW_p1z1_h, TW_U1z1_h, TW_wb_h, TW_S32_h)
                 global budget_counter +=1
@@ -507,6 +515,8 @@ function run_model(prob, model_params)
                     if psi_out_bool==true && two_layer_kspace_modal_nrg_budget_bool==false && xspace_layered_nrg==true
                         jld_data = Dict("t" => t_yrly,  "layered_nrg_ot" => Array(nrg_ot),
                             "psi_ot" => Array(psi_ot), "psi_yrs_end" => Array(vars.ψ))
+                    elseif kspace_modal_nrg_spectrum_bool==true
+                        jld_data = Dict("kspace_modal_nrg_spectrum" => Array(kspace_modal_nrg_spectrum ./ budget_counter))
                     elseif psi_out_bool==true && two_layer_kspace_modal_nrg_budget_bool==false && xspace_layered_nrg==false
                         jld_data = Dict("t" => t_yrly, 
                             "psi_ot" => Array(psi_ot), "psi_yrs_end" => Array(vars.ψ))
@@ -627,6 +637,8 @@ function preallocate_global_diag_arrays(prob, grid, dev, nsubs, restart_yr, EAPE
         global TW_wb_h = zeros(dev, T, (grid.nkr, grid.nl))
         global TW_S32_h = zeros(dev, T, (grid.nkr, grid.nl))
     end
+
+    global kspace_modal_nrg_spectrum = zeros(dev, T, (grid.nx, grid.ny, 2))
 
     nterms_two_layer_modal_xspace = 10  # only one nonlinear term (instead of 5)
     global two_layer_kspace_modal_nrgs = zeros(dev, T, (grid.nkr, nterms_two_layer_modal_kspace))
@@ -1480,6 +1492,57 @@ end
 
 update_two_layered_nrg(prob, ψ, model_params) = update_two_layered_nrg(prob.vars, prob.params, prob.grid, prob.sol, ψ, model_params)
 
+
+#####################################
+#####################################
+#####################################
+
+
+
+function update_kspace_modal_nrg_spectrum!(kspace_modal_nrg_spectrum, vars, params, grid, sol, ψ, model_params)
+
+    @unpack_mod_params model_params
+
+    dev = grid.device
+    T = eltype(grid)
+    A = device_array(dev)
+
+    rfftplan = plan_flows_rfft(A{T, 3}(undef, grid.nx, grid.ny, 1), [1, 2]; flags=FFTW.MEASURE)
+
+    NxNy = grid.nx .* grid.ny
+
+    # nlayers = Nz
+    # δ = H ./ sum(H)
+    # g′ = @. g * (rho[2:end] - rho[1:end-1]) / rho0 # reduced gravity at the interface
+    # F = (f0^2 ./ (g′ .* sum(params.H)))
+    # μ = params.μ
+
+    # KE = zeros(dev, T, (nlayers))
+    # APE = zeros(dev, T, (nlayers-1))
+
+    ψ1 = @view ψ[:, :, 1]
+    ψ2 = @view ψ[:, :, 2]
+
+    ψBT = 0.5 * (ψ1 .+ ψ2)
+    ψBC = 0.5 * (ψ1 .- ψ2)
+
+    ψBCh = deepcopy(kspace_modal_nrg_spectrum[:,:,1])
+    ψBTh = deepcopy(kspace_modal_nrg_spectrum[:,:,1])
+
+    mul2D!(ψBCh, rfftplan, ψBC)
+    mul2D!(ψBTh, rfftplan, ψBT)
+
+
+    kspace_modal_nrg_spectrum[:,:,1] .+= grid.Ksq .* abs2.(ψBTh) ./ NxNy
+    kspace_modal_nrg_spectrum[:,:,2] .+= grid.Ksq .* abs2.(ψBCh) ./ NxNy
+
+    # @views KE[i:i] = sum(KE_d) * grid.dx * grid.dy * grid.Lx^-1 * grid.Ly^-1
+
+    return nothing # CUDA.@allowscalar BT_KE_spec, BC_KE_spec # , nrgs_in .+ vcat(KE, APE)
+
+end
+
+update_kspace_modal_nrg_spectrum!(kspace_modal_nrg_spectrum, prob, ψ, model_params) = update_kspace_modal_nrg_spectrum!(kspace_modal_nrg_spectrum, prob.vars, prob.params, prob.grid, prob.sol, ψ, model_params)
 
 
 #####################################
