@@ -401,6 +401,8 @@ function run_model(prob, model_params)
     global nsaves = 0
     global psi_ot = nothing
 
+    global fft_plan! = plan_fft!(zeros(Complex, grid.nx, grid.ny); flags=FFTW.MEASURE)
+
     if diags_on==true
         preallocate_global_diag_arrays(prob, grid, dev, nsubs, restart_yr, EAPE_two_layer_kspace_modal_nrg_budget_bool, omega_diags_bool)
     end
@@ -473,7 +475,7 @@ function run_model(prob, model_params)
 
             if kspace_modal_nrg_spectrum_bool==true
                 # global @views kspace_modal_nrg_spectrum = 
-                update_kspace_modal_nrg_spectrum!(kspace_modal_nrg_spectrum, prob, vars.ψ, model_params) 
+                update_kspace_modal_nrg_spectrum!(kspace_modal_nrg_spectrum, prob, vars.ψ, model_params, fft_plan!) 
 
                 global budget_counter+=1
             end
@@ -1499,7 +1501,7 @@ update_two_layered_nrg(prob, ψ, model_params) = update_two_layered_nrg(prob.var
 
 
 
-function update_kspace_modal_nrg_spectrum!(kspace_modal_nrg_spectrum, vars, params, grid, sol, ψ, model_params)
+function update_kspace_modal_nrg_spectrum!(kspace_modal_nrg_spectrum, vars, params, grid, sol, ψ, model_params, fftplan)
 
     @unpack_mod_params model_params
 
@@ -1507,7 +1509,7 @@ function update_kspace_modal_nrg_spectrum!(kspace_modal_nrg_spectrum, vars, para
     T = eltype(grid)
     A = device_array(dev)
 
-    rfftplan = plan_flows_rfft(A{T, 3}(undef, grid.nx, grid.ny, 1), [1, 2]; flags=FFTW.MEASURE)
+    # rfftplan = plan_flows_rfft(A{T, 3}(undef, grid.nx, grid.ny, 1), [1, 2]; flags=FFTW.MEASURE)
 
     NxNy = grid.nx .* grid.ny
 
@@ -1526,12 +1528,16 @@ function update_kspace_modal_nrg_spectrum!(kspace_modal_nrg_spectrum, vars, para
     ψBT = 0.5 * (ψ1 .+ ψ2)
     ψBC = 0.5 * (ψ1 .- ψ2)
 
-    ψBCh = deepcopy(kspace_modal_nrg_spectrum[:,:,1])
-    ψBTh = deepcopy(kspace_modal_nrg_spectrum[:,:,1])
+    # ψBCh = deepcopy(kspace_modal_nrg_spectrum[:,:,1])
+    # ψBTh = deepcopy(kspace_modal_nrg_spectrum[:,:,1])
+    # mul2D!(ψBCh, fftplan, ψBC)
+    # mul2D!(ψBTh, fftplan, ψBT)
 
-    mul2D!(ψBCh, rfftplan, ψBC)
-    mul2D!(ψBTh, rfftplan, ψBT)
+    copyto!(ψBTh, ψBT)
+    copyto!(ψBCh, ψBC)
 
+    fft_plan!(ψBTh)     # IN-PLACE FFT
+    fft_plan!(ψBCh)     # IN-PLACE FFT
 
     kspace_modal_nrg_spectrum[:,:,1] .+= grid.Ksq .* abs2.(ψBTh) ./ NxNy
     kspace_modal_nrg_spectrum[:,:,2] .+= grid.Ksq .* abs2.(ψBCh) ./ NxNy
@@ -1542,7 +1548,7 @@ function update_kspace_modal_nrg_spectrum!(kspace_modal_nrg_spectrum, vars, para
 
 end
 
-update_kspace_modal_nrg_spectrum!(kspace_modal_nrg_spectrum, prob, ψ, model_params) = update_kspace_modal_nrg_spectrum!(kspace_modal_nrg_spectrum, prob.vars, prob.params, prob.grid, prob.sol, ψ, model_params)
+update_kspace_modal_nrg_spectrum!(kspace_modal_nrg_spectrum, prob, ψ, model_params, fftplan) = update_kspace_modal_nrg_spectrum!(kspace_modal_nrg_spectrum, prob.vars, prob.params, prob.grid, prob.sol, ψ, model_params, fftplan)
 
 
 #####################################
