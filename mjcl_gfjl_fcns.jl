@@ -401,7 +401,8 @@ function run_model(prob, model_params)
     global nsaves = 0
     global psi_ot = nothing
 
-    global fft_plan! = plan_fft!(zeros(ComplexF64, grid.nx, grid.ny); flags=FFTW.MEASURE)
+    # global fft_plan = plan_flows_rfft(A{T, 3}(undef, grid.nx, grid.ny, 1), [1, 2]; flags=FFTW.MEASURE)
+    global fft_plan = CUDA.CUFFT.plan_fft(CUDA.rand(grid.nx, grid.ny))
 
     if diags_on==true
         preallocate_global_diag_arrays(prob, grid, dev, nsubs, restart_yr, EAPE_two_layer_kspace_modal_nrg_budget_bool, omega_diags_bool)
@@ -1528,17 +1529,17 @@ function update_kspace_modal_nrg_spectrum!(kspace_modal_nrg_spectrum, vars, para
     ψBT = 0.5 * (ψ1 .+ ψ2)
     ψBC = 0.5 * (ψ1 .- ψ2)
 
-    ψBCh = deepcopy(kspace_modal_nrg_spectrum[:,:,1])
-    ψBTh = deepcopy(kspace_modal_nrg_spectrum[:,:,1])
-    
-    # mul2D!(ψBCh, fftplan, ψBC)
-    # mul2D!(ψBTh, fftplan, ψBT)
+    ψBCh = fft_plan * ψBC
+    ψBTh = fft_plan * ψBT
 
-    copyto!(ψBTh, ψBT)
-    copyto!(ψBCh, ψBC)
+    # mul2D!(ψBCh, fft_plan, ψBC)
+    # mul2D!(ψBTh, fft_plan, ψBT)
 
-    fft_plan! * ψBTh     # IN-PLACE FFT
-    fft_plan! * ψBCh     # IN-PLACE FFT
+    # copyto!(ψBTh, ψBT)
+    # copyto!(ψBCh, ψBC)
+
+    # fft_plan! * ψBTh     # IN-PLACE FFT
+    # fft_plan! * ψBCh     # IN-PLACE FFT
 
     kspace_modal_nrg_spectrum[:,:,1] .+= grid.Ksq .* abs2.(ψBTh) ./ NxNy
     kspace_modal_nrg_spectrum[:,:,2] .+= grid.Ksq .* abs2.(ψBCh) ./ NxNy
