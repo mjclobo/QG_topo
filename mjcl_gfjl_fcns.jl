@@ -401,7 +401,7 @@ function run_model(prob, model_params)
     global nsaves = 0
     global psi_ot = nothing
 
-    global fft_plan! = plan_fft!(zeros(Complex, grid.nx, grid.ny); flags=FFTW.MEASURE)
+    global fft_plan! = plan_fft!(zeros(ComplexF64, grid.nx, grid.ny); flags=FFTW.MEASURE)
 
     if diags_on==true
         preallocate_global_diag_arrays(prob, grid, dev, nsubs, restart_yr, EAPE_two_layer_kspace_modal_nrg_budget_bool, omega_diags_bool)
@@ -1536,8 +1536,8 @@ function update_kspace_modal_nrg_spectrum!(kspace_modal_nrg_spectrum, vars, para
     copyto!(ψBTh, ψBT)
     copyto!(ψBCh, ψBC)
 
-    fft_plan!(ψBTh)     # IN-PLACE FFT
-    fft_plan!(ψBCh)     # IN-PLACE FFT
+    fft_plan! * ψBTh     # IN-PLACE FFT
+    fft_plan! * ψBCh     # IN-PLACE FFT
 
     kspace_modal_nrg_spectrum[:,:,1] .+= grid.Ksq .* abs2.(ψBTh) ./ NxNy
     kspace_modal_nrg_spectrum[:,:,2] .+= grid.Ksq .* abs2.(ψBCh) ./ NxNy
