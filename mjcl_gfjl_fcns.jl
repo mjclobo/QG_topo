@@ -1528,8 +1528,9 @@ function update_kspace_modal_nrg_spectrum!(kspace_modal_nrg_spectrum, vars, para
     ψBT = 0.5 * (ψ1 .+ ψ2)
     ψBC = 0.5 * (ψ1 .- ψ2)
 
-    # ψBCh = deepcopy(kspace_modal_nrg_spectrum[:,:,1])
-    # ψBTh = deepcopy(kspace_modal_nrg_spectrum[:,:,1])
+    ψBCh = deepcopy(kspace_modal_nrg_spectrum[:,:,1])
+    ψBTh = deepcopy(kspace_modal_nrg_spectrum[:,:,1])
+    
     # mul2D!(ψBCh, fftplan, ψBC)
     # mul2D!(ψBTh, fftplan, ψBT)
 
