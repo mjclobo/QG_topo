@@ -476,7 +476,7 @@ function run_model(prob, model_params)
 
             if kspace_modal_nrg_spectrum_bool==true
                 # global @views kspace_modal_nrg_spectrum = 
-                update_kspace_modal_nrg_spectrum!(kspace_modal_nrg_spectrum, prob, vars.ψ, model_params, fft_plan!) 
+                update_kspace_modal_nrg_spectrum!(kspace_modal_nrg_spectrum, prob, vars.ψ, model_params, fft_plan) 
 
                 global budget_counter+=1
             end
